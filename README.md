@@ -25,7 +25,7 @@ npx code-abyss
 交互式菜单（方向键选择，回车确认）：
 
 ```
-☠️ Code Abyss v1.7.1
+☠️ Code Abyss v1.7.2
 
 ? 请选择操作 (Use arrow keys)
 ❯ 安装到 Claude Code (~/.claude/)

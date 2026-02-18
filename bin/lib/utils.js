@@ -7,15 +7,23 @@ const SKIP = ['__pycache__', '.pyc', '.pyo', '.egg-info', '.DS_Store', 'Thumbs.d
 function shouldSkip(name) { return SKIP.some(p => name.includes(p)); }
 
 function copyRecursive(src, dest) {
-  const stat = fs.statSync(src);
+  let stat;
+  try { stat = fs.statSync(src); } catch (e) {
+    throw new Error(`复制失败: 源路径不存在 ${src} (${e.code})`);
+  }
   if (stat.isDirectory()) {
     if (shouldSkip(path.basename(src))) return;
     fs.mkdirSync(dest, { recursive: true });
-    fs.readdirSync(src).forEach(f => {
-      if (!shouldSkip(f)) copyRecursive(path.join(src, f), path.join(dest, f));
-    });
+    for (const f of fs.readdirSync(src)) {
+      if (!shouldSkip(f)) {
+        try { copyRecursive(path.join(src, f), path.join(dest, f)); }
+        catch (e) { console.error(`  ⚠ 跳过: ${path.join(src, f)} (${e.message})`); }
+      }
+    }
   } else {
     if (shouldSkip(path.basename(src))) return;
+    const destDir = path.dirname(dest);
+    if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
     fs.copyFileSync(src, dest);
   }
 }
@@ -63,13 +71,15 @@ function printMergeLog(log, c) {
  * @param {string} content - 文件内容
  * @returns {Object|null} 解析后的键值对，无 frontmatter 返回 null
  */
+const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 function parseFrontmatter(content) {
   const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (!match) return null;
-  const meta = {};
+  const meta = Object.create(null);
   match[1].split('\n').forEach(line => {
     const m = line.match(/^([\w][\w-]*)\s*:\s*(.+)/);
-    if (m) meta[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
+    if (m && !UNSAFE_KEYS.has(m[1])) meta[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
   });
   return meta;
 }

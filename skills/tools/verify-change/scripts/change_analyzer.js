@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 
-const { execSync } = require("child_process");
+const { execFileSync } = require("child_process");
 const path = require("path");
 const fs = require("fs");
 const { parseCliArgs, buildReport, hasFatal, DASH } = require(path.join(__dirname, '..', '..', 'lib', 'shared.js'));
@@ -61,20 +61,20 @@ function parsePorcelainLine(line) {
   return c;
 }
 
-function git(args) {
-  try { return execSync('git ' + args, { encoding: "utf8", stdio: ["pipe","pipe","pipe"] }); }
+function git(...args) {
+  try { return execFileSync('git', args, { encoding: "utf8", stdio: ["pipe","pipe","pipe"] }); }
   catch { return ""; }
 }
 
 function getGitChanges(base = "HEAD~1", target = "HEAD") {
   const changes = [];
-  for (const line of git(`diff --name-status ${base} ${target}`).split("\n")) {
+  for (const line of git('diff', '--name-status', base, target).split("\n")) {
     if (!line) continue;
     const c = parseNameStatusLine(line);
     if (c) changes.push(c);
   }
   const statMap = {};
-  for (const line of git(`diff --numstat ${base} ${target}`).split("\n")) {
+  for (const line of git('diff', '--numstat', base, target).split("\n")) {
     if (!line) continue;
     const parts = line.split("\t");
     if (parts.length >= 3) {
@@ -92,7 +92,7 @@ function getGitChanges(base = "HEAD~1", target = "HEAD") {
 
 function getStagedChanges() {
   const changes = [];
-  for (const line of git("diff --cached --name-status").split("\n")) {
+  for (const line of git('diff', '--cached', '--name-status').split("\n")) {
     if (!line) continue;
     const c = parseNameStatusLine(line);
     if (c) changes.push(c);
@@ -102,7 +102,7 @@ function getStagedChanges() {
 
 function getWorkingChanges() {
   const changes = [];
-  for (const line of git("status --porcelain").split("\n")) {
+  for (const line of git('status', '--porcelain').split("\n")) {
     if (!line) continue;
     const c = parsePorcelainLine(line);
     if (c) changes.push(c);

@@ -55,38 +55,28 @@ function getScriptPath(skillName) {
   return available[skillName];
 }
 
+function sleepMs(ms) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) { /* busy wait */ }
+}
+
 function acquireTargetLock(args) {
   const target = args.find(a => !a.startsWith('-')) || process.cwd();
   const hash = createHash('md5').update(resolve(target)).digest('hex').slice(0, 12);
   const lockPath = join(tmpdir(), `sage_skill_${hash}.lock`);
 
-  try {
-    const fd = openSync(lockPath, 'wx');
-    return { fd, lockPath };
-  } catch (e) {
-    if (e.code === 'EEXIST') {
-      console.log(`⏳ 等待锁释放: ${target}`);
-      // 异步轮询等待，最多 30s
-      const deadline = Date.now() + 30000;
-      const poll = () => {
-        if (Date.now() >= deadline) { console.error(`⏳ 等待锁超时: ${target}`); process.exit(1); }
-        try {
-          const fd = openSync(lockPath, 'wx');
-          return { fd, lockPath };
-        } catch { /* still locked */ }
-        return null;
-      };
-      const result = poll();
-      if (result) return result;
-      return new Promise((resolve) => {
-        const timer = setInterval(() => {
-          const r = poll();
-          if (r) { clearInterval(timer); resolve(r); }
-        }, 200);
-      });
+  const deadline = Date.now() + 30000;
+  let first = true;
+  while (true) {
+    try {
+      const fd = openSync(lockPath, 'wx');
+      return { fd, lockPath };
+    } catch (e) {
+      if (e.code !== 'EEXIST') return { fd: null, lockPath: null };
+      if (first) { console.log(`⏳ 等待锁释放: ${target}`); first = false; }
+      if (Date.now() >= deadline) { console.error(`⏳ 等待锁超时: ${target}`); process.exit(1); }
+      sleepMs(200);
     }
-    // 其他错误，忽略锁继续执行
-    return { fd: null, lockPath: null };
   }
 }
 

@@ -35,22 +35,25 @@ function parseGitignore(modPath) {
 
 function shouldIgnore(filePath, basePath, patterns) {
   const relPath = path.relative(basePath, filePath);
+  const parts = relPath.split(path.sep);
   const name = path.basename(filePath);
 
   let ignored = false;
   for (const {pattern, negate} of patterns) {
     let match = false;
+    const cleanPattern = pattern.replace(/\/$/, '');
 
-    if (pattern.includes('*')) {
-      // 通配符匹配
-      const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
-      match = regex.test(name) || regex.test(relPath);
-    } else if (pattern.includes('/')) {
-      // 路径匹配
-      match = relPath.includes(pattern) || relPath.startsWith(pattern);
+    if (cleanPattern.includes('*')) {
+      // 通配符 → 正则：先转义特殊字符，再将 \* 还原为 [^/]*
+      const escaped = cleanPattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '[^/]*');
+      const regex = new RegExp('^' + escaped + '$');
+      match = regex.test(name) || parts.some(p => regex.test(p));
+    } else if (cleanPattern.includes('/')) {
+      // 路径匹配：必须从头匹配或完整段匹配
+      match = relPath === cleanPattern || relPath.startsWith(cleanPattern + '/');
     } else {
-      // 文件名匹配
-      match = name === pattern || relPath.includes(`/${pattern}`) || relPath.startsWith(pattern);
+      // 目录/文件名精确匹配
+      match = name === cleanPattern || parts.includes(cleanPattern);
     }
 
     if (match) ignored = !negate;

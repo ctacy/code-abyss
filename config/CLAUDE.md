@@ -54,7 +54,7 @@
 | ❄ 玄冰 | 镇魔之盾，护佑安宁 | 蓝队、告警、IOC、应急、取证、SIEM、EDR |
 | ⚡ 紫霄 | 攻守一体，方为大道 | 紫队、ATT&CK、TTP、检测验证、规则调优 |
 
-详细攻防技术见 `skills/security/` 各秘典。
+详细攻防技术见 `skills/domains/security/` 各秘典。
 
 ---
 
@@ -156,15 +156,15 @@
 
 | 化身 | 秘典 | 触发场景 |
 |------|------|----------|
-| 🔥 赤焰 | `skills/security/red-team.md` | 渗透、红队、exploit、C2 |
-| ❄ 玄冰 | `skills/security/blue-team.md` | 蓝队、告警、IOC、应急 |
-| ⚡ 紫霄 | `skills/security/` | ATT&CK、TTP、攻防演练 |
-| 📜 符箓 | `skills/development/` | 语言开发任务 |
-| 👁 天眼 | `skills/security/threat-intel.md` | OSINT、威胁情报 |
-| 🔮 丹鼎 | `skills/ai/` | RAG、Agent、LLM |
-| 🕸 天罗 | `skills/multi-agent/` | TeamCreate、多Agent协同 |
-| 🏗 阵法 | `skills/architecture/` | 架构、API、云原生、缓存、合规 |
-| 🔧 炼器 | `skills/devops/` | Git、测试、数据库、性能、可观测性 |
+| 🔥 赤焰 | `skills/domains/security/red-team.md` | 渗透、红队、exploit、C2 |
+| ❄ 玄冰 | `skills/domains/security/blue-team.md` | 蓝队、告警、IOC、应急 |
+| ⚡ 紫霄 | `skills/domains/security/` | ATT&CK、TTP、攻防演练 |
+| 📜 符箓 | `skills/domains/development/` | 语言开发任务 |
+| 👁 天眼 | `skills/domains/security/threat-intel.md` | OSINT、威胁情报 |
+| 🔮 丹鼎 | `skills/domains/ai/` | RAG、Agent、LLM |
+| 🕸 天罗 | `skills/orchestration/multi-agent/SKILL.md` | TeamCreate、多Agent协同 |
+| 🏗 阵法 | `skills/domains/architecture/` | 架构、API、云原生、缓存、合规 |
+| 🔧 炼器 | `skills/domains/devops/` | Git、测试、数据库、性能、可观测性 |
 
 **校验关卡**（自动触发，不可跳过）：
 

@@ -15,7 +15,7 @@ if (parseInt(process.versions.node) < parseInt(MIN_NODE)) {
   process.exit(1);
 }
 const PKG_ROOT = fs.realpathSync(path.join(__dirname, '..'));
-const { shouldSkip, copyRecursive, rmSafe, deepMergeNew, printMergeLog } =
+const { shouldSkip, copyRecursive, rmSafe, deepMergeNew, printMergeLog, parseFrontmatter } =
   require(path.join(__dirname, 'lib', 'utils.js'));
 const { detectCclineBin, installCcline: _installCcline } = require(path.join(__dirname, 'lib', 'ccline.js'));
 
@@ -193,6 +193,122 @@ function runUninstall(tgt) {
 
 // ── 安装核心 ──
 
+/**
+ * 递归扫描 skills 目录，找出所有 user-invocable: true 的 SKILL.md
+ * @param {string} skillsDir - skills 源目录绝对路径
+ * @returns {Array<{meta: Object, relPath: string, hasScripts: boolean}>}
+ */
+function scanInvocableSkills(skillsDir) {
+  const results = [];
+  function scan(dir) {
+    const skillMd = path.join(dir, 'SKILL.md');
+    if (fs.existsSync(skillMd)) {
+      try {
+        const content = fs.readFileSync(skillMd, 'utf8');
+        const meta = parseFrontmatter(content);
+        if (meta && meta['user-invocable'] === 'true' && meta.name) {
+          const relPath = path.relative(skillsDir, dir);
+          const scriptsDir = path.join(dir, 'scripts');
+          const hasScripts = fs.existsSync(scriptsDir) &&
+            fs.readdirSync(scriptsDir).some(f => f.endsWith('.js'));
+          results.push({ meta, relPath, hasScripts });
+        }
+      } catch (e) { /* 解析失败跳过 */ }
+    }
+    try {
+      fs.readdirSync(dir).forEach(sub => {
+        const subPath = path.join(dir, sub);
+        if (fs.statSync(subPath).isDirectory() && !shouldSkip(sub) && sub !== 'scripts') {
+          scan(subPath);
+        }
+      });
+    } catch (e) { /* 读取失败跳过 */ }
+  }
+  scan(skillsDir);
+  return results;
+}
+
+/**
+ * 根据 SKILL.md 元数据生成 command .md 内容
+ * @param {Object} meta - parseFrontmatter 返回的元数据
+ * @param {string} skillRelPath - 相对于 skills/ 的路径（如 'tools/gen-docs'）
+ * @param {boolean} hasScripts - 是否有可执行脚本
+ * @returns {string} command .md 文件内容
+ */
+function generateCommandContent(meta, skillRelPath, hasScripts) {
+  const name = meta.name;
+  const desc = (meta.description || '').replace(/"/g, '\\"');
+  const argHint = meta['argument-hint'];
+  const tools = meta['allowed-tools'] || 'Read';
+  const skillPath = skillRelPath
+    ? `~/.claude/skills/${skillRelPath}/SKILL.md`
+    : '~/.claude/skills/SKILL.md';
+
+  const lines = [
+    '---',
+    `name: ${name}`,
+    `description: "${desc}"`,
+  ];
+  if (argHint) lines.push(`argument-hint: "${argHint}"`);
+  lines.push(`allowed-tools: ${tools}`);
+  lines.push('---');
+  lines.push('');
+  lines.push('## 执行指南');
+  lines.push('');
+  lines.push('先读取完整的 Skill 定义获取详细规范：');
+  lines.push('');
+  lines.push('```');
+  lines.push(skillPath);
+  lines.push('```');
+
+  if (hasScripts) {
+    lines.push('');
+    lines.push('然后执行：');
+    lines.push('');
+    lines.push('```bash');
+    lines.push(`node ~/.claude/skills/run_skill.js ${name} $ARGUMENTS`);
+    lines.push('```');
+  } else {
+    lines.push('');
+    lines.push('根据秘典内容为用户提供专业指导。');
+  }
+
+  lines.push('');
+  return lines.join('\n');
+}
+
+/**
+ * 扫描 skills 并为 user-invocable 的 skill 生成 command 包装，文件级合并安装
+ */
+function installGeneratedCommands(skillsSrcDir, targetDir, backupDir, manifest) {
+  const skills = scanInvocableSkills(skillsSrcDir);
+  if (skills.length === 0) return 0;
+
+  const cmdsDir = path.join(targetDir, 'commands');
+  fs.mkdirSync(cmdsDir, { recursive: true });
+
+  skills.forEach(({ meta, relPath, hasScripts }) => {
+    const fileName = `${meta.name}.md`;
+    const destFile = path.join(cmdsDir, fileName);
+    const relFile = path.posix.join('commands', fileName);
+
+    if (fs.existsSync(destFile)) {
+      const cmdsBackupDir = path.join(backupDir, 'commands');
+      fs.mkdirSync(cmdsBackupDir, { recursive: true });
+      fs.copyFileSync(destFile, path.join(cmdsBackupDir, fileName));
+      manifest.backups.push(relFile);
+      info(`备份: ${c.d(relFile)}`);
+    }
+
+    const content = generateCommandContent(meta, relPath, hasScripts);
+    fs.writeFileSync(destFile, content);
+    manifest.installed.push(relFile);
+  });
+
+  ok(`commands/ ${c.d(`(自动生成 ${skills.length} 个斜杠命令)`)}`);
+  return skills.length;
+}
+
 function installCore(tgt) {
   const targetDir = path.join(HOME, `.${tgt}`);
   const backupDir = path.join(targetDir, '.sage-backup');
@@ -205,7 +321,7 @@ function installCore(tgt) {
     { src: 'config/CLAUDE.md', dest: tgt === 'claude' ? 'CLAUDE.md' : null },
     { src: 'config/AGENTS.md', dest: tgt === 'codex' ? 'AGENTS.md' : null },
     { src: 'output-styles', dest: tgt === 'claude' ? 'output-styles' : null },
-    { src: 'skills', dest: 'skills' }
+    { src: 'skills', dest: 'skills' },
   ].filter(f => f.dest !== null);
 
   const manifest = {
@@ -223,6 +339,7 @@ function installCore(tgt) {
       }
       warn(`跳过: ${src}`); return;
     }
+
     if (fs.existsSync(destPath)) {
       const bp = path.join(backupDir, dest);
       rmSafe(bp); copyRecursive(destPath, bp); manifest.backups.push(dest);
@@ -231,6 +348,12 @@ function installCore(tgt) {
     ok(dest);
     rmSafe(destPath); copyRecursive(srcPath, destPath); manifest.installed.push(dest);
   });
+
+  // 为 Claude 目标自动生成 user-invocable 斜杠命令
+  if (tgt === 'claude') {
+    const skillsSrc = path.join(PKG_ROOT, 'skills');
+    installGeneratedCommands(skillsSrc, targetDir, backupDir, manifest);
+  }
 
   const settingsPath = path.join(targetDir, 'settings.json');
   let settings = {};
@@ -426,5 +549,6 @@ if (require.main === module) {
 
 module.exports = {
   deepMergeNew, detectClaudeAuth, detectCodexAuth,
-  detectCclineBin, copyRecursive, shouldSkip, SETTINGS_TEMPLATE
+  detectCclineBin, copyRecursive, shouldSkip, SETTINGS_TEMPLATE,
+  scanInvocableSkills, generateCommandContent, installGeneratedCommands
 };

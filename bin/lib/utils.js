@@ -58,4 +58,20 @@ function printMergeLog(log, c) {
   });
 }
 
-module.exports = { shouldSkip, copyRecursive, rmSafe, deepMergeNew, printMergeLog, SKIP };
+/**
+ * 解析 Markdown 文件的 YAML frontmatter
+ * @param {string} content - 文件内容
+ * @returns {Object|null} 解析后的键值对，无 frontmatter 返回 null
+ */
+function parseFrontmatter(content) {
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return null;
+  const meta = {};
+  match[1].split('\n').forEach(line => {
+    const m = line.match(/^([\w][\w-]*)\s*:\s*(.+)/);
+    if (m) meta[m[1]] = m[2].trim().replace(/^["']|["']$/g, '');
+  });
+  return meta;
+}
+
+module.exports = { shouldSkip, copyRecursive, rmSafe, deepMergeNew, printMergeLog, parseFrontmatter, SKIP };

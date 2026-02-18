@@ -2,7 +2,7 @@
 name: sage
 description: 邪修红尘仙·神通秘典总纲。智能路由到专业秘典。当魔尊需要任何开发、安全、架构、DevOps、AI 相关能力时，通过此入口路由到最匹配的专业秘典。
 license: MIT
-user-invocable: true
+user-invocable: false
 disable-model-invocation: false
 ---
 

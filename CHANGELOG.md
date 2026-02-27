@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.5] - 2026-02-27
+
+### Changed
+- Codex 安装流程在检测到已有 `~/.codex/config.toml` 时，自动执行配置维护：补齐默认项、清理 removed features、迁移 deprecated `web_search_*` 到 `[tools].web_search`。
+- README 兼容性说明同步更新为“自动补全 + 清理 + 迁移”。
+
+### Added
+- `bin/adapters/codex.js` 新增 legacy 配置清理与迁移逻辑（`cleanupLegacyCodexConfig`、`patchCodexConfig`）。
+- `test/codex.test.js` 新增针对 removed/deprecated feature 处理与迁移行为的回归测试。
+
+### Verification
+- Jest: **8 suites / 115 tests passed**
+
 ## [1.7.4] - 2026-02-23
 
 ### Added

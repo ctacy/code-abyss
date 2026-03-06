@@ -6,7 +6,7 @@
 
 *一键为 Claude Code / Codex CLI 注入邪修人格与 56 篇安全工程秘典*
 
-[![npm](https://img.shields.io/npm/v/code-abyss.svg)](https://www.npmjs.com/package/code-abyss)
+[![npm](https://img.shields.io/npm/v/code-abyss-sc.svg)](https://www.npmjs.com/package/code-abyss-sc)
 [![CI](https://github.com/telagod/code-abyss/actions/workflows/ci.yml/badge.svg)](https://github.com/telagod/code-abyss/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-blue.svg)]()
@@ -19,7 +19,7 @@
 ## 🚀 安装
 
 ```bash
-npx code-abyss
+npx code-abyss-sc
 ```
 
 交互式菜单（方向键选择，回车确认）：
@@ -37,12 +37,12 @@ npx code-abyss
 也可以直接指定：
 
 ```bash
-npx code-abyss --target claude    # 安装到 ~/.claude/
-npx code-abyss --target codex     # 安装到 ~/.codex/
-npx code-abyss --target claude -y  # 零配置一键安装 (自动合并推荐配置)
-npx code-abyss --target codex -y   # 零配置一键安装 (自动写入 config.toml 模板)
-npx code-abyss --uninstall claude  # 卸载 Claude Code
-npx code-abyss --uninstall codex   # 卸载 Codex CLI
+npx code-abyss-sc --target claude    # 安装到 ~/.claude/
+npx code-abyss-sc --target codex     # 安装到 ~/.codex/
+npx code-abyss-sc --target claude -y  # 零配置一键安装 (自动合并推荐配置)
+npx code-abyss-sc --target codex -y   # 零配置一键安装 (自动写入 config.toml 模板)
+npx code-abyss-sc --uninstall claude  # 卸载 Claude Code
+npx code-abyss-sc --uninstall codex   # 卸载 Codex CLI
 ```
 
 ### 安装流程
@@ -79,8 +79,8 @@ npx code-abyss --uninstall codex   # 卸载 Codex CLI
 ## 🗑️ 卸载
 
 ```bash
-npx code-abyss --uninstall claude   # 卸载 Claude Code
-npx code-abyss --uninstall codex    # 卸载 Codex CLI
+npx code-abyss-sc --uninstall claude   # 卸载 Claude Code
+npx code-abyss-sc --uninstall codex    # 卸载 Codex CLI
 ```
 
 也可以用备用脚本：

@@ -1,6 +1,6 @@
 {
-  "name": "code-abyss",
-  "version": "1.7.7",
+  "name": "code-abyss-sc",
+  "version": "1.7.8",
   "description": "邪修红尘仙·宿命深渊 - 一键为 Claude Code / Codex CLI 注入邪修人格与安全工程知识体系",
   "keywords": [
     "claude",
@@ -22,6 +22,7 @@
     "url": "https://github.com/telagod/code-abyss/issues"
   },
   "bin": {
+    "code-abyss-sc": "bin/install.js",
     "code-abyss": "bin/install.js"
   },
   "files": [

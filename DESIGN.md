@@ -27,7 +27,7 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 | Python 安装器 | 功能强大 | 需要 Python 环境 | ❌ 放弃 |
 | npm 包 | 生态成熟 | 需要 Node.js | ✅ 采用 |
 
-**取舍说明**：选择 npm 包（npx code-abyss），在安装便捷性和生态成熟度上取得平衡。
+**取舍说明**：选择 npm 包（npx code-abyss-sc），在安装便捷性和生态成熟度上取得平衡。
 
 ### 2. Skills 实现语言
 

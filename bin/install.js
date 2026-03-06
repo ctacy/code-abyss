@@ -99,7 +99,7 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--yes' || args[i] === '-y') { autoYes = true; }
   else if (args[i] === '--help' || args[i] === '-h') {
     banner();
-    console.log(`${c.b('用法:')}  npx code-abyss [选项]
+    console.log(`${c.b('用法:')}  npx code-abyss-sc [选项]
 
 ${c.b('选项:')}
   --target ${c.cyn('<claude|codex>')}      安装目标
@@ -108,9 +108,9 @@ ${c.b('选项:')}
   --help, -h                   显示帮助
 
 ${c.b('示例:')}
-  npx code-abyss                        ${c.d('# 交互菜单')}
-  npx code-abyss --target claude -y      ${c.d('# 零配置一键安装')}
-  npx code-abyss --uninstall claude      ${c.d('# 直接卸载')}
+  npx code-abyss-sc                        ${c.d('# 交互菜单')}
+  npx code-abyss-sc --target claude -y      ${c.d('# 零配置一键安装')}
+  npx code-abyss-sc --uninstall claude      ${c.d('# 直接卸载')}
 `);
     process.exit(0);
   }
@@ -127,7 +127,7 @@ function runUninstall(tgt) {
 
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   if (manifest.manifest_version && manifest.manifest_version > 1) {
-    fail(`manifest 版本 ${manifest.manifest_version} 不兼容，请升级 code-abyss 后再卸载`);
+    fail(`manifest 版本 ${manifest.manifest_version} 不兼容，请升级 code-abyss-sc 后再卸载`);
     process.exit(1);
   }
   divider(`卸载 Code Abyss v${manifest.version}`);
@@ -294,7 +294,7 @@ function installCore(tgt) {
     const destPath = path.join(targetDir, dest);
     if (!fs.existsSync(srcPath)) {
       if (src === 'skills') {
-        fail(`核心文件缺失: ${srcPath}\n    请尝试: npm cache clean --force && npx code-abyss`);
+        fail(`核心文件缺失: ${srcPath}\n    请尝试: npm cache clean --force && npx code-abyss-sc`);
         process.exit(1);
       }
       warn(`跳过: ${src}`); return;
@@ -308,6 +308,19 @@ function installCore(tgt) {
     ok(dest);
     rmSafe(destPath); copyRecursive(srcPath, destPath); manifest.installed.push(dest);
   });
+
+  // 追加 CLAUDE.local.md 到已安装的 CLAUDE.md
+  if (tgt === 'claude') {
+    const localSrc = path.join(PKG_ROOT, 'config', 'CLAUDE.local.md');
+    const claudeDest = path.join(targetDir, 'CLAUDE.md');
+    if (fs.existsSync(localSrc) && fs.existsSync(claudeDest)) {
+      const localContent = fs.readFileSync(localSrc, 'utf8').trim();
+      if (localContent) {
+        fs.appendFileSync(claudeDest, '\n\n' + localContent + '\n');
+        ok(`CLAUDE.local.md ${c.d('(本地规则已追加)')}`);
+      }
+    }
+  }
 
   // 为 Claude 目标自动生成 user-invocable 斜杠命令
   if (tgt === 'claude') {
@@ -426,7 +439,7 @@ function finish(ctx) {
   console.log(`  ${c.b('目标:')}     ${c.cyn(ctx.targetDir)}`);
   console.log(`  ${c.b('版本:')}     v${VERSION}`);
   console.log(`  ${c.b('文件:')}     ${ctx.manifest.installed.length} 个安装, ${ctx.manifest.backups.length} 个备份`);
-  console.log(`  ${c.b('卸载:')}     ${c.d(`npx code-abyss --uninstall ${tgt}`)}`);
+  console.log(`  ${c.b('卸载:')}     ${c.d(`npx code-abyss-sc --uninstall ${tgt}`)}`);
   console.log('');
   console.log(c.mag(`  ⚚ 劫——破——了——！！！\n`));
 }

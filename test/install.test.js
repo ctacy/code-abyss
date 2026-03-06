@@ -3,12 +3,15 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const { spawnSync } = require('child_process');
 
 // install.js 核心函数测试
 const {
   deepMergeNew, detectClaudeAuth, detectCodexAuth,
   detectCclineBin, copyRecursive, shouldSkip, SETTINGS_TEMPLATE,
-  scanInvocableSkills, generateCommandContent, installGeneratedCommands
+  scanInvocableSkills,
+  generateCommandContent,
+  installGeneratedCommands,
 } = require('../bin/install');
 
 // utils.js 函数测试
@@ -446,6 +449,59 @@ describe('installGeneratedCommands', () => {
     // 包含一气呵成指令流（有脚本的 skill）
     expect(content).toContain('一气呵成');
     expect(content).toContain('run_skill.js gen-docs');
+  });
+});
+
+describe('codex install smoke', () => {
+  let tmpHome;
+
+  beforeEach(() => {
+    tmpHome = fs.mkdtempSync(path.join(os.tmpdir(), 'abyss-codex-home-'));
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpHome, { recursive: true, force: true });
+  });
+
+  function runInstall(args) {
+    return spawnSync(process.execPath, [path.join(__dirname, '..', 'bin', 'install.js'), ...args], {
+      cwd: path.join(__dirname, '..'),
+      env: {
+        ...process.env,
+        HOME: tmpHome,
+        USERPROFILE: tmpHome,
+      },
+      encoding: 'utf8',
+    });
+  }
+
+  test('安装 Codex 时生成 prompts 且不写 settings.json', () => {
+    const result = runInstall(['--target', 'codex', '-y']);
+    const codexDir = path.join(tmpHome, '.codex');
+
+    expect(result.status).toBe(0);
+    expect(fs.existsSync(path.join(codexDir, 'AGENTS.md'))).toBe(true);
+    expect(fs.existsSync(path.join(codexDir, 'skills'))).toBe(true);
+    expect(fs.existsSync(path.join(codexDir, 'prompts'))).toBe(true);
+    expect(fs.existsSync(path.join(codexDir, 'prompts', 'gen-docs.md'))).toBe(true);
+    expect(fs.existsSync(path.join(codexDir, 'config.toml'))).toBe(true);
+    expect(fs.existsSync(path.join(codexDir, 'settings.json'))).toBe(false);
+  });
+
+  test('安装 Codex 时会迁移旧 settings.json，卸载后恢复', () => {
+    const codexDir = path.join(tmpHome, '.codex');
+    fs.mkdirSync(codexDir, { recursive: true });
+    fs.writeFileSync(path.join(codexDir, 'settings.json'), '{"legacy":true}\n');
+
+    const install = runInstall(['--target', 'codex', '-y']);
+
+    expect(install.status).toBe(0);
+    expect(fs.existsSync(path.join(codexDir, 'settings.json'))).toBe(false);
+    expect(install.stdout).toContain('移除 legacy settings.json');
+
+    const uninstall = runInstall(['--uninstall', 'codex']);
+    expect(uninstall.status).toBe(0);
+    expect(fs.readFileSync(path.join(codexDir, 'settings.json'), 'utf8')).toContain('legacy');
   });
 });
 

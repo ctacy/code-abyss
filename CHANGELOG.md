@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased] - 2026-03-06
+
+### Added
+- Codex 安装流程现在会从 `user-invocable` skills 自动生成 `~/.codex/prompts/*.md`，把 `verify-*` / `gen-docs` 等工具对齐到官方 custom prompts 入口。
+- GitHub Actions 新增 `smoke-codex` 跨平台打包验证，覆盖 `ubuntu-latest`、`macos-latest`、`windows-latest` 的 `install -> smoke -> uninstall` 闭环。
+
+### Changed
+- Codex 默认模板切换为 **safe 默认档**：`approval_policy = "on-request"` 与 `sandbox_mode = "workspace-write"`，并提供 `[profiles.full_access]` 作为显式高自动化档。
+- README 与安装内容说明同步更新：补充 `prompts/`、`settings.json` 迁移行为、`full_access` profile 用法，以及当前 Codex 配置风格说明。
+
+### Fixed
+- Codex 目标不再写入伪配置 `~/.codex/settings.json`；若检测到 legacy 文件，会在安装时备份移除、卸载时恢复。
+- `projects.*.trust_level` 仅在 `danger-full-access` 配置下才会被清理，避免 `workspace-write` 场景误删。
+
+### Verification
+- Jest: **8 suites / 120 tests passed**
+- Targeted regression: `npm test -- --runInBand test/install.test.js test/codex.test.js`
+- Package smoke: `npm pack` + `npx --package ./code-abyss-1.7.7.tgz code-abyss --target codex -y` + uninstall pass
+
 ## [1.7.7] - 2026-02-27
 
 ### Fixed

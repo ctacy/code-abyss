@@ -4,8 +4,8 @@ const fs = require('fs');
 const path = require('path');
 
 const CODEX_DEFAULTS = {
-  approvalPolicy: 'never',
-  sandboxMode: 'danger-full-access',
+  approvalPolicy: 'on-request',
+  sandboxMode: 'workspace-write',
   featureFlag: 'multi_agent',
 };
 
@@ -179,7 +179,7 @@ function removeKeyAssignmentsInNonRootSections(content, key) {
 function removeProjectTrustSectionsForFullAccess(content) {
   const eol = content.includes('\r\n') ? '\r\n' : '\n';
   const sandboxMode = readRootStringKey(content, 'sandbox_mode');
-  if (sandboxMode !== CODEX_DEFAULTS.sandboxMode) {
+  if (sandboxMode !== 'danger-full-access') {
     return { merged: content, removed: false };
   }
 

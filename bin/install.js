@@ -186,90 +186,152 @@ function scanInvocableSkills(skillsDir) {
   return results;
 }
 
-/**
- * 根据 SKILL.md 元数据生成 command .md 内容
- *
- * 设计原则：
- * - 读取 SKILL.md + 执行脚本合并为一气呵成的指令流
- * - 禁止「先…然后…」的分步模式，避免 Claude 在步骤间停顿
- * - 无脚本的 skill：仅读取 SKILL.md 作为知识库提供指导
- *
- * @param {Object} meta - parseFrontmatter 返回的元数据
- * @param {string} skillRelPath - 相对于 skills/ 的路径（如 'tools/gen-docs'）
- * @param {boolean} hasScripts - 是否有可执行脚本
- * @returns {string} command .md 文件内容
- */
-function generateCommandContent(meta, skillRelPath, hasScripts) {
-  const name = meta.name;
+const INVOCABLE_TARGETS = {
+  claude: {
+    dir: 'commands',
+    label: '斜杠命令',
+    skillRoot: '~/.claude/skills',
+  },
+  codex: {
+    dir: 'prompts',
+    label: 'custom prompts',
+    skillRoot: '~/.codex/skills',
+  },
+};
+
+function getInvocableTarget(targetName) {
+  const targetCfg = INVOCABLE_TARGETS[targetName];
+  if (!targetCfg) throw new Error(`不支持的 invocable target: ${targetName}`);
+  return targetCfg;
+}
+
+function getSkillPath(skillRoot, skillRelPath) {
+  return skillRelPath
+    ? `${skillRoot}/${skillRelPath}/SKILL.md`
+    : `${skillRoot}/SKILL.md`;
+}
+
+function buildCommandFrontmatter(meta) {
   const desc = (meta.description || '').replace(/"/g, '\\"');
   const argHint = meta['argument-hint'];
   const tools = meta['allowed-tools'] || 'Read';
-  const skillPath = skillRelPath
-    ? `~/.claude/skills/${skillRelPath}/SKILL.md`
-    : '~/.claude/skills/SKILL.md';
+  const lines = ['---', `name: ${meta.name}`, `description: "${desc}"`];
 
-  const lines = [
-    '---',
-    `name: ${name}`,
-    `description: "${desc}"`,
-  ];
   if (argHint) lines.push(`argument-hint: "${argHint}"`);
   lines.push(`allowed-tools: ${tools}`);
-  lines.push('---');
-  lines.push('');
-
-  if (hasScripts) {
-    // ── 有脚本的 skill：读取规范 + 执行脚本，一气呵成 ──
-    lines.push('以下所有步骤一气呵成，不要在步骤间停顿等待用户输入：');
-    lines.push('');
-    lines.push(`1. 读取规范：${skillPath}`);
-    lines.push(`2. 执行命令：\`node ~/.claude/skills/run_skill.js ${name} $ARGUMENTS\``);
-    lines.push('3. 按规范分析输出，完成后续动作');
-    lines.push('');
-    lines.push('全程不要停顿，不要询问是否继续。');
-  } else {
-    // ── 无脚本的 skill：知识库模式 ──
-    lines.push('读取以下秘典，根据内容为用户提供专业指导：');
-    lines.push('');
-    lines.push('```');
-    lines.push(skillPath);
-    lines.push('```');
-  }
-
-  lines.push('');
-  return lines.join('\n');
+  lines.push('---', '');
+  return lines;
 }
 
-/**
- * 扫描 skills 并为 user-invocable 的 skill 生成 command 包装，文件级合并安装
- */
-function installGeneratedCommands(skillsSrcDir, targetDir, backupDir, manifest) {
+function buildClaudeBody(skillPath, meta, hasScripts) {
+  const lines = [];
+  if (hasScripts) {
+    lines.push('以下所有步骤一气呵成，不要在步骤间停顿等待用户输入：', '');
+    lines.push(`1. 读取规范：${skillPath}`);
+    lines.push(`2. 执行命令：\`node ~/.claude/skills/run_skill.js ${meta.name} $ARGUMENTS\``);
+    lines.push('3. 按规范分析输出，完成后续动作', '');
+    lines.push('全程不要停顿，不要询问是否继续。');
+    return lines;
+  }
+
+  lines.push('读取以下秘典，根据内容为用户提供专业指导：', '');
+  lines.push('```', skillPath, '```');
+  return lines;
+}
+
+function buildCodexPromptBody(skillPath, meta, hasScripts) {
+  const lines = [];
+  if (meta['argument-hint']) lines.push(`Arguments: ${meta['argument-hint']}`, '');
+  lines.push(`Read \`${skillPath}\` before acting.`, '');
+  if (hasScripts) {
+    lines.push(`Then run \`node ~/.codex/skills/run_skill.js ${meta.name} $ARGUMENTS\`.`);
+    lines.push('Do not stop between steps unless blocked by permissions or missing required inputs.');
+    lines.push('Use the skill guidance plus script output to complete the task end-to-end.');
+    return lines;
+  }
+
+  lines.push('Use that skill as the authoritative playbook for the task.');
+  lines.push('Respond with concrete actions instead of generic advice.');
+  return lines;
+}
+
+function generateInvocableContent(meta, skillRelPath, hasScripts, targetName) {
+  const targetCfg = getInvocableTarget(targetName);
+  const skillPath = getSkillPath(targetCfg.skillRoot, skillRelPath);
+  const lines = targetName === 'claude' ? buildCommandFrontmatter(meta) : [];
+  const body = targetName === 'claude'
+    ? buildClaudeBody(skillPath, meta, hasScripts)
+    : buildCodexPromptBody(skillPath, meta, hasScripts);
+  return [...lines, ...body, ''].join('\n');
+}
+
+function generateCommandContent(meta, skillRelPath, hasScripts) {
+  return generateInvocableContent(meta, skillRelPath, hasScripts, 'claude');
+}
+
+function generatePromptContent(meta, skillRelPath, hasScripts) {
+  return generateInvocableContent(meta, skillRelPath, hasScripts, 'codex');
+}
+
+function installGeneratedArtifacts(skillsSrcDir, targetDir, backupDir, manifest, targetName) {
   const skills = scanInvocableSkills(skillsSrcDir);
   if (skills.length === 0) return 0;
 
-  const cmdsDir = path.join(targetDir, 'commands');
-  fs.mkdirSync(cmdsDir, { recursive: true });
+  const targetCfg = getInvocableTarget(targetName);
+  const installDir = path.join(targetDir, targetCfg.dir);
+  fs.mkdirSync(installDir, { recursive: true });
 
   skills.forEach(({ meta, relPath, hasScripts }) => {
     const fileName = `${meta.name}.md`;
-    const destFile = path.join(cmdsDir, fileName);
-    const relFile = path.posix.join('commands', fileName);
+    const destFile = path.join(installDir, fileName);
+    const relFile = path.posix.join(targetCfg.dir, fileName);
 
     if (fs.existsSync(destFile)) {
-      const cmdsBackupDir = path.join(backupDir, 'commands');
-      fs.mkdirSync(cmdsBackupDir, { recursive: true });
-      fs.copyFileSync(destFile, path.join(cmdsBackupDir, fileName));
+      const backupSubdir = path.join(backupDir, targetCfg.dir);
+      fs.mkdirSync(backupSubdir, { recursive: true });
+      fs.copyFileSync(destFile, path.join(backupSubdir, fileName));
       manifest.backups.push(relFile);
       info(`备份: ${c.d(relFile)}`);
     }
 
-    const content = generateCommandContent(meta, relPath, hasScripts);
+    const content = generateInvocableContent(meta, relPath, hasScripts, targetName);
     fs.writeFileSync(destFile, content);
     manifest.installed.push(relFile);
   });
 
-  ok(`commands/ ${c.d(`(自动生成 ${skills.length} 个斜杠命令)`)}`);
+  ok(`${targetCfg.dir}/ ${c.d(`(自动生成 ${skills.length} 个 ${targetCfg.label})`)}`);
   return skills.length;
+}
+
+function installGeneratedCommands(skillsSrcDir, targetDir, backupDir, manifest) {
+  return installGeneratedArtifacts(skillsSrcDir, targetDir, backupDir, manifest, 'claude');
+}
+
+function installGeneratedPrompts(skillsSrcDir, targetDir, backupDir, manifest) {
+  return installGeneratedArtifacts(skillsSrcDir, targetDir, backupDir, manifest, 'codex');
+}
+
+function backupPathIfExists(targetDir, backupDir, relPath, manifest) {
+  const targetPath = path.join(targetDir, relPath);
+  if (!fs.existsSync(targetPath)) return false;
+
+  const backupPath = path.join(backupDir, relPath);
+  rmSafe(backupPath);
+  copyRecursive(targetPath, backupPath);
+  manifest.backups.push(relPath);
+  info(`备份: ${c.d(relPath)}`);
+  return true;
+}
+
+function pruneLegacyCodexSettings(targetDir, backupDir, manifest) {
+  const relPath = 'settings.json';
+  const settingsPath = path.join(targetDir, relPath);
+  if (!fs.existsSync(settingsPath)) return null;
+
+  backupPathIfExists(targetDir, backupDir, relPath, manifest);
+  rmSafe(settingsPath);
+  warn('移除 legacy settings.json（Codex 已改用 config.toml）');
+  return settingsPath;
 }
 
 function installCore(tgt) {
@@ -322,30 +384,37 @@ function installCore(tgt) {
     }
   }
 
-  // 为 Claude 目标自动生成 user-invocable 斜杠命令
+  // 为目标 CLI 自动生成 user-invocable artifacts
   if (tgt === 'claude') {
     const skillsSrc = path.join(PKG_ROOT, 'skills');
     installGeneratedCommands(skillsSrc, targetDir, backupDir, manifest);
+  } else if (tgt === 'codex') {
+    const skillsSrc = path.join(PKG_ROOT, 'skills');
+    installGeneratedPrompts(skillsSrc, targetDir, backupDir, manifest);
   }
 
-  const settingsPath = path.join(targetDir, 'settings.json');
+  let settingsPath = null;
   let settings = {};
-  if (fs.existsSync(settingsPath)) {
-    try {
-      settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
-    } catch (e) {
-      warn(`settings.json 解析失败，将使用空配置`);
-      settings = {};
-    }
-    fs.copyFileSync(settingsPath, path.join(backupDir, 'settings.json'));
-    manifest.backups.push('settings.json');
-  }
   if (tgt === 'claude') {
+    settingsPath = path.join(targetDir, 'settings.json');
+    if (fs.existsSync(settingsPath)) {
+      try {
+        settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      } catch (e) {
+        warn('settings.json 解析失败，将使用空配置');
+        settings = {};
+      }
+      fs.copyFileSync(settingsPath, path.join(backupDir, 'settings.json'));
+      manifest.backups.push('settings.json');
+    }
     settings.outputStyle = 'abyss-cultivator';
     ok(`outputStyle = ${c.mag('abyss-cultivator')}`);
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+    manifest.installed.push('settings.json');
+  } else {
+    pruneLegacyCodexSettings(targetDir, backupDir, manifest);
   }
-  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
-  manifest.installed.push('settings.json');
+
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
 
   const uSrc = path.join(PKG_ROOT, 'bin', 'uninstall.js');
@@ -451,5 +520,9 @@ if (require.main === module) {
 module.exports = {
   deepMergeNew, detectClaudeAuth, detectCodexAuth,
   detectCclineBin, copyRecursive, shouldSkip, SETTINGS_TEMPLATE,
-  scanInvocableSkills, generateCommandContent, installGeneratedCommands
+  scanInvocableSkills,
+  generateCommandContent,
+  generatePromptContent,
+  installGeneratedCommands,
+  installGeneratedPrompts,
 };

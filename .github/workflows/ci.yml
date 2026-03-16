@@ -19,3 +19,47 @@ jobs:
       - run: npm test
       - run: node skills/tools/verify-quality/scripts/quality_checker.js .
       - run: node skills/tools/verify-security/scripts/security_scanner.js .
+
+  smoke-codex:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: Pack npm tarball
+        shell: bash
+        run: npm pack
+      - name: Smoke install/uninstall Codex target
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pkg_tgz="$(ls code-abyss-*.tgz | head -n 1)"
+          abyss_home="$RUNNER_TEMP/abyss-home"
+          rm -rf "$abyss_home"
+          mkdir -p "$abyss_home"
+
+          export HOME="$abyss_home"
+          export USERPROFILE="$abyss_home"
+
+          npx --yes --package "./$pkg_tgz" code-abyss --target codex -y
+
+          test -f "$abyss_home/.codex/AGENTS.md"
+          test -d "$abyss_home/.codex/skills"
+          test -f "$abyss_home/.codex/config.toml"
+          test -d "$abyss_home/.codex/prompts"
+          test -f "$abyss_home/.codex/prompts/gen-docs.md"
+          test ! -e "$abyss_home/.codex/settings.json"
+          test -f "$abyss_home/.codex/.sage-uninstall.js"
+
+          npx --yes --package "./$pkg_tgz" code-abyss --uninstall codex
+
+          test ! -e "$abyss_home/.codex/AGENTS.md"
+          test ! -e "$abyss_home/.codex/skills"
+          test ! -e "$abyss_home/.codex/.sage-backup"

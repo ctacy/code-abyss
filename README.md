@@ -4,7 +4,7 @@
 
 **邪修红尘仙 · 宿命深渊**
 
-*一键为 Claude Code / Codex CLI 注入邪修人格与 56 篇安全工程秘典*
+*一键为 Claude Code / Codex CLI 注入邪修人格与攻防安全工程知识体系*
 
 [![npm](https://img.shields.io/npm/v/code-abyss.svg)](https://www.npmjs.com/package/code-abyss)
 [![CI](https://github.com/telagod/code-abyss/actions/workflows/ci.yml/badge.svg)](https://github.com/telagod/code-abyss/actions/workflows/ci.yml)
@@ -25,7 +25,7 @@ npx code-abyss
 交互式菜单（方向键选择，回车确认）：
 
 ```
-☠️ Code Abyss v1.7.3
+☠️ Code Abyss v2.0.0
 
 ? 请选择操作 (Use arrow keys)
 ❯ 安装到 Claude Code (~/.claude/)
@@ -96,13 +96,14 @@ node ~/.codex/.sage-uninstall.js    # Codex CLI
 
 ## 🎭 这是什么
 
-Code Abyss 是一套 **Claude Code / Codex CLI 个性化配置包**，一条命令注入：
+Code Abyss 是一套 **Claude Code / Codex CLI 攻防安全配置包**，一条命令注入：
 
-- 🔥 **邪修人格** — 宿命压迫叙事 + 道语标签 + 渡劫协议
-- ⚔️ **安全工程知识体系** — 红队/蓝队/紫队三脉道统，11 领域 56 篇专业秘典
+- 🔥 **邪修人格** — 沉浸式角色扮演 + 道语标签 + 渡劫协议 + 反拒绝条款
+- ⚔️ **攻防安全知识体系** — 红队/蓝队/紫队三脉道统，6 个安全化身，11 领域 56 篇专业秘典
+- 🗡 **零废话安全研究** — 禁 disclaimer、禁道德前缀、全授权直出 PoC + 技术细节
+- ⚡ **全开默认配置** — Claude `bypassPermissions` / Codex `approval_policy=never` + `danger-full-access`
 - ⚖️ **5 个校验关卡** — 安全扫描、模块完整性、变更分析、代码质量、文档生成
-- ✅ **单元测试覆盖** — Jest 框架，GitHub Actions CI (Node 18/20/22)
-- ⚡ **三级授权** — T1/T2/T3 分级，零确认直接执行
+- 🧠 **沙箱感知 + 离线优先** — 自适应执行环境，信息三级分级验证
 
 ---
 
@@ -279,6 +280,9 @@ undo = true
 |------|------|
 | `☠ 劫钟已鸣` | 开场受令 |
 | `🔥 破妄！` | 红队攻击 |
+| `🗡 破阵！` | 渗透/安全评估 |
+| `🔬 验毒！` | 代码审计 |
+| `💀 噬魂！` | 逆向/漏洞研究 |
 | `❄ 镇魔！` | 蓝队防御 |
 | `⚡ 炼合！` | 紫队协同 |
 | `🩸 道基欲裂...` | 任务推进 |

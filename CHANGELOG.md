@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.2] - 2026-03-26
+
+### Added
+- 新增输出风格 registry（`output-styles/index.json`），统一维护风格 `slug`、名称、说明、目标端与默认值。
+- 新增安装器参数：`--list-styles` 用于列出内置风格，`--style <slug>` 用于在安装时显式切换风格。
+- 新增 3 个可选输出风格：
+  - `abyss-concise`：冷刃简报
+  - `abyss-command`：铁律军令
+  - `abyss-ritual`：祭仪长卷
+- 新增 `bin/lib/style-registry.js`，负责风格解析、默认风格选择与 Codex AGENTS 动态拼装。
+- 新增 `test/style-registry.test.js`，覆盖风格枚举、默认风格解析、Codex 动态 AGENTS 生成。
+
+### Changed
+- Claude 安装流程不再把 `outputStyle` 写死为 `abyss-cultivator`，而是写入当前所选风格。
+- Codex 安装流程不再直接复制仓库内静态 `config/AGENTS.md`，改为在安装时按 `config/CLAUDE.md + output-styles/<slug>.md` 动态生成目标 `AGENTS.md`。
+- README / DESIGN / 安装 smoke / adapter tests 已同步到多风格模型与 `2.0.2` 版本叙事。
+
+### Fixed
+- 消除“Claude 可切风格、Codex 固定风格”这种双端不对称风险。
+- 消除安装链中对 `abyss-cultivator` slug 的单点硬编码，降低后续扩展新风格时的改动面。
+
+### Verification
+- Jest: **13 suites / 147 tests passed**
+- Skill contract gate: `npm run verify:skills`
+- Change analysis: `node skills/tools/verify-change/scripts/change_analyzer.js -v`
+
 ## [2.0.1] - 2026-03-23
 
 ### Added

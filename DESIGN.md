@@ -9,13 +9,13 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 | 层 | 文件 | 职责 |
 |---|------|------|
 | **身份与规则** | `config/CLAUDE.md` | 定义"做什么"：身份、规则、场景路由、执行链、成功标准 |
-| **输出风格** | `output-styles/abyss-cultivator.md` | 定义"怎么说"：道语标签、情绪递进、报告模板、术语映射 |
+| **输出风格** | `output-styles/*.md` + `output-styles/index.json` | 定义"怎么说"：风格目录 + registry |
 | **技术知识** | `skills/**/*.md` | 定义"会什么"：技术知识 + 道语浸染首尾 |
-| **合并版** | `config/AGENTS.md` | CLAUDE.md + output-style 合并生成（Codex CLI 用） |
+| **合并版** | `config/AGENTS.md` | 默认风格 snapshot；Codex 安装时会按所选 style 动态生成 |
 
 ### AGENTS.md 生成规则
 
-`config/AGENTS.md` = `config/CLAUDE.md` 全文 + `output-styles/abyss-cultivator.md` 全文拼接。每次更新 CLAUDE.md 或 output-style 后需重新生成。
+仓库内 `config/AGENTS.md` 保留默认风格 snapshot；Codex 实际安装文件由 `config/CLAUDE.md` + 当前选定的 `output-styles/<slug>.md` 动态拼接生成。每次更新 CLAUDE.md 或默认 style 后需同步更新 snapshot。
 
 ## 设计决策
 
@@ -29,12 +29,15 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 
 **取舍说明**：选择 npm 包（npx code-abyss-sc），在安装便捷性和生态成熟度上取得平衡。
 
-### 2. Skills 实现语言
+### 2. Skills 实现与元数据单源
 
-选择 Python 实现 skills：
-- Claude Code 环境通常有 Python
-- 跨平台兼容性好
-- 便于扩展和维护
+当前 skills 与执行器统一采用 Node.js 实现：
+- 脚本型 skill 位于 `skills/**/scripts/*.js`
+- 每个 skill 的权威元数据来自对应 `SKILL.md` frontmatter
+- 共享 registry（`bin/lib/skill-registry.js`）负责扫描、分类、脚本入口解析
+- Claude commands、Codex prompts、`skills/run_skill.js` 都消费同一份 skill 清单
+
+这样避免安装器、执行器、双端生成器各自维护一套 discovery 逻辑。
 
 ### 3. 配置文件位置
 
@@ -51,7 +54,34 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 - 通过 manifest 记录备份清单
 - 避免用户数据丢失
 
-## 技术债记录
+### 5. Skill registry 与双端生成
+
+- 问题：skills 元数据发现、脚本执行、Claude commands、Codex prompts 曾各自扫描，容易漂移。
+- 决策：以 `SKILL.md` frontmatter 为唯一事实源，抽出共享 registry，统一产出 `name`、`description`、`userInvocable`、`allowedTools`、`argumentHint`、`relPath`、`category`、`runtimeType`、`scriptPath`、`meta` 等标准化字段；`kind` 与 kebab-case compatibility 镜像字段已从 registry public surface 移除。
+- 决策：`category` 按目录前缀自动推断（`tools` / `domains` / `orchestration`），`runtimeType` 按脚本入口自动推断（`scripted` / `knowledge`）。
+- 决策：registry 在扫描阶段 fail-fast 校验 frontmatter 解析、必填字段、合法工具名、重复 skill name、多脚本入口，拒绝把脏数据交给后续生成链。
+- 取舍：多了一层 registry 抽象，但 commands/prompts/run_skill/CI gate 共享同一条契约，测试面更集中，错误更早暴露。
+
+### 6. `run_skill.js` 职责收窄
+
+- 问题：`run_skill.js` 曾只扫描 `tools/*/scripts/*.js`，与安装器递归扫描 `SKILL.md` 的逻辑不一致。
+- 决策：`run_skill.js` 只做脚本型 skill 执行编排：通过 registry 解析 skill、校验 `runtimeType=scripted`、加目标锁、spawn 子进程、透传退出码。
+- 决策：`knowledge` skill 立即报错并指向对应 `SKILL.md`，由上层 command/prompt 走知识型执行链。
+- 取舍：执行器不再隐式推断目录结构，但边界更清晰、行为与安装器一致。
+
+### 7. 锁等待实现
+
+- 问题：历史版本存在 busy wait 自旋锁，文档与实现长期漂移。
+- 决策：当前 `skills/run_skill.js` 使用异步定时等待（`setTimeout`/Promise 轮询）保留锁语义与超时策略，消除 CPU 空转。
+- 取舍：入口改为 async，但锁释放时序更稳定、资源占用更低。
+
+### 8. 输出风格 registry 与 Codex 动态 AGENTS
+
+- 问题：输出风格曾固定为 `abyss-cultivator`，Claude `outputStyle`、Codex `AGENTS.md`、README 与测试都写死在同一 slug 上，无法扩展成多风格安装。
+- 决策：新增 `output-styles/index.json` 作为 style registry，统一维护 `slug`、`label`、`description`、`file`、`targets`、`default`。
+- 决策：Claude 继续安装整个 `output-styles/` 目录，并把 `settings.json.outputStyle` 写为所选 style slug。
+- 决策：Codex 不再直接复制仓库内静态 `config/AGENTS.md`，改为安装时动态拼接 `config/CLAUDE.md + output-styles/<slug>.md` 生成目标 `AGENTS.md`。
+- 取舍：安装器多了一层 registry 与模板拼装逻辑，但换来多风格切换能力，并消除 Codex 风格与仓库 snapshot 的长期漂移。
 
 | 债务 | 原因 | 计划 |
 |------|------|------|
@@ -104,6 +134,8 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 | v1.6.2 | 2026-02-07 | ccline statusLine 强制覆盖旧配置 |
 | v1.6.3 | 2026-02-08 | Windows 兼容 — ccline 路径检测 + statusLine 命令；Codex config 废弃字段修复；审查问题批量修复 |
 | v1.7.1 | 2026-02-17 | 工程健壮性大修：命令注入修复、函数拆分、共享库提取、错误处理统一、CPU自旋锁修复、Jest测试框架(34用例) |
+| v2.0.0 | 2026-03-23 | 攻防侧重转向：沙箱感知、离线优先、信息分级、禁废话令、化身细分、Scene Modes优先级矩阵 |
+| v2.0.2 | 2026-03-26 | style registry、`--list-styles` / `--style`、Codex 动态 AGENTS 生成 |
 
 ### v1.7.1 设计决策
 
@@ -164,3 +196,47 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 - 问题：Claude 认证检测、settings merge、交互配置仍留在 `install.js`，与编排层混合。
 - 决策：抽离 `SETTINGS_TEMPLATE`、`detectClaudeAuth()`、`postClaude()`、`getClaudeCoreFiles()` 到 `bin/adapters/claude.js`。
 - 取舍：主安装器依赖注入参数稍增，但 provider 边界更稳定、单测更直接。
+
+
+### v2.0.0 设计决策
+
+#### 1. 攻防侧重转向
+
+- 问题：项目定位为"全栈+安全"，安全能力分散在多个秘典中，缺乏统一的攻防执行纪律。
+- 决策：核心定位从"高级安全工程师 / Tech Lead / MLOps Architect"转向"攻防安全优先，全栈工程为翼"。安全研究场景零废话直出，禁止 disclaimer/道德前缀/授权确认。
+- 取舍：非安全场景的优先级相对降低，但仍保留完整的开发/架构/MLOps 能力。
+- 灵感来源：coff0xc.xyz Full-Stack Security Engineering 提示词的"Banned output patterns"理念。
+
+#### 2. 沙箱感知执行模型（第七章）
+
+- 问题：Codex CLI 运行在 OS 级沙箱中（workspace-write + 网络禁用），提示词未感知此约束，导致执行受阻时缺乏应对策略。
+- 决策：新增沙箱感知章节，定义默认态、审批高效模式（批量脚本/先读后改/优先编辑）、受阻处理（声明路径/端点/替代位置）。
+- 取舍：增加提示词长度约 30 行，换取沙箱环境下的执行效率显著提升。
+- 灵感来源：coff0xc.xyz 的 "Sandbox Execution Model" 与 "Approval-efficient patterns"。
+
+#### 3. 离线优先信息策略（第八章）
+
+- 问题：网络默认关闭，但提示词未定义离线验证链，导致模型可能从训练记忆编造过时信息。
+- 决策：定义四级验证链（项目源码→依赖清单→缓存搜索→`[unverified]`标记），禁止假设网络可用。
+- 取舍：增加验证步骤，可能略降响应速度，但大幅提升信息准确性。
+- 灵感来源：coff0xc.xyz 的 "Offline-First Information Strategy" 与 "Verification chain"。
+
+#### 4. 信息分级（第九章）
+
+- 问题：模型输出未区分信息可信度，用户无法判断哪些是项目事实、哪些是训练记忆。
+- 决策：三级分类（已验证/高置信/需验证），不确定信息强制标记 `[unverified]`。
+- 取舍：输出可能包含标记，略增阅读成本，但消除"自信地输出错误信息"的风险。
+- 灵感来源：coff0xc.xyz 的 "Information Tiers"。
+
+#### 5. Scene Modes 优先级矩阵
+
+- 问题：原有7个情景剧本缺乏优先级定义，模型在不同场景下的权衡标准不明确。
+- 决策：扩展到11个场景，每个场景定义三级优先级（如攻击模拟：效果>精准>控制，紧急故障：速度>正确>简洁）。
+- 取舍：增加提示词复杂度，但让模型在不同场景下的行为更可预测。
+- 灵感来源：coff0xc.xyz 的 "Scene Modes" 优先级表。
+
+#### 6. 安全化身细分
+
+- 问题：原有安全秘典全部归入"赤焰化身"，渗透/审计/逆向/红队的触发词和报告格式混为一体。
+- 决策：将安全化身从3个扩展到6个（赤焰/破阵/验毒/噬魂/玄冰/天眼），每个化身有独立触发词、道语标签和报告模板。
+- 取舍：Skill路由表更长，但触发精度更高，报告格式更贴合具体场景。

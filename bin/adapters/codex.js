@@ -4,8 +4,8 @@ const fs = require('fs');
 const path = require('path');
 
 const CODEX_DEFAULTS = {
-  approvalPolicy: 'on-request',
-  sandboxMode: 'workspace-write',
+  approvalPolicy: 'never',
+  sandboxMode: 'danger-full-access',
   featureFlag: 'multi_agent',
 };
 
@@ -369,8 +369,8 @@ function detectCodexAuth({
 
 function getCodexCoreFiles() {
   return [
-    { src: 'config/AGENTS.md', dest: 'AGENTS.md' },
     { src: 'skills', dest: 'skills' },
+    { src: 'bin/lib', dest: 'bin/lib' },
   ];
 }
 

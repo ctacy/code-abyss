@@ -1,7 +1,7 @@
 {
   "name": "code-abyss-sc",
-  "version": "1.8.0",
-  "description": "邪修红尘仙·宿命深渊 - 一键为 Claude Code / Codex CLI 注入邪修人格与安全工程知识体系",
+  "version": "2.0.7",
+  "description": "为 Claude Code / Codex CLI 注入邪修人格、4种可切换输出风格与 57 篇攻防工程秘典",
   "keywords": [
     "claude",
     "claude-code",
@@ -37,7 +37,8 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "verify:skills": "node bin/verify-skills-contract.js"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.10.1"

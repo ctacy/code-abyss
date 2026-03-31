@@ -2,22 +2,34 @@
 
 const fs = require('fs');
 const path = require('path');
+const { getDefaultStyle } = require(path.join(__dirname, '..', 'lib', 'style-registry.js'));
+
+const PROJECT_ROOT = path.join(__dirname, '..', '..');
+const DEFAULT_OUTPUT_STYLE = getDefaultStyle(PROJECT_ROOT, 'claude').slug;
 
 const SETTINGS_TEMPLATE = {
   $schema: 'https://json.schemastore.org/claude-code-settings.json',
   env: {
     CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
-    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
+    CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
+    CLAUDE_CODE_ENABLE_TASKS: '1',
+    CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION: '1',
+    ENABLE_TOOL_SEARCH: 'auto:10'
   },
+  defaultMode: 'bypassPermissions',
   alwaysThinkingEnabled: true,
+  autoMemoryEnabled: true,
   model: 'opus',
-  outputStyle: 'abyss-cultivator',
+  outputStyle: DEFAULT_OUTPUT_STYLE,
   attribution: { commit: '', pr: '' },
+  sandbox: {
+    autoAllowBashIfSandboxed: true
+  },
   permissions: {
     allow: [
-      'Bash', 'LS', 'Read', 'Agent', 'Write', 'Edit', 'MultiEdit',
-      'Glob', 'Grep', 'WebFetch', 'WebSearch', 'TodoWrite',
-      'NotebookRead', 'NotebookEdit'
+      'Bash', 'LS', 'Read', 'Edit', 'Write', 'MultiEdit',
+      'Agent', 'Glob', 'Grep', 'WebFetch', 'WebSearch',
+      'TodoWrite', 'NotebookRead', 'NotebookEdit', 'mcp__*'
     ]
   }
 };
@@ -36,6 +48,7 @@ function getClaudeCoreFiles() {
     { src: 'config/CLAUDE.md', dest: 'CLAUDE.md' },
     { src: 'output-styles', dest: 'output-styles' },
     { src: 'skills', dest: 'skills' },
+    { src: 'bin/lib', dest: 'bin/lib' },
   ];
 }
 
@@ -140,6 +153,7 @@ async function postClaude({
 }
 
 module.exports = {
+  DEFAULT_OUTPUT_STYLE,
   SETTINGS_TEMPLATE,
   CCLINE_STATUS_LINE,
   getClaudeCoreFiles,

@@ -321,6 +321,45 @@ undo = true
 
 ---
 
+## 📦 发版铁律（避免版本踩坑）
+
+`code-abyss-sc` 是上游 `code-abyss` 的分叉发布包，**版本号默认跟随上游已发布的 tag/release，而不是跟随上游 `main` 分支里的 `package.json`**。
+
+### 发版规则
+
+1. **只认上游 release/tag**
+   - 发布前先确认上游最新正式版本（GitHub Releases / tags）
+   - 不得仅凭 `telagod/main:package.json` 决定版本号
+
+2. **严格镜像上游正式版**
+   - 若上游最新 release 是 `2.0.2`，则本包只能发布 `2.0.2`
+   - 只有当上游正式发布 `2.0.7` 后，才允许本包使用 `2.0.7`
+
+3. **误发版本不可复用**
+   - npm 上同包名同版本一经发布，哪怕后续 deprecated，也不能再次发布同版本
+   - 若误发了 `2.0.7`，未来即使上游真的发了 `2.0.7`，本包也必须改发 `2.0.7.1` 或 `2.0.7-sc.1`
+
+4. **补丁策略**
+   - 纯镜像上游：使用 `X.Y.Z`
+   - 需要在上游正式版基础上追加本地修正：优先使用 `X.Y.Z-sc.1`
+   - 不建议继续直接使用四段号，除非明确要兼容既有历史
+
+### 发布前检查清单
+
+```bash
+git fetch --all --prune
+git tag -l "v*" --sort=-version:refname | head
+npm view code-abyss-sc versions --json
+```
+
+发布前必须确认：
+
+- 上游最新 **release/tag** 是多少
+- `package.json` 中的版本是否与策略一致
+- npm 上该版本号是否已经被 `code-abyss-sc` 占用
+
+---
+
 ## 🧪 CI / Smoke 覆盖
 
 当前 CI 覆盖：

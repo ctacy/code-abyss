@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(verify-change)",
+      "Skill(verify-quality)"
+    ]
+  }
+}

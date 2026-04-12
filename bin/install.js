@@ -28,6 +28,13 @@ const {
 const { syncProjectBootstrapArtifacts } = require(path.join(__dirname, 'lib', 'pack-bootstrap.js'));
 const { writeReportArtifact } = require(path.join(__dirname, 'lib', 'pack-reports.js'));
 const {
+  listInstallTargets,
+  listTargetNames,
+  isSupportedTarget,
+  getManagedRootRelativeDir,
+  formatTargetList,
+} = require(path.join(__dirname, 'lib', 'target-registry.js'));
+const {
   listStyles,
   getDefaultStyle,
   resolveStyle,
@@ -115,11 +122,7 @@ function detectGeminiAuth(settings) {
 }
 
 function resolveManagedRootDir(tgt, rootName = tgt) {
-  if (rootName === 'claude') return path.join(HOME, '.claude');
-  if (rootName === 'codex') return path.join(HOME, '.codex');
-  if (rootName === 'agents') return path.join(HOME, '.agents');
-  if (rootName === 'gemini') return path.join(HOME, '.gemini');
-  throw new Error(`不支持的安装根: ${rootName}`);
+  return path.join(HOME, getManagedRootRelativeDir(rootName));
 }
 
 function normalizeManifestEntry(entry, defaultRoot) {
@@ -170,8 +173,8 @@ for (let i = 0; i < args.length; i++) {
     console.log(`${c.b('用法:')}  npx code-abyss [选项]
 
 ${c.b('选项:')}
-  --target ${c.cyn('<claude|codex|gemini>')}      安装目标
-  --uninstall ${c.cyn('<claude|codex|gemini>')}   卸载目标
+  --target ${c.cyn(`<${formatTargetList('|')}>`)}      安装目标
+  --uninstall ${c.cyn(`<${formatTargetList('|')}>`)}   卸载目标
   --style ${c.cyn('<slug>')}               指定输出风格
   --list-styles               列出可用输出风格
   --yes, -y                    全自动模式
@@ -192,7 +195,10 @@ ${c.b('示例:')}
 // ── 卸载 ──
 
 function runUninstall(tgt) {
-  if (!['claude', 'codex', 'gemini'].includes(tgt)) { fail(formatActionableError('--uninstall 必须是 claude、codex 或 gemini', 'Try: npx code-abyss --uninstall claude')); process.exit(1); }
+  if (!isSupportedTarget(tgt)) {
+    fail(formatActionableError(`--uninstall 必须是 ${listTargetNames().join('、')}`, 'Try: npx code-abyss --uninstall claude'));
+    process.exit(1);
+  }
   const targetDir = resolveManagedRootDir(tgt);
   const backupDir = path.join(targetDir, '.sage-backup');
   const manifestPath = path.join(backupDir, 'manifest.json');
@@ -850,7 +856,10 @@ async function main() {
   banner();
 
   if (target) {
-    if (!['claude', 'codex', 'gemini'].includes(target)) { fail(formatActionableError('--target 必须是 claude、codex 或 gemini', 'Try: node bin/install.js --target claude')); process.exit(1); }
+    if (!isSupportedTarget(target)) {
+      fail(formatActionableError(`--target 必须是 ${listTargetNames().join('、')}`, 'Try: node bin/install.js --target claude'));
+      process.exit(1);
+    }
     const style = await resolveInstallStyle(target);
     const packPlan = await resolveProjectPackPlan(target);
     info(`输出风格: ${c.mag(style.slug)} (${style.label})`);
@@ -868,14 +877,13 @@ async function main() {
   const { select } = await import('@inquirer/prompts');
   const action = await select({
     message: '请选择操作',
-    choices: [
-      { name: `安装到 Claude Code ${c.d('(~/.claude/')}${c.d(')')}`, value: 'install-claude' },
-      { name: `安装到 Codex CLI   ${c.d('(~/.codex/')}${c.d(')')}`, value: 'install-codex' },
-      { name: `安装到 Gemini CLI  ${c.d('(~/.gemini/)')}`, value: 'install-gemini' },
-      { name: `${c.red('卸载')} Claude Code`, value: 'uninstall-claude' },
-      { name: `${c.red('卸载')} Codex CLI`, value: 'uninstall-codex' },
-      { name: `${c.red('卸载')} Gemini CLI`, value: 'uninstall-gemini' },
-    ],
+    choices: listInstallTargets().flatMap((targetMeta) => {
+      const targetDir = resolveManagedRootDir(targetMeta.name);
+      return [
+        { name: `安装到 ${targetMeta.actionLabel} ${c.d(`(${targetDir})`)}`, value: `install-${targetMeta.name}` },
+        { name: `${c.red('卸载')} ${targetMeta.actionLabel}`, value: `uninstall-${targetMeta.name}` },
+      ];
+    }),
   });
 
   switch (action) {

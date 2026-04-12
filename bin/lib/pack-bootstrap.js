@@ -7,6 +7,7 @@ const {
   applySnippetToFile,
   hasSnippetBlock,
 } = require('./pack-docs');
+const { listTargetNames } = require('./target-registry');
 
 function renderReadmeSnippet(lock) {
   const lines = [
@@ -16,19 +17,18 @@ function renderReadmeSnippet(lock) {
     '',
   ];
 
-  ['claude', 'codex', 'gemini'].forEach((host) => {
+  listTargetNames().forEach((host) => {
     const cfg = lock.hosts[host];
     lines.push(`- ${host}: required=[${cfg.required.join(', ') || 'none'}], optional=[${cfg.optional.join(', ') || 'none'}], optional_policy=${cfg.optional_policy}`);
   });
 
+  const installCommands = listTargetNames().map((host) => `npx code-abyss --target ${host} -y`);
   lines.push(
     '',
     'Recommended install:',
     '',
     '```bash',
-    'npx code-abyss --target claude -y',
-    'npx code-abyss --target codex -y',
-    'npx code-abyss --target gemini -y',
+    ...installCommands,
     '```',
     ''
   );
@@ -36,6 +36,7 @@ function renderReadmeSnippet(lock) {
 }
 
 function renderContributingSnippet(lock) {
+  const targetNames = listTargetNames();
   return [
     '## AI Tooling',
     '',
@@ -43,9 +44,9 @@ function renderContributingSnippet(lock) {
     '',
     '- Update the lock with `npm run packs:update -- [flags]`.',
     '- Validate it with `npm run packs:check`.',
-    '- Re-run `npx code-abyss --target claude|codex|gemini -y` after pack changes.',
+    `- Re-run \`npx code-abyss --target ${targetNames.join('|')} -y\` after pack changes.`,
     '',
-    `Current host policies: claude=${lock.hosts.claude.optional_policy}, codex=${lock.hosts.codex.optional_policy}, gemini=${lock.hosts.gemini.optional_policy}`,
+    `Current host policies: ${targetNames.map((host) => `${host}=${lock.hosts[host].optional_policy}`).join(', ')}`,
     '',
   ].join('\n');
 }

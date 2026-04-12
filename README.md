@@ -96,6 +96,13 @@ Claude 安装时会把所选 slug 写入 `settings.json.outputStyle`；若当前
 
 当前 runtime kernel 已进一步瘦身：默认 `GEMINI.md` / 动态 guidance 体积控制在约 `1.6KB~1.9KB`，较上一版再降约 `25%`，优先把细节下沉到 `skills/**/SKILL.md` 与工具脚本，减少常驻 token 占用。
 
+### 多风格切换
+
+- Claude / Gemini：重新执行安装命令并带上 `--style <slug>`，即可切换为目标风格
+- 例：`npx code-abyss --target claude --style abyss-concise -y`
+- 例：`npx code-abyss --target gemini --style abyss-ritual -y`
+- Codex：当前为 `skills-only` 运行形态，`--style` 会被显式忽略
+
 ---
 
 ## 🗑️ 卸载

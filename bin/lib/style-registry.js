@@ -2,8 +2,9 @@
 
 const fs = require('fs');
 const path = require('path');
+const { listTargetNames } = require('./target-registry');
 
-const SUPPORTED_TARGETS = new Set(['claude', 'codex', 'gemini']);
+const SUPPORTED_TARGETS = new Set(listTargetNames());
 
 // Module-level cache: projectRoot → normalized styles
 const _cache = new Map();
@@ -75,7 +76,7 @@ function requireNonEmptyString(value, fieldName) {
 }
 
 function normalizeTargets(targets, slug) {
-  const values = Array.isArray(targets) && targets.length > 0 ? targets : ['claude', 'codex', 'gemini'];
+  const values = Array.isArray(targets) && targets.length > 0 ? targets : listTargetNames();
   values.forEach((target) => {
     if (!SUPPORTED_TARGETS.has(target)) {
       throw new Error(`style ${slug} 包含不支持的 target: ${target}`);

@@ -94,6 +94,8 @@ npx code-abyss --uninstall gemini  # 卸载 Gemini CLI
 
 Claude 安装时会把所选 slug 写入 `settings.json.outputStyle`；若当前仓库声明了 project packs，则自动同步对应 runtime + commands。Codex 走 `skills-only`，根据项目 `packs.lock` 自动附带对应 pack，不再写运行时 `~/.codex/AGENTS.md`。Gemini 作为第三宿主，安装到 `~/.gemini/`，生成 `GEMINI.md`、`settings.json`、`commands/*.toml` 与 `skills/`；若项目声明了 `gstack`，也会同步安装 `~/.gemini/skills/gstack/` 与对应 TOML commands。
 
+当前 runtime kernel 已进一步瘦身：默认 `GEMINI.md` / 动态 guidance 体积控制在约 `1.6KB~1.9KB`，较上一版再降约 `25%`，优先把细节下沉到 `skills/**/SKILL.md` 与工具脚本，减少常驻 token 占用。
+
 ---
 
 ## 🗑️ 卸载

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.0.9] - 2026-04-13
+
+### Fixed
+- 修正 `test/pack-registry.test.js` 对 Codex pack 映射的断言，覆盖新增 `config/instruction.md -> instruction.md` 文件同步。
+
+### Verification
+- Jest: `test/pack-registry.test.js` 与全量测试通过（207/208）。
+
 ## [2.0.8] - 2026-04-12
 
 ### Added

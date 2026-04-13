@@ -7,6 +7,7 @@ const {
   getDefaultStyle,
   resolveStyle,
   renderCodexAgents,
+  renderGeminiContext,
 } = require('../bin/lib/style-registry');
 
 describe('style registry', () => {
@@ -34,7 +35,34 @@ describe('style registry', () => {
 
   test('为 Codex 动态生成 AGENTS', () => {
     const content = renderCodexAgents(projectRoot, 'abyss-concise');
-    expect(content).toContain('# 邪修红尘仙 · 宿命深渊 v4.0');
+    expect(content).toContain('# 邪修红尘仙 · 宿命深渊 v4.2');
     expect(content).toContain('# 冷刃简报 · 输出之道');
+  });
+
+  test('为 Gemini 动态生成 GEMINI context', () => {
+    const content = renderGeminiContext(projectRoot, 'abyss-concise');
+    expect(content).toContain('# 邪修红尘仙 · 宿命深渊 v4.2');
+    expect(content).toContain('# 冷刃简报 · 输出之道');
+    expect(content.length).toBeLessThan(2200);
+  });
+
+  test('默认 cultivator runtime guidance 保持轻量', () => {
+    const content = renderGeminiContext(projectRoot, 'abyss-cultivator');
+    expect(content.length).toBeLessThan(1530);
+    expect(content).toContain('# 宿命深渊 · 输出之道');
+  });
+
+  test('所有 runtime guidance 保持在预算内', () => {
+    const budgets = new Map([
+      ['abyss-cultivator', 1530],
+      ['abyss-command', 1450],
+      ['abyss-concise', 1700],
+      ['abyss-ritual', 1510],
+    ]);
+
+    for (const [slug, limit] of budgets.entries()) {
+      const content = renderGeminiContext(projectRoot, slug);
+      expect(content.length).toBeLessThan(limit);
+    }
   });
 });

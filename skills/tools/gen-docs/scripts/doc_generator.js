@@ -107,7 +107,7 @@ function detectLanguage(modPath) {
 function analyzePythonModule(modPath) {
   const info = makeInfo(modPath, 'Python');
   const pyFiles = rglob(modPath, (name) => name.endsWith('.py'));
-  info.files = pyFiles.map(f => path.relative(modPath, f));
+  info.files = pyFiles.map(f => path.relative(modPath, f).split(path.sep).join('/'));
 
   for (const pyFile of pyFiles) {
     const basename = path.basename(pyFile);
@@ -178,7 +178,7 @@ function analyzeModule(modPath) {
   try {
     for (const f of rglob(modPath)) {
       if (!CODE_EXTS.has(path.extname(f).toLowerCase())) continue;
-      const rel = path.relative(modPath, f);
+      const rel = path.relative(modPath, f).split(path.sep).join('/');
       info.files.push(rel);
 
       if (!funcPat && !clsPat) continue;

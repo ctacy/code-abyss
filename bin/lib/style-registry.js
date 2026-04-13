@@ -2,16 +2,26 @@
 
 const fs = require('fs');
 const path = require('path');
+const { listTargetNames } = require('./target-registry');
 
-const SUPPORTED_TARGETS = new Set(['claude', 'codex']);
+const SUPPORTED_TARGETS = new Set(listTargetNames());
+
+// Module-level cache: projectRoot → normalized styles
+const _cache = new Map();
+
+function clearStyleCache() {
+  _cache.clear();
+}
 
 function loadStyleRegistry(projectRoot) {
+  if (_cache.has(projectRoot)) return _cache.get(projectRoot);
+
   const registryPath = path.join(projectRoot, 'output-styles', 'index.json');
   const raw = fs.readFileSync(registryPath, 'utf8');
   const parsed = JSON.parse(raw);
   const styles = Array.isArray(parsed.styles) ? parsed.styles : null;
   if (!styles || styles.length === 0) {
-    throw new Error('output-styles/index.json 缺少 styles 列表');
+    throw new Error('output-styles/index.json 缺少 styles 列表. Check output-styles/index.json has a "styles" array');
   }
 
   const seen = new Set();
@@ -22,9 +32,10 @@ function loadStyleRegistry(projectRoot) {
   });
 
   if (defaultCount !== 1) {
-    throw new Error('style registry 必须且只能有一个 default style');
+    throw new Error('style registry 必须且只能有一个 default style. Check output-styles/index.json — exactly one entry must have "default: true"');
   }
 
+  _cache.set(projectRoot, normalized);
   return normalized;
 }
 
@@ -65,7 +76,7 @@ function requireNonEmptyString(value, fieldName) {
 }
 
 function normalizeTargets(targets, slug) {
-  const values = Array.isArray(targets) && targets.length > 0 ? targets : ['claude', 'codex'];
+  const values = Array.isArray(targets) && targets.length > 0 ? targets : listTargetNames();
   values.forEach((target) => {
     if (!SUPPORTED_TARGETS.has(target)) {
       throw new Error(`style ${slug} 包含不支持的 target: ${target}`);
@@ -99,16 +110,24 @@ function readStyleContent(projectRoot, style) {
   return fs.readFileSync(stylePath, 'utf8');
 }
 
-function renderCodexAgents(projectRoot, styleSlug) {
-  const style = resolveStyle(projectRoot, styleSlug, 'codex');
+function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex') {
+  const style = resolveStyle(projectRoot, styleSlug, targetName === 'gemini' ? 'claude' : targetName);
   if (!style) {
-    throw new Error(`未知输出风格: ${styleSlug}`);
+    throw new Error(`未知输出风格: ${styleSlug}. Try: node bin/install.js --list-styles`);
   }
 
   const basePath = path.join(projectRoot, 'config', 'CLAUDE.md');
-  const base = fs.readFileSync(basePath, 'utf8').replace(/\s+$/, '');
-  const styleContent = readStyleContent(projectRoot, style).replace(/^\s+/, '');
+  const base = fs.readFileSync(basePath, 'utf8').replace(/\r/g, '').replace(/\s+$/, '');
+  const styleContent = readStyleContent(projectRoot, style).replace(/\r/g, '').replace(/^\s+/, '');
   return `${base}\n\n${styleContent}\n`;
+}
+
+function renderCodexAgents(projectRoot, styleSlug) {
+  return renderRuntimeGuidance(projectRoot, styleSlug, 'codex');
+}
+
+function renderGeminiContext(projectRoot, styleSlug) {
+  return renderRuntimeGuidance(projectRoot, styleSlug, 'gemini');
 }
 
 module.exports = {
@@ -116,4 +135,7 @@ module.exports = {
   getDefaultStyle,
   resolveStyle,
   renderCodexAgents,
+  renderGeminiContext,
+  renderRuntimeGuidance,
+  clearStyleCache,
 };

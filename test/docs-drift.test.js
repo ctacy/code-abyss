@@ -11,6 +11,7 @@ describe('docs drift guard', () => {
 
     expect(readme).not.toContain('56 篇');
     expect(readme).not.toContain('~/.codex/prompts');
+    expect(readme).not.toContain('~/.agents/skills/gstack');
   });
 
   test('CHANGELOG 对历史 skill 数量与旧 Codex 入口显式标注历史语境', () => {
@@ -26,5 +27,14 @@ describe('docs drift guard', () => {
 
     expect(design).not.toContain('Codex 安装时会按所选 style 动态生成');
     expect(design).toContain('skills-only');
+  });
+
+  test('当前项目不再默认声明 gstack pack', () => {
+    const lock = JSON.parse(fs.readFileSync(path.join(projectRoot, '.code-abyss', 'packs.lock.json'), 'utf8'));
+
+    Object.values(lock.hosts).forEach((host) => {
+      expect(host.required).not.toContain('gstack');
+      expect(host.optional).not.toContain('gstack');
+    });
   });
 });

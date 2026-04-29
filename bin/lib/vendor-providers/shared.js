@@ -60,13 +60,14 @@ function resolveUpstreamPath(projectRoot, targetPath) {
 
 function extractArchive(archivePath, destDir) {
   const lower = archivePath.toLowerCase();
-  const posixArchive = archivePath.split(path.sep).join('/');
-  const posixDest = destDir.split(path.sep).join('/');
   if (lower.endsWith('.zip')) {
-    runCommand('unzip', ['-q', posixArchive, '-d', posixDest]);
+    runCommand('unzip', ['-q', archivePath, '-d', destDir]);
     return;
   }
-  runCommand('tar', ['-xf', posixArchive, '-C', posixDest]);
+  const forceLocal = process.platform === 'win32' ? ['--force-local'] : [];
+  const normArchive = process.platform === 'win32' ? archivePath.replace(/\\/g, '/') : archivePath;
+  const normDest = process.platform === 'win32' ? destDir.replace(/\\/g, '/') : destDir;
+  runCommand('tar', [...forceLocal, '-xf', normArchive, '-C', normDest]);
 }
 
 function writeVendorMetadata(vendorDir, metadata) {

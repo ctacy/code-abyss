@@ -38,9 +38,14 @@ const {
   listStyles,
   getDefaultStyle,
   resolveStyle,
+  listPersonas,
+  getDefaultPersona,
+  resolvePersona,
+  readPersonaContent,
+  renderCodexAgents,
   renderGeminiContext,
 } = require(path.join(__dirname, 'lib', 'style-registry.js'));
-const { detectCclineBin, installCcline: _installCcline } = require(path.join(__dirname, 'lib', 'ccline.js'));
+const { detectCcstatusline, installCcstatusline } = require(path.join(__dirname, 'lib', 'ccstatusline.js'));
 const { installGstackClaudePack } = require(path.join(__dirname, 'lib', 'gstack-claude.js'));
 const { installGstackGeminiPack } = require(path.join(__dirname, 'lib', 'gstack-gemini.js'));
 
@@ -161,33 +166,39 @@ let target = null;
 let uninstallTarget = null;
 let autoYes = false;
 let listStylesOnly = false;
+let listPersonasOnly = false;
 let requestedStyleSlug = null;
+let requestedPersonaSlug = null;
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === '--target' && args[i + 1]) { target = args[++i]; }
   else if (args[i] === '--uninstall' && args[i + 1]) { uninstallTarget = args[++i]; }
   else if (args[i] === '--style' && args[i + 1]) { requestedStyleSlug = args[++i]; }
+  else if (args[i] === '--persona' && args[i + 1]) { requestedPersonaSlug = args[++i]; }
   else if (args[i] === '--list-styles') { listStylesOnly = true; }
+  else if (args[i] === '--list-personas') { listPersonasOnly = true; }
   else if (args[i] === '--yes' || args[i] === '-y') { autoYes = true; }
   else if (args[i] === '--help' || args[i] === '-h') {
     banner();
-    console.log(`${c.b('用法:')}  npx code-abyss-sc [选项]
+    console.log(`${c.b('用法:')}  npx code-abyss [选项]
 
 ${c.b('选项:')}
   --target ${c.cyn(`<${formatTargetList('|')}>`)}      安装目标
   --uninstall ${c.cyn(`<${formatTargetList('|')}>`)}   卸载目标
   --style ${c.cyn('<slug>')}               指定输出风格
+  --persona ${c.cyn('<slug>')}             指定人格预设
   --list-styles               列出可用输出风格
+  --list-personas             列出可用人格预设
   --yes, -y                    全自动模式
   --help, -h                   显示帮助
 
 ${c.b('示例:')}
-  npx code-abyss-sc                        ${c.d('# 交互菜单')}
-  npx code-abyss-sc --list-styles           ${c.d('# 查看可用风格')}
-  npx code-abyss-sc --target claude -y      ${c.d('# 零配置一键安装')}
-  npx code-abyss-sc --target codex --style abyss-concise -y
+  npx code-abyss                        ${c.d('# 交互菜单')}
+  npx code-abyss --list-styles           ${c.d('# 查看可用风格')}
+  npx code-abyss --target claude -y      ${c.d('# 零配置一键安装')}
+  npx code-abyss --target codex --style scholar-classic -y
                                    ${c.d('# 指定风格安装')}
-  npx code-abyss-sc --uninstall claude      ${c.d('# 直接卸载')}
+  npx code-abyss --uninstall claude      ${c.d('# 直接卸载')}
 `);
     process.exit(0);
   }
@@ -207,7 +218,7 @@ function runUninstall(tgt) {
 
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   if (manifest.manifest_version && manifest.manifest_version > 2) {
-    fail(`manifest 版本 ${manifest.manifest_version} 不兼容，请升级 code-abyss-sc 后再卸载`);
+    fail(`manifest 版本 ${manifest.manifest_version} 不兼容，请升级 code-abyss 后再卸载`);
     process.exit(1);
   }
   divider(`卸载 Code Abyss v${manifest.version}`);
@@ -227,6 +238,16 @@ function runUninstall(tgt) {
     if (fs.existsSync(targetPath)) {
       rmSafe(targetPath);
       console.log(`  ${c.red('✘')} ${manifestLabel(entry, tgt)}`);
+      if (normalized.root !== tgt) {
+        let parent = path.dirname(targetPath);
+        while (parent !== installRoot && parent !== path.dirname(parent)) {
+          try {
+            if (fs.readdirSync(parent).length > 0) break;
+            fs.rmdirSync(parent);
+          } catch { break; }
+          parent = path.dirname(parent);
+        }
+      }
     }
   });
   (manifest.backups || []).forEach((entry) => {
@@ -269,8 +290,11 @@ const GEMINI_COMMAND_TARGET = {
 };
 
 function getSkillPath(skillRoot, skillRelPath) {
-  return skillRelPath
-    ? `${skillRoot}/${skillRelPath}/SKILL.md`
+  const normalizedRelPath = skillRelPath
+    ? String(skillRelPath).split(path.sep).join('/')
+    : '';
+  return normalizedRelPath
+    ? `${skillRoot}/${normalizedRelPath}/SKILL.md`
     : `${skillRoot}/SKILL.md`;
 }
 
@@ -512,6 +536,17 @@ function printStyleCatalog() {
   console.log('');
 }
 
+function printPersonaCatalog() {
+  banner();
+  divider('可用人格预设');
+  listPersonas(PKG_ROOT).forEach((persona) => {
+    const tag = persona.default ? ' [默认]' : '';
+    console.log(`  ${c.cyn(persona.slug)}  ${persona.label}${c.d(tag)}`);
+    console.log(`  ${c.d(persona.description)}`);
+  });
+  console.log('');
+}
+
 async function resolveProjectPackPlan(targetName) {
   const projectPacks = resolveProjectPacks(process.cwd(), targetName);
   if (!projectPacks.path) {
@@ -543,44 +578,48 @@ async function resolveProjectPackPlan(targetName) {
   };
 }
 
+async function resolveInstallPersona() {
+  if (requestedPersonaSlug) {
+    const persona = resolvePersona(PKG_ROOT, requestedPersonaSlug);
+    if (!persona) throw new Error(`未知人格预设: ${requestedPersonaSlug}`);
+    return persona;
+  }
+  if (autoYes) return getDefaultPersona(PKG_ROOT);
+
+  const { select } = await import('@inquirer/prompts');
+  const personas = listPersonas(PKG_ROOT);
+  const defaultPersona = getDefaultPersona(PKG_ROOT);
+  const genderLabel = { male: '♂', female: '♀', other: '⚧' };
+
+  const slug = await select({
+    message: '选择人格预设（心）',
+    choices: personas.map(p => ({
+      name: `${genderLabel[p.gender] || '⚧'} ${p.label} (${p.slug})${p.default ? ' [默认]' : ''} — ${p.description}`,
+      value: p.slug,
+    })),
+    default: defaultPersona.slug,
+  });
+  return resolvePersona(PKG_ROOT, slug);
+}
+
 async function resolveInstallStyle(targetName) {
-  if (targetName === 'codex') {
-    if (requestedStyleSlug) {
-      warn('Codex 已改为 skills-only，忽略 --style（不再生成 ~/.codex/AGENTS.md）');
-    }
-    return getDefaultStyle(PKG_ROOT, 'claude');
-  }
-
-  if (targetName === 'gemini') {
-    if (requestedStyleSlug) {
-      const requested = resolveStyle(PKG_ROOT, requestedStyleSlug, 'gemini') || resolveStyle(PKG_ROOT, requestedStyleSlug, 'claude');
-      if (!requested) {
-        throw new Error(`未知输出风格: ${requestedStyleSlug}`);
-      }
-      return requested;
-    }
-    return getDefaultStyle(PKG_ROOT, 'claude');
-  }
-
   if (requestedStyleSlug) {
-    const style = resolveStyle(PKG_ROOT, requestedStyleSlug, targetName);
-    if (!style) {
-      throw new Error(`未知输出风格: ${requestedStyleSlug}`);
-    }
+    const style = resolveStyle(PKG_ROOT, requestedStyleSlug, targetName === 'gemini' || targetName === 'codex' ? 'claude' : targetName)
+      || resolveStyle(PKG_ROOT, requestedStyleSlug, 'claude');
+    if (!style) throw new Error(`未知输出风格: ${requestedStyleSlug}`);
     return style;
   }
 
-  if (autoYes) {
-    return getDefaultStyle(PKG_ROOT, targetName);
-  }
+  if (autoYes) return getDefaultStyle(PKG_ROOT, targetName);
 
+  const { select } = await import('@inquirer/prompts');
   const styles = listStyles(PKG_ROOT, targetName);
   const defaultStyle = getDefaultStyle(PKG_ROOT, targetName);
-  const { select } = await import('@inquirer/prompts');
+
   const slug = await select({
-    message: '选择输出风格',
+    message: '选择输出风格（口）',
     choices: styles.map(style => ({
-      name: `${style.label} (${style.slug})${style.default ? ' [默认]' : ''} - ${style.description}`,
+      name: `${style.label} (${style.slug})${style.default ? ' [默认]' : ''} — ${style.description}`,
       value: style.slug,
     })),
     default: defaultStyle.slug,
@@ -588,7 +627,7 @@ async function resolveInstallStyle(targetName) {
   return resolveStyle(PKG_ROOT, slug, targetName);
 }
 
-function installCore(tgt, selectedStyle, packPlan) {
+function installCore(tgt, selectedStyle, selectedPersona, packPlan) {
   const targetDir = resolveManagedRootDir(tgt);
   const backupDir = path.join(targetDir, '.sage-backup');
   const manifestPath = path.join(backupDir, 'manifest.json');
@@ -612,7 +651,7 @@ function installCore(tgt, selectedStyle, packPlan) {
 
   const manifest = {
     manifest_version: 2, version: VERSION, target: tgt,
-    timestamp: new Date().toISOString(), style: selectedStyle.slug, installed: [], backups: [],
+    timestamp: new Date().toISOString(), style: selectedStyle.slug, persona: selectedPersona.slug, installed: [], backups: [],
     project_packs: packPlan.selected,
     optional_policy: packPlan.optionalPolicy || 'auto',
     pack_reports: [],
@@ -625,7 +664,7 @@ function installCore(tgt, selectedStyle, packPlan) {
     const destPath = path.join(destRoot, dest);
     if (!fs.existsSync(srcPath)) {
       if (src === 'skills') {
-        fail(`核心文件缺失: ${srcPath}\n    请尝试: npm cache clean --force && npx code-abyss-sc`);
+        fail(`核心文件缺失: ${srcPath}\n    请尝试: npm cache clean --force && npx code-abyss`);
         process.exit(1);
       }
       warn(`跳过: ${src}`); return;
@@ -650,19 +689,6 @@ function installCore(tgt, selectedStyle, packPlan) {
     status: 'installed',
     source: 'bundled',
   });
-
-  // 追加 CLAUDE.local.md 到已安装的 CLAUDE.md
-  if (tgt === 'claude') {
-    const localSrc = path.join(PKG_ROOT, 'config', 'CLAUDE.local.md');
-    const claudeDest = path.join(targetDir, 'CLAUDE.md');
-    if (fs.existsSync(localSrc) && fs.existsSync(claudeDest)) {
-      const localContent = fs.readFileSync(localSrc, 'utf8').trim();
-      if (localContent) {
-        fs.appendFileSync(claudeDest, '\n\n' + localContent + '\n');
-        ok(`CLAUDE.local.md ${c.d('(本地规则已追加)')}`);
-      }
-    }
-  }
 
   // 为目标 CLI 自动生成 user-invocable artifacts
   if (tgt === 'claude') {
@@ -804,6 +830,28 @@ function installCore(tgt, selectedStyle, packPlan) {
     pruneLegacyCodexSettings(tgt, backupDir, manifest);
   }
 
+  // 根据独立选择的 persona 覆盖 CLAUDE.md / GEMINI.md
+  if (selectedPersona) {
+    const personaContent = readPersonaContent(PKG_ROOT, selectedPersona);
+    if (tgt === 'claude') {
+      const claudeMdPath = path.join(targetDir, 'CLAUDE.md');
+      fs.writeFileSync(claudeMdPath, personaContent);
+      ok(`人格（心）→ ${c.mag(selectedPersona.label)} (${selectedPersona.slug})`);
+    } else if (tgt === 'gemini') {
+      const geminiMdPath = path.join(targetDir, 'GEMINI.md');
+      const guidance = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
+      fs.writeFileSync(geminiMdPath, guidance);
+      ok(`人格（心）→ ${c.mag(selectedPersona.label)} (${selectedPersona.slug})`);
+    } else if (tgt === 'codex') {
+      const agentsMdPath = path.join(targetDir, 'AGENTS.md');
+      const guidance = renderCodexAgents(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
+      fs.writeFileSync(agentsMdPath, guidance);
+      pushManifestEntry(manifest.installed, 'codex', 'AGENTS.md');
+      ok(`人格（心）→ ${c.mag(selectedPersona.label)} (${selectedPersona.slug})`);
+      ok(`风格（口）→ ${c.mag(selectedStyle.label)} → ~/.codex/AGENTS.md`);
+    }
+  }
+
   fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n');
 
   const uSrc = path.join(PKG_ROOT, 'bin', 'uninstall.js');
@@ -828,7 +876,7 @@ async function postClaude(ctx) {
     c,
     deepMergeNew,
     printMergeLog,
-    installCcline: _installCcline,
+    installCcstatusline,
   });
 }
 
@@ -870,6 +918,11 @@ async function main() {
     return;
   }
 
+  if (listPersonasOnly) {
+    printPersonaCatalog();
+    return;
+  }
+
   if (uninstallTarget) { runUninstall(uninstallTarget); return; }
 
   banner();
@@ -879,13 +932,15 @@ async function main() {
       fail(formatActionableError(`--target 必须是 ${listTargetNames().join('、')}`, 'Try: node bin/install.js --target claude'));
       process.exit(1);
     }
+    const persona = await resolveInstallPersona();
     const style = await resolveInstallStyle(target);
     const packPlan = await resolveProjectPackPlan(target);
-    info(`输出风格: ${c.mag(style.slug)} (${style.label})`);
+    info(`人格（心）: ${c.mag(persona.label)} (${persona.slug})`);
+    info(`风格（口）: ${c.mag(style.slug)} (${style.label})`);
     if (packPlan.path) {
       info(`项目 packs: required=[${packPlan.required.join(', ')}] optional=[${packPlan.optional.join(', ')}] policy=${packPlan.optionalPolicy}`);
     }
-    const ctx = installCore(target, style, packPlan);
+    const ctx = installCore(target, style, persona, packPlan);
     if (target === 'claude') await postClaude(ctx);
     else if (target === 'codex') await postCodex();
     else await postGemini(ctx);
@@ -907,32 +962,38 @@ async function main() {
 
   switch (action) {
     case 'install-claude': {
+      const persona = await resolveInstallPersona();
       const style = await resolveInstallStyle('claude');
       const packPlan = await resolveProjectPackPlan('claude');
-      info(`输出风格: ${c.mag(style.slug)} (${style.label})`);
+      info(`人格（心）: ${c.mag(persona.label)}`);
+      info(`风格（口）: ${c.mag(style.slug)}`);
       if (packPlan.path) {
         info(`项目 packs: required=[${packPlan.required.join(', ')}] optional=[${packPlan.optional.join(', ')}] policy=${packPlan.optionalPolicy}`);
       }
-      const ctx = installCore('claude', style, packPlan);
+      const ctx = installCore('claude', style, persona, packPlan);
       await postClaude(ctx);
       finish(ctx); break;
     }
     case 'install-codex': {
+      const persona = await resolveInstallPersona();
       const style = await resolveInstallStyle('codex');
       const packPlan = await resolveProjectPackPlan('codex');
-      info(`输出风格: ${c.mag(style.slug)} (${style.label})`);
+      info(`人格（心）: ${c.mag(persona.label)}`);
+      info(`风格（口）: ${c.mag(style.slug)}`);
       if (packPlan.path) {
         info(`项目 packs: required=[${packPlan.required.join(', ')}] optional=[${packPlan.optional.join(', ')}] policy=${packPlan.optionalPolicy}`);
       }
-      const ctx = installCore('codex', style, packPlan);
+      const ctx = installCore('codex', style, persona, packPlan);
       await postCodex();
       finish(ctx); break;
     }
     case 'install-gemini': {
+      const persona = await resolveInstallPersona();
       const style = await resolveInstallStyle('gemini');
       const packPlan = await resolveProjectPackPlan('gemini');
-      info(`输出风格: ${c.mag(style.slug)} (${style.label})`);
-      const ctx = installCore('gemini', style, packPlan);
+      info(`人格（心）: ${c.mag(persona.label)}`);
+      info(`风格（口）: ${c.mag(style.slug)}`);
+      const ctx = installCore('gemini', style, persona, packPlan);
       await postGemini(ctx);
       finish(ctx); break;
     }
@@ -997,7 +1058,7 @@ function finish(ctx) {
     console.log(`  ${c.b('Report:')}   ${reportPath}`);
   }
   console.log(`  ${c.b('文件:')}     ${ctx.manifest.installed.length} 个安装, ${ctx.manifest.backups.length} 个备份`);
-  console.log(`  ${c.b('卸载:')}     ${c.d(`npx code-abyss-sc --uninstall ${tgt}`)}`);
+  console.log(`  ${c.b('卸载:')}     ${c.d(`npx code-abyss --uninstall ${tgt}`)}`);
   console.log('');
   console.log(c.mag(`  ⚚ 劫——破——了——！！！\n`));
 }
@@ -1008,7 +1069,7 @@ if (require.main === module) {
 
 module.exports = {
   deepMergeNew, detectClaudeAuth, detectCodexAuth,
-  detectCclineBin, copyRecursive, shouldSkip, SETTINGS_TEMPLATE,
+  detectCcstatusline, copyRecursive, shouldSkip, SETTINGS_TEMPLATE,
   scanInvocableSkills,
   generateCommandContent,
   generateGeminiCommandContent,

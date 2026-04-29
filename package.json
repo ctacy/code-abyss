@@ -1,7 +1,7 @@
 {
   "name": "code-abyss-sc",
-  "version": "2.0.9",
-  "description": "为 Claude Code / Codex CLI / Gemini CLI 注入邪修人格、4种可切换输出风格与 56 篇攻防工程秘典",
+  "version": "2.1.5",
+  "description": "为 Claude Code / Codex CLI 注入可切换人格、5种输出风格与21个工程技能",
   "keywords": [
     "claude",
     "claude-code",
@@ -22,7 +22,6 @@
     "url": "https://github.com/telagod/code-abyss/issues"
   },
   "bin": {
-    "code-abyss-sc": "bin/install.js",
     "code-abyss": "bin/install.js"
   },
   "files": [

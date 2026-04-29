@@ -27,7 +27,7 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 | Python 安装器 | 功能强大 | 需要 Python 环境 | ❌ 放弃 |
 | npm 包 | 生态成熟 | 需要 Node.js | ✅ 采用 |
 
-**取舍说明**：选择 npm 包（npx code-abyss-sc），在安装便捷性和生态成熟度上取得平衡。
+**取舍说明**：选择 npm 包（npx code-abyss），在安装便捷性和生态成熟度上取得平衡。
 
 ### 2. Skills 实现与元数据单源
 
@@ -44,7 +44,7 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 根据目标 CLI 选择配置文件：
 - Claude Code CLI：`~/.claude/CLAUDE.md`
 - Codex CLI：`~/.codex/config.toml`
-- Codex 用户级 skills：`~/.agents/skills/`
+- Codex 用户级 skills：`~/.codex/skills/`
 
 安装脚本通过 `--target claude|codex`（或交互选择）确定写入位置，确保用户级配置不污染项目目录。
 
@@ -82,21 +82,21 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 - 决策：新增 `output-styles/index.json` 作为 style registry，统一维护 `slug`、`label`、`description`、`file`、`targets`、`default`。
 - 决策：Claude 继续安装整个 `output-styles/` 目录，并把 `settings.json.outputStyle` 写为所选 style slug。
 - 决策：Claude 通过 `settings.json.outputStyle` 选风格；Gemini 由 `config/CLAUDE.md + output-styles/<slug>.md` 动态生成 `GEMINI.md`；Codex 当前维持 `skills-only`，显式忽略 `--style`。
-- 决策：Codex skills 对齐官方当前规范，安装到 `~/.agents/skills/`；`agents/openai.yaml` 只负责可选 metadata，而不是旧 `prompts/` 入口。
+- 决策：Codex skills 对齐当前项目运行时，安装到 `~/.codex/skills/`；`agents/openai.yaml` 只负责可选 metadata，而不是旧 `prompts/` 入口。
 - 取舍：运行时策略按宿主分化，但 style registry 仍保持单一索引，避免 README / 测试 / 安装链再次漂移。
 
 ### 9. Pack registry（进行中）
 
-- 问题：`abyss` core 资源与 `gstack` 融合逻辑分别散落在 adapter、installer、测试中，host 映射与 upstream pin 容易再次漂移。
-- 决策：新增 `packs/abyss/manifest.json` 与 `packs/gstack/manifest.json`，把 host 文件映射、upstream repo/commit、runtime 目录、路径改写规则集中到 manifest。
+- 问题：`abyss` core 资源与可选外部 pack 逻辑分别散落在 adapter、installer、测试中，host 映射与 upstream pin 容易再次漂移。
+- 决策：新增 `packs/abyss/manifest.json` 与可选 `packs/gstack/manifest.json`，把 host 文件映射、upstream repo/commit、runtime 目录、路径改写规则集中到 manifest。
 - 决策：`bin/lib/pack-registry.js` 成为安装器读取 pack 元数据的唯一入口；Claude/Codex adapter 只消费 registry，不再手写 core file 列表。
-- 取舍：多一层 manifest 解析，但后续扩展 Claude 侧 gstack、更多第三方 pack 或 pack 锁文件时不必再次散改 installer 常量。
+- 取舍：多一层 manifest 解析，但后续扩展第三方 pack 或 pack 锁文件时不必再次散改 installer 常量。
 
 ### 10. 项目级 packs.lock（进行中）
 
-- 问题：上一阶段的 gstack 自动融合是“全局默认行为”，缺乏项目粒度开关，容易把不相关仓库也拖入同一套 workflow。
+- 问题：上一阶段的外部 workflow pack 自动融合是“全局默认行为”，缺乏项目粒度开关，容易把不相关仓库也拖入同一套 workflow。
 - 决策：新增 `.code-abyss/packs.lock.json`，支持按 host 声明 `required` / `optional` packs；安装器从当前工作目录向上查找最近的 lock 文件。
-- 决策：安装器只自动同步 lock 中的 `required` packs；本仓当前为 Claude/Codex 都声明 `gstack`，因此保持“零手动触发”的体验。
+- 决策：安装器只自动同步 lock 中的 `required` packs；本仓当前不默认声明 gstack，保持 core skills only，避免无关 workflow skill 占用 Codex context。
 - 取舍：多了一层项目配置解析，但把“自动化”从全局硬编码降成项目声明，更适合团队协作与多仓共存。
 
 ### 11. optional source 策略 + bootstrap/diff（进行中）

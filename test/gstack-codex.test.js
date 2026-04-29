@@ -27,7 +27,7 @@ describe('gstack codex integration', () => {
   });
 
   test('extractNameAndDescription 支持 CRLF frontmatter', () => {
-    const content = fs.readFileSync(path.join(fixtureRoot, 'review', 'SKILL.md'), 'utf8').replace(/\n/g, '\r\n');
+    const content = fs.readFileSync(path.join(fixtureRoot, 'review', 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
     const parsed = extractNameAndDescription(content);
 
     expect(parsed.name).toBe('review');

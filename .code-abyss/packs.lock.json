@@ -2,34 +2,22 @@
   "version": 1,
   "hosts": {
     "claude": {
-      "required": [
-        "gstack"
-      ],
+      "required": [],
       "optional": [],
       "optional_policy": "auto",
-      "sources": {
-        "gstack": "pinned"
-      }
+      "sources": {}
     },
     "codex": {
-      "required": [
-        "gstack"
-      ],
+      "required": [],
       "optional": [],
       "optional_policy": "auto",
-      "sources": {
-        "gstack": "pinned"
-      }
+      "sources": {}
     },
     "gemini": {
-      "required": [
-        "gstack"
-      ],
+      "required": [],
       "optional": [],
       "optional_policy": "auto",
-      "sources": {
-        "gstack": "pinned"
-      }
+      "sources": {}
     }
   }
 }

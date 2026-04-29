@@ -19,7 +19,7 @@ describe('gstack claude integration', () => {
   });
 
   test('extractAllowedTools 支持 CRLF frontmatter', () => {
-    const content = fs.readFileSync(path.join(fixtureRoot, 'review', 'SKILL.md'), 'utf8').replace(/\n/g, '\r\n');
+    const content = fs.readFileSync(path.join(fixtureRoot, 'review', 'SKILL.md'), 'utf8').replace(/\r\n/g, '\n').replace(/\n/g, '\r\n');
     expect(extractAllowedTools(content)).toBe('Bash, Read');
   });
 

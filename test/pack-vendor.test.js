@@ -68,13 +68,7 @@ describe('pack vendor providers', () => {
     const archivePath = path.join(tmpDir, 'archive-source.tgz');
     fs.mkdirSync(sourceDir, { recursive: true });
     fs.writeFileSync(path.join(sourceDir, 'README.md'), 'archive source\n');
-    const tarArchive = archivePath.split(path.sep).join('/');
-    const tarSource = sourceDir.split(path.sep).join('/');
-    const tarResult = spawnSync('tar', ['-czf', tarArchive, '-C', tarSource, '.'], { encoding: 'utf8' });
-    if (tarResult.status !== 0) {
-      console.warn('tar unavailable or failed, skipping archive test');
-      return;
-    }
+    spawnSync('tar', ['--force-local', '-czf', archivePath, '-C', sourceDir, '.'], { encoding: 'utf8' });
     writeManifest('archive-pack', { provider: 'archive', path: 'archive-source.tgz' });
 
     const report = syncPackVendor(tmpDir, 'archive-pack');

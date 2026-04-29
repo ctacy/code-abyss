@@ -3,7 +3,7 @@ name: threat-intel
 description: 威胁情报。OSINT、威胁狩猎、情报分析、IOC管理。当用户提到威胁情报、OSINT、开源情报、威胁狩猎、IOC、TTP、ATT&CK时使用。
 ---
 
-# 👁 天眼秘典 · 威胁情报 (Threat Intelligence)
+# 天眼秘典 · 威胁情报 (Threat Intelligence)
 
 
 ## 情报层次

@@ -6,132 +6,37 @@ user-invocable: false
 disable-model-invocation: false
 ---
 
-# Liquid Glass Design System
+# Liquid Glass 设计规范
 
-Apple-inspired translucent glass UI with depth, refraction, and ambient light response.
+Apple 风格半透明玻璃 UI：纵深、折射、环境光响应。
 
-## Core Principles
+## 五则
 
-1. **Translucency** — Surfaces reveal layered content beneath via backdrop blur
-2. **Depth** — Elements float on distinct z-layers with realistic shadows
-3. **Ambient Response** — Glass tints shift based on underlying content color
-4. **Minimal Chrome** — Borders are subtle; shape and blur define boundaries
-5. **Motion** — Transitions feel physical: spring-based, with inertia
+1. **透光** — 表面经 backdrop blur 透出下层
+2. **纵深** — 元素浮于不同 z 层，写实阴影
+3. **环境感应** — 玻璃色调随底层内容偏移
+4. **极简边界** — 形状与模糊界定边缘，非描边
+5. **物理动效** — 弹簧曲线，带惯性
 
-## Usage
+## CSS Tokens
 
-Import the token file in your CSS:
+`@import 'references/tokens.css';` — 详见 [references/tokens.css](references/tokens.css)
 
-```css
-@import 'references/tokens.css';
-```
+| 类别 | 前缀 | 示例 |
+|------|------|------|
+| 玻璃底 | `--lg-bg-*` | `--lg-bg-primary` |
+| 模糊 | `--lg-blur-*` | `--lg-blur-md` |
+| 边框 | `--lg-border-*` | `--lg-border-color` |
+| 阴影 | `--lg-shadow-*` | `--lg-shadow-elevated` |
+| 圆角 | `--lg-radius-*` | `--lg-radius-lg` |
+| 动画 | `--lg-duration-*` | `--lg-duration-normal` |
+| 饱和 | `--lg-saturate` | `1.8` |
 
-## CSS Tokens Reference
+## 关键约束
 
-All tokens are defined in `references/tokens.css`. Key categories:
+- `backdrop-filter` 须附 `-webkit-` 前缀；`linear()` easing 较新，回退用 `cubic-bezier`
+- 同屏 blur 元素 ≤ 3 个；低端设备降级为纯色
+- 玻璃面文字须保 `contrast-ratio ≥ 4.5:1`，用 text-shadow 或垫层兜底
+- `prefers-reduced-motion: reduce` 禁弹簧动画；`prefers-contrast: more` 替换为实色
 
-| Category | Prefix | Example |
-|---|---|---|
-| Glass backgrounds | `--lg-bg-*` | `--lg-bg-primary` |
-| Blur | `--lg-blur-*` | `--lg-blur-md` |
-| Borders | `--lg-border-*` | `--lg-border-color` |
-| Shadows | `--lg-shadow-*` | `--lg-shadow-elevated` |
-| Radius | `--lg-radius-*` | `--lg-radius-lg` |
-| Animation | `--lg-duration-*` | `--lg-duration-normal` |
-
-## Component Patterns
-
-### Glass Card
-
-```css
-.glass-card {
-  background: var(--lg-bg-primary);
-  backdrop-filter: blur(var(--lg-blur-md));
-  -webkit-backdrop-filter: blur(var(--lg-blur-md));
-  border: 1px solid var(--lg-border-color);
-  border-radius: var(--lg-radius-lg);
-  box-shadow: var(--lg-shadow-elevated);
-  transition: transform var(--lg-duration-normal) var(--lg-easing-spring);
-}
-
-.glass-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--lg-shadow-high);
-}
-```
-
-### Glass Toolbar
-
-```css
-.glass-toolbar {
-  background: var(--lg-bg-toolbar);
-  backdrop-filter: blur(var(--lg-blur-lg)) saturate(var(--lg-saturate));
-  -webkit-backdrop-filter: blur(var(--lg-blur-lg)) saturate(var(--lg-saturate));
-  border-bottom: 1px solid var(--lg-border-subtle);
-}
-```
-
-### Glass Button
-
-```css
-.glass-btn {
-  background: var(--lg-bg-interactive);
-  backdrop-filter: blur(var(--lg-blur-sm));
-  border: 1px solid var(--lg-border-color);
-  border-radius: var(--lg-radius-md);
-  transition: all var(--lg-duration-fast) var(--lg-easing-spring);
-}
-
-.glass-btn:active {
-  transform: scale(0.97);
-  background: var(--lg-bg-pressed);
-}
-```
-
-### Glass Modal Overlay
-
-```css
-.glass-overlay {
-  background: var(--lg-bg-scrim);
-  backdrop-filter: blur(var(--lg-blur-xl));
-}
-
-.glass-modal {
-  background: var(--lg-bg-elevated);
-  border: 1px solid var(--lg-border-color);
-  border-radius: var(--lg-radius-xl);
-  box-shadow: var(--lg-shadow-high);
-}
-```
-
-## Dark / Light Mode
-
-Tokens auto-switch via `prefers-color-scheme`. Light mode uses white-tinted glass; dark mode uses dark-tinted glass with higher blur to maintain readability.
-
-```css
-/* Force a mode on a subtree */
-.light-glass { color-scheme: light; }
-.dark-glass  { color-scheme: dark; }
-```
-
-## Animations
-
-Use spring-based easing for physical feel:
-
-```css
-/* Entry */
-@keyframes glass-enter {
-  from { opacity: 0; transform: scale(0.95) translateY(8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.glass-animate-in {
-  animation: glass-enter var(--lg-duration-normal) var(--lg-easing-spring) both;
-}
-```
-
-## Accessibility
-
-- Ensure `contrast-ratio ≥ 4.5:1` for text over glass surfaces
-- Respect `prefers-reduced-motion` — disable blur animations, use opacity-only transitions
-- Provide `prefers-contrast: high` overrides that replace translucent backgrounds with solid ones
+组件 CSS、暗色模式、动画、无障碍详见 [references/components.md](references/components.md)

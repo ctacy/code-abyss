@@ -52,16 +52,15 @@ jobs:
 
           export HOME="$abyss_home"
           export USERPROFILE="$abyss_home"
-          export CODE_ABYSS_GSTACK_SOURCE="$GITHUB_WORKSPACE/test/fixtures/gstack-codex-source"
 
           npx --yes --package "./$pkg_tgz" code-abyss --target claude -y
 
           test -f "$abyss_home/.claude/CLAUDE.md"
           test -d "$abyss_home/.claude/skills"
-          test -d "$abyss_home/.claude/skills/gstack/review"
+          test ! -e "$abyss_home/.claude/skills/gstack"
           test -d "$abyss_home/.claude/commands"
           test -f "$abyss_home/.claude/commands/gen-docs.md"
-          test -f "$abyss_home/.claude/commands/review.md"
+          test ! -e "$abyss_home/.claude/commands/review.md"
           test -f "$abyss_home/.claude/settings.json"
           test -f "$abyss_home/.claude/.sage-uninstall.js"
 
@@ -98,14 +97,13 @@ jobs:
 
           export HOME="$abyss_home"
           export USERPROFILE="$abyss_home"
-          export CODE_ABYSS_GSTACK_SOURCE="$GITHUB_WORKSPACE/test/fixtures/gstack-codex-source"
 
           npx --yes --package "./$pkg_tgz" code-abyss --target codex -y
 
-          test ! -e "$abyss_home/.codex/AGENTS.md"
-          test -d "$abyss_home/.agents/skills"
-          test -d "$abyss_home/.agents/bin/lib"
-          test -f "$abyss_home/.agents/skills/gstack/review/SKILL.md"
+          test -f "$abyss_home/.codex/AGENTS.md"
+          test -d "$abyss_home/.codex/skills"
+          test -d "$abyss_home/.codex/bin/lib"
+          test ! -e "$abyss_home/.agents/skills/gstack"
           test -f "$abyss_home/.codex/config.toml"
           test ! -e "$abyss_home/.codex/settings.json"
           test -f "$abyss_home/.codex/.sage-uninstall.js"
@@ -143,7 +141,6 @@ jobs:
 
           export HOME="$abyss_home"
           export USERPROFILE="$abyss_home"
-          export CODE_ABYSS_GSTACK_SOURCE="$GITHUB_WORKSPACE/test/fixtures/gstack-codex-source"
 
           npx --yes --package "./$pkg_tgz" code-abyss --target gemini -y
 
@@ -151,8 +148,8 @@ jobs:
           test -d "$abyss_home/.gemini/skills"
           test -d "$abyss_home/.gemini/commands"
           test -f "$abyss_home/.gemini/commands/gen-docs.toml"
-          test -f "$abyss_home/.gemini/commands/review.toml"
-          test -d "$abyss_home/.gemini/skills/gstack/review"
+          test ! -e "$abyss_home/.gemini/commands/review.toml"
+          test ! -e "$abyss_home/.gemini/skills/gstack"
           test -f "$abyss_home/.gemini/settings.json"
           test -f "$abyss_home/.gemini/.sage-uninstall.js"
 

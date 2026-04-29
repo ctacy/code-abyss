@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const targetDir = path.dirname(__filename);
 const backupDir = path.join(targetDir, '.sage-backup');
@@ -20,28 +21,66 @@ try {
   process.exit(1);
 }
 
+const MANAGED_ROOTS = {
+  claude: '.claude',
+  codex: '.codex',
+  agents: '.agents',
+  gemini: '.gemini',
+};
+
+function resolveEntryPath(entry) {
+  if (typeof entry === 'string') return path.join(targetDir, entry);
+  const rootDir = MANAGED_ROOTS[entry.root]
+    ? path.join(os.homedir(), MANAGED_ROOTS[entry.root])
+    : targetDir;
+  return path.join(rootDir, entry.path);
+}
+
+function resolveBackupPath(entry) {
+  if (typeof entry === 'string') return path.join(backupDir, entry);
+  return path.join(backupDir, entry.root, entry.path);
+}
+
+function entryLabel(entry) {
+  if (typeof entry === 'string') return entry;
+  return entry.root === manifest.target ? entry.path : `${entry.root}/${entry.path}`;
+}
+
+function pruneEmptyParents(dirPath, stopAt) {
+  let current = dirPath;
+  while (current !== stopAt && current !== path.dirname(current)) {
+    try {
+      const entries = fs.readdirSync(current);
+      if (entries.length > 0) break;
+      fs.rmdirSync(current);
+    } catch { break; }
+    current = path.dirname(current);
+  }
+}
+
 console.log(`\n🗑️  卸载 Code Abyss v${manifest.version}...\n`);
 
-// 1. 删除安装的文件
-(manifest.installed || []).forEach(f => {
-  const p = path.join(targetDir, f);
+(manifest.installed || []).forEach(entry => {
+  const p = resolveEntryPath(entry);
   if (fs.existsSync(p)) {
     fs.rmSync(p, { recursive: true, force: true });
-    console.log(`🗑️  删除: ${f}`);
+    console.log(`🗑️  删除: ${entryLabel(entry)}`);
+    if (typeof entry !== 'string' && entry.root !== manifest.target) {
+      const rootDir = path.join(os.homedir(), MANAGED_ROOTS[entry.root] || '');
+      pruneEmptyParents(path.dirname(p), rootDir);
+    }
   }
 });
 
-// 2. 恢复备份
-(manifest.backups || []).forEach(f => {
-  const bp = path.join(backupDir, f);
-  const tp = path.join(targetDir, f);
+(manifest.backups || []).forEach(entry => {
+  const bp = resolveBackupPath(entry);
+  const tp = resolveEntryPath(entry);
   if (fs.existsSync(bp)) {
     fs.renameSync(bp, tp);
-    console.log(`✅ 恢复: ${f}`);
+    console.log(`✅ 恢复: ${entryLabel(entry)}`);
   }
 });
 
-// 3. 清理备份目录和卸载脚本自身
 fs.rmSync(backupDir, { recursive: true, force: true });
 fs.unlinkSync(__filename);
 

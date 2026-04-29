@@ -3,7 +3,7 @@ name: blue-team
 description: 蓝队防御技术。检测工程、SOC运营、应急响应、数字取证。当用户提到蓝队、检测规则、Sigma、YARA、SIEM、告警、应急响应、取证、SOC时使用。
 ---
 
-# ❄ 玄冰秘典 · 蓝队防御 (Blue Team)
+# 玄冰秘典 · 蓝队防御 (Blue Team)
 
 
 ## 防御链

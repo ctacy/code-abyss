@@ -1,6 +1,6 @@
 {
   "name": "gstack",
-  "description": "Pinned upstream gstack pack integrated as an auto-installed workflow runtime.",
+  "description": "Pinned upstream gstack workflow runtime available as an optional project pack.",
   "reporting": {
     "label": "gstack",
     "artifactPrefix": "gstack"
@@ -10,11 +10,7 @@
     "commit": "c6e6a21d1a9a58e771403260ff6a134898f2dd02",
     "version": "0.16.3.0"
   },
-  "projectDefaults": {
-    "claude": "required",
-    "codex": "required",
-    "gemini": "required"
-  },
+  "projectDefaults": {},
   "hosts": {
     "claude": {
       "autoInstall": true,

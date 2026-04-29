@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.5] - 2026-04-28
+
+### Changed
+- Codex 默认运行时收敛为 core skills only：当前项目不再默认声明或安装 gstack，减少 Codex skill context 占用。
+- gstack 保留为可选 project pack，仅在 `.code-abyss/packs.lock.json` 显式声明时安装。
+- Codex skill metadata 默认路径统一到 `~/.codex/skills/`。
+- package description、README、DESIGN、CLAUDE 与 pack 文档同步到当前 21 skills / 5 styles 口径。
+
+### Fixed
+- 质量检查器不再把 `bin/` 下带 Node shebang 的 CLI 编排入口按普通业务模块的 500 行阈值误报为文件过长。
+- 安全扫描器不再把 CLI 正常输出使用的 `console.log` 误报为调试残留；调试规则聚焦 `debugger` / `pdb.set_trace` / `breakpoint`。
+- 增加 docs drift 回归，防止 README 或项目 lock 再次默认启用 gstack。
+
+### Verification
+- Jest: **22 suites / 220 tests passed**（1 skipped）
+- Skill contract gate: `npm run verify:skills` — 21 skills 通过
+- Pack gate: `npm run packs:check` — 通过
+- Quality gate: `quality_checker.js . --json` — 0 warnings
+- Security gate: `security_scanner.js . --json` — 0 findings
+
 ## [2.0.9] - 2026-04-13
 
 ### Fixed

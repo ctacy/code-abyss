@@ -17,7 +17,7 @@ const {
 } = require('./gstack-codex');
 
 function readFrontmatterBlock(content) {
-  const normalized = String(content || '').replace(/\r/g, '');
+  const normalized = String(content || '').replace(/\r\n/g, '\n');
   const fmStart = normalized.indexOf('---\n');
   if (fmStart !== 0) return null;
   const fmEnd = normalized.indexOf('\n---', fmStart + 4);

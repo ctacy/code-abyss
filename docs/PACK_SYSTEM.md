@@ -23,7 +23,7 @@ The system has four main flows:
 ### Host roots
 
 - Claude: `~/.claude/`
-- Codex: `~/.codex/` plus `~/.agents/`
+- Codex: `~/.codex/` for core skills; optional packs may declare additional roots such as `~/.agents/`
 - Gemini: `~/.gemini/`
 
 ### Project declaration

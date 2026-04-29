@@ -9,118 +9,57 @@ allowed-tools: Bash, Read, Glob
 argument-hint: <扫描路径>
 ---
 
-# ⚖ 校验关卡 · 代码质量
+# 代码质量校验关卡
 
-
-## 核心原则
-
-```
-代码质量 = 可读性 + 可维护性 + 可测试性
-劣质代码是技术债，技术债是道基裂痕
-复杂度是 bug 的温床
-```
-
-## 自动检查
-
-运行质量检查脚本（跨平台）：
+## 命令
 
 ```bash
-# 在 skill 目录下运行
-node scripts/quality_checker.js <扫描路径>
-node scripts/quality_checker.js <扫描路径> -v      # 详细模式
-node scripts/quality_checker.js <扫描路径> --json  # JSON 输出
+node scripts/quality_checker.js <路径>
+node scripts/quality_checker.js <路径> -v      # 详细
+node scripts/quality_checker.js <路径> --json  # JSON
 ```
 
 ## 检测指标
 
-### 复杂度指标
-
-| 指标 | 阈值 | 超标后果 |
+| 指标 | 阈值 | 超标处置 |
 |------|------|----------|
-| **圈复杂度** | ≤ 10 | 🟠 警告，建议拆分 |
-| **函数长度** | ≤ 50 行 | 🟠 警告，建议拆分 |
-| **文件长度** | ≤ 500 行 | 🟡 提示，考虑拆分 |
-| **参数数量** | ≤ 5 | 🟠 警告，考虑封装 |
-| **嵌套深度** | ≤ 4 | 🟠 警告，建议重构 |
-| **行长度** | ≤ 120 | 🔵 提示 |
+| 圈复杂度 | <=10 | 拆分函数 |
+| 函数长度 | <=50 行 | 提取子函数 |
+| 文件长度 | <=500 行 | 拆分模块 |
+| 参数数量 | <=5 | 封装对象 |
+| 嵌套深度 | <=4 | 早返回/提取 |
+| 行长度 | <=120 | 换行 |
 
-### 命名规范
+## 代码异味
 
-| 类型 | 规范 | 示例 |
-|------|------|------|
-| **类名** | PascalCase | `UserService`, `HttpClient` |
-| **函数名** | snake_case | `get_user`, `process_data` |
-| **常量** | UPPER_SNAKE | `MAX_RETRY`, `DEFAULT_TIMEOUT` |
-| **变量** | snake_case | `user_id`, `total_count` |
+| 异味 | 严重度 | 处置 |
+|------|--------|------|
+| 重复代码 >10 行 | High | 提取公共函数 |
+| 参数 >5 个 | Medium | 封装参数对象 |
+| 魔法数字 | Medium | 提取常量 |
+| 死代码/注释代码块 | Low | 删除 |
 
-### 代码异味
+说明：`bin/` 下带 Node shebang 的 CLI 入口文件按命令编排层处理，不参与文件长度阈值；其业务逻辑仍应优先下沉到 `bin/lib/`。
 
-| 异味 | 说明 | 严重度 |
-|------|------|--------|
-| 重复代码 | 相似代码块 > 10 行 | 🟠 High |
-| 过长参数列表 | 参数 > 5 个 | 🟡 Medium |
-| 魔法数字 | 未命名的常量 | 🟡 Medium |
-| 死代码 | 未使用的函数/变量 | 🔵 Low |
-| 注释代码 | 被注释的代码块 | 🔵 Low |
+## 命名规范
 
-## 校验流程
+类名 PascalCase | 函数 snake_case/camelCase | 常量 UPPER_SNAKE | 变量 snake_case/camelCase
 
-```
-1. 扫描代码文件
-2. 计算复杂度指标
-3. 检测代码异味
-4. 验证命名规范
-5. 输出质量校验报告
-```
-
-报告格式以 `quality_checker.js` 的实际输出为准，不在秘典里重复维护静态模板。
-
-## 重构建议
-
-### 降低复杂度
+## 重构范式
 
 ```python
-# 🔴 高复杂度 - 道基不稳
+# 深嵌套 → 早返回
 def process(data):
-    if condition1:
-        if condition2:
-            if condition3:
-                # 深层嵌套
-                pass
-
-# ✅ 低复杂度 - 道基稳固
-def process(data):
-    if not condition1:
-        return
-    if not condition2:
-        return
-    if not condition3:
-        return
+    if not c1: return
+    if not c2: return
     # 主逻辑
+
+# 重复 → 提取
+def common(): ...
+def f1(): common()
+def f2(): common()
 ```
 
-### 消除重复
+## 触发条件
 
-```python
-# 🔴 重复代码 - 异端
-def func1():
-    # 10行相同逻辑
-    pass
-
-def func2():
-    # 10行相同逻辑
-    pass
-
-# ✅ 提取公共函数 - 正道
-def common_logic():
-    # 公共逻辑
-    pass
-
-def func1():
-    common_logic()
-
-def func2():
-    common_logic()
-```
-
----
+复杂模块 | 重构完成 | 提交前。报告以 `quality_checker.js` 实际输出为准。

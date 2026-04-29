@@ -21,6 +21,15 @@ const COMMENT_PREFIXES = {
   '.c': '//', '.cpp': '//', '.rs': '//',
 };
 
+function isCliEntrypoint(filePath, content) {
+  const normalized = filePath.split(path.sep).join('/');
+  return normalized.includes('/bin/') && content.startsWith('#!/usr/bin/env node');
+}
+
+function shouldCheckFileLength(filePath, content) {
+  return !isCliEntrypoint(filePath, content);
+}
+
 // --- Analysis ---
 
 function analyzeGenericFile(filePath) {
@@ -61,7 +70,7 @@ function analyzeGenericFile(filePath) {
     }
   }
 
-  if (metrics.code_lines > MAX_FILE_LENGTH) {
+  if (shouldCheckFileLength(filePath, content) && metrics.code_lines > MAX_FILE_LENGTH) {
     issues.push({
       severity: 'warning', category: '复杂度',
       message: `文件过长 (${metrics.code_lines} 行代码 > ${MAX_FILE_LENGTH})`,
@@ -118,7 +127,7 @@ function analyzePythonFile(filePath) {
     }
   }
 
-  if (metrics.code_lines > MAX_FILE_LENGTH) {
+  if (shouldCheckFileLength(filePath, content) && metrics.code_lines > MAX_FILE_LENGTH) {
     issues.push({
       severity: 'warning', category: '复杂度',
       message: `文件过长 (${metrics.code_lines} 行代码 > ${MAX_FILE_LENGTH})`,

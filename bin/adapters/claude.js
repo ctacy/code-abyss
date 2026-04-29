@@ -34,11 +34,11 @@ const SETTINGS_TEMPLATE = {
   }
 };
 
-const CCLINE_CMD = process.platform === 'win32' ? 'ccline' : '~/.claude/ccline/ccline';
-const CCLINE_STATUS_LINE = {
+const CCSTATUSLINE_CMD = 'npx -y ccstatusline@latest';
+const CCSTATUSLINE_CONFIG = {
   statusLine: {
     type: 'command',
-    command: CCLINE_CMD,
+    command: CCSTATUSLINE_CMD,
     padding: 0
   }
 };
@@ -119,7 +119,7 @@ async function postClaude({
   c,
   deepMergeNew,
   printMergeLog,
-  installCcline
+  installCcstatusline
 }) {
   step(2, 3, '认证检测');
   const auth = detectClaudeAuth({ settings: ctx.settings, HOME, warn });
@@ -135,7 +135,7 @@ async function postClaude({
   if (autoYes) {
     info('自动模式: 合并推荐配置');
     mergeSettings(ctx, { deepMergeNew, printMergeLog, c, ok });
-    await installCcline(ctx, { HOME, PKG_ROOT, CCLINE_STATUS_LINE, ok, warn, info, c });
+    await installCcstatusline(ctx, { HOME, PKG_ROOT, CCSTATUSLINE_CONFIG, ok, warn, info, c });
     return;
   }
 
@@ -144,22 +144,22 @@ async function postClaude({
     message: '选择要安装的配置 (空格选择, 回车确认)',
     choices: [
       { name: '精细合并推荐 settings.json (保留现有配置)', value: 'settings', checked: true },
-      { name: '安装 ccline 状态栏 (需要 Nerd Font)', value: 'ccline', checked: true },
+      { name: '安装 ccstatusline 状态栏 (需要 Nerd Font)', value: 'ccstatusline', checked: true },
     ],
   });
 
   if (choices.includes('settings')) {
     mergeSettings(ctx, { deepMergeNew, printMergeLog, c, ok });
   }
-  if (choices.includes('ccline')) {
-    await installCcline(ctx, { HOME, PKG_ROOT, CCLINE_STATUS_LINE, ok, warn, info, c });
+  if (choices.includes('ccstatusline')) {
+    await installCcstatusline(ctx, { HOME, PKG_ROOT, CCSTATUSLINE_CONFIG, ok, warn, info, c });
   }
 }
 
 module.exports = {
   SETTINGS_TEMPLATE,
   resolveSettingsTemplate,
-  CCLINE_STATUS_LINE,
+  CCSTATUSLINE_CONFIG,
   getClaudeCoreFiles,
   detectClaudeAuth,
   configureCustomProvider,

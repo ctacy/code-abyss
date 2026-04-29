@@ -9,24 +9,22 @@
   "version": 1,
   "hosts": {
     "claude": {
-      "required": ["gstack"],
+      "required": [],
       "optional": [],
       "optional_policy": "auto",
-      "sources": {
-        "gstack": "pinned"
-      }
+      "sources": {}
     },
     "codex": {
-      "required": ["gstack"],
+      "required": [],
       "optional": [],
       "optional_policy": "auto",
-      "sources": {
-        "gstack": "pinned"
-      }
+      "sources": {}
     }
   }
 }
 ```
+
+Declare external packs explicitly when a project needs them, for example with `optional=["gstack"]` or `required=["gstack"]` plus `sources.gstack`.
 
 ## Fields
 

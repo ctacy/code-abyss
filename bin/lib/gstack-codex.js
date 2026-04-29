@@ -15,7 +15,7 @@ const GSTACK_RUNTIME_EXTRA_DIRS = new Set(['references', 'templates', 'specialis
 const GSTACK_FRONTMATTER_DESCRIPTION_LIMIT = 240;
 
 function normalizeEol(content) {
-  return String(content || '').replace(/\r/g, '');
+  return String(content || '').replace(/\r\n/g, '\n');
 }
 
 function getGstackConfig(hostName = 'codex', projectRoot = PROJECT_ROOT) {

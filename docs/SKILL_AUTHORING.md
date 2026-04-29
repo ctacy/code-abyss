@@ -59,7 +59,7 @@ These conditions fail `collectSkills()`, `npm run verify:skills`, and CI:
 1. scan and normalize `skills/**/SKILL.md`
 2. filter `user-invocable=true`
 3. generate Claude commands
-4. install Codex skills under `~/.agents/skills/`
+4. install Codex skills under `~/.codex/skills/`
 5. execute scripted entries via `run_skill.js`
 
 ## Author checklist

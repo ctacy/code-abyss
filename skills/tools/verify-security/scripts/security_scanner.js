@@ -131,7 +131,7 @@ const SECURITY_RULES = [
   },
   {
     id: 'DEBUG_CODE', category: '调试', severity: 'low',
-    pattern: /\b(console\.log|debugger|pdb\.set_trace|breakpoint)\s*\(/i,
+    pattern: /\b(debugger|pdb\.set_trace|breakpoint)\s*\(/i,
     extensions: ['.py', '.js', '.ts'],
     message: '发现调试代码',
     recommendation: '生产环境移除调试代码',

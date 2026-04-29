@@ -1,0 +1,43 @@
+{
+  "version": 3,
+  "lines": [
+    [
+      { "id": "1", "type": "model", "color": "cyan", "rawValue": true },
+      { "id": "2", "type": "separator" },
+      { "id": "3", "type": "custom-symbol", "color": "green", "customSymbol": "↑", "merge": true },
+      { "id": "4", "type": "tokens-input", "color": "green", "rawValue": true, "merge": true },
+      { "id": "5", "type": "custom-text", "color": "brightBlack", "customText": " ", "merge": true },
+      { "id": "6", "type": "custom-symbol", "color": "yellow", "customSymbol": "↓", "merge": true },
+      { "id": "7", "type": "tokens-output", "color": "yellow", "rawValue": true, "merge": true },
+      { "id": "8", "type": "custom-text", "color": "brightBlack", "customText": " ", "merge": true },
+      { "id": "9", "type": "custom-symbol", "color": "magenta", "customSymbol": "⊡", "merge": true },
+      { "id": "10", "type": "tokens-cached", "color": "magenta", "rawValue": true },
+      { "id": "11", "type": "separator" },
+      { "id": "12", "type": "context-length", "color": "brightBlack", "rawValue": true, "merge": true },
+      { "id": "12b", "type": "custom-text", "color": "brightBlack", "customText": " ", "merge": true },
+      { "id": "12c", "type": "context-percentage", "color": "brightBlack", "rawValue": true }
+    ],
+    [
+      { "id": "13", "type": "git-root-dir", "color": "blue", "rawValue": true },
+      { "id": "14", "type": "separator" },
+      { "id": "15", "type": "session-cost", "color": "green" },
+      { "id": "16", "type": "separator" },
+      { "id": "17", "type": "session-clock", "color": "brightBlack" }
+    ]
+  ],
+  "flexMode": "full-minus-40",
+  "compactThreshold": 60,
+  "colorLevel": 1,
+  "inheritSeparatorColors": false,
+  "globalBold": false,
+  "minimalistMode": false,
+  "powerline": {
+    "enabled": false,
+    "separators": [],
+    "separatorInvertBackground": [],
+    "startCaps": [],
+    "endCaps": [],
+    "autoAlign": false,
+    "continueThemeAcrossLines": false
+  }
+}

@@ -44,7 +44,7 @@ CI runs on Node 18/20/22: `npm ci && npm test && npm run verify:skills` plus all
 | Output Style | `output-styles/*.md` + `index.json` | Style registry + per-style templates |
 | Knowledge | `skills/**/*.md` | Domain skill documents + executable tools |
 
-`config/AGENTS.md` remains a repository snapshot, but Codex runtime installation no longer writes a generated `~/.codex/AGENTS.md`. Codex now runs in a `skills-only` shape and installs Code Abyss plus gstack under `~/.agents/skills/`.
+`config/AGENTS.md` remains a repository snapshot. Codex runtime installation writes a generated `~/.codex/AGENTS.md` containing persona + output style, and installs Code Abyss core skills under `~/.codex/skills/`.
 
 ### Skill Registry (Single Source of Truth)
 
@@ -59,7 +59,7 @@ CI runs on Node 18/20/22: `npm ci && npm test && npm run verify:skills` plus all
 
 ### Pack Registry
 
-`packs/*/manifest.json` defines installable packs. `abyss` is the core pack; `gstack` is a pinned upstream pack consumed by the Claude/Codex auto-install flows. `bin/lib/pack-registry.js` is the source of truth for host file mappings and upstream metadata.
+`packs/*/manifest.json` defines installable packs. `abyss` is the core pack; `gstack` is an optional pinned upstream pack installed only when a project lock declares it. `bin/lib/pack-registry.js` is the source of truth for host file mappings and upstream metadata.
 
 Project-level automatic pack sync is driven by `.code-abyss/packs.lock.json`. The installer reads the nearest lock file from the current working directory upward and installs host-specific packs according to `required`, `optional`, `optional_policy`, and `sources`. `node bin/packs.js bootstrap` initializes the lock plus README/CONTRIBUTING snippets, `--apply-docs` writes them back into repo docs, `vendor-pull` / `vendor-sync` manage local sources, `vendor-sync --check` acts as a gate, `report summary` reads `.code-abyss/reports/`, and `uninstall <pack>` removes pack-specific runtime artifacts with a report.
 
@@ -72,7 +72,7 @@ Project-level automatic pack sync is driven by `.code-abyss/packs.lock.json`. Th
 The installer generates different artifacts per target CLI:
 
 - **Claude**: `~/.claude/commands/*.md` (slash commands) — `runtimeType=scripted` calls `run_skill.js`, `knowledge` reads SKILL.md directly
-- **Codex**: `~/.agents/skills/**/SKILL.md` — Codex discovers user skills from `~/.agents/skills`; Code Abyss auto-installs an embedded gstack runtime under `~/.agents/skills/gstack`
+- **Codex**: `~/.codex/skills/**/SKILL.md` — Code Abyss installs core skills directly under the Codex managed skills directory; optional packs may add their own runtime artifacts when declared
 - **Gemini**: `~/.gemini/GEMINI.md` + `~/.gemini/commands/*.toml` + `~/.gemini/skills/**/SKILL.md` — Gemini reads persistent context from `GEMINI.md` and custom commands from TOML files
 
 Claude command generation and Codex skill installation share the same skill source tree; only Claude filters on `user-invocable` to emit slash commands.
@@ -82,7 +82,7 @@ Claude command generation and Codex skill installation share the same skill sour
 `bin/install.js` is the orchestration layer. Target-specific logic lives in adapters:
 - `bin/adapters/claude.js` — Claude auth detection, settings merge, core files mapping
 - `bin/adapters/codex.js` — Codex auth detection, config.toml merge, core files mapping
-- `bin/lib/ccline.js` — Claude status bar (ccline) integration
+- `bin/lib/ccstatusline.js` — Claude status bar (ccstatusline) integration
 - `bin/lib/style-registry.js` — Style catalog + repository AGENTS snapshot assembly
 - `bin/lib/utils.js` — Shared: `copyRecursive`, `rmSafe`, `deepMergeNew`, `parseFrontmatter`, `shouldSkip`
 
@@ -131,7 +131,7 @@ aliases: vq                    # optional comma-separated aliases
 | Target | Config file | Skill artifacts | Style mechanism |
 |--------|-------------|-----------------|-----------------|
 | Claude | `~/.claude/CLAUDE.md` | `~/.claude/commands/*.md` + `~/.claude/skills/` | `settings.json.outputStyle` = slug |
-| Codex | `~/.codex/config.toml` | `~/.agents/skills/` + `~/.agents/skills/gstack/` | Skills-only runtime; no generated AGENTS.md |
+| Codex | `~/.codex/config.toml` | `~/.codex/skills/` | `~/.codex/AGENTS.md` (persona + style) |
 | Gemini | `~/.gemini/settings.json` | `~/.gemini/GEMINI.md` + `~/.gemini/commands/*.toml` + `~/.gemini/skills/` | Global context + TOML command runtime |
 
 Backups go to `<target-dir>/.sage-backup/` with `manifest.json`. Uninstall restores from backup.

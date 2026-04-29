@@ -62,8 +62,8 @@ describe('pack registry', () => {
 
     expect(getPackHostFiles(projectRoot, 'abyss', 'codex')).toEqual([
       { src: 'config/instruction.md', dest: 'instruction.md', root: 'codex' },
-      { src: 'skills', dest: 'skills', root: 'agents' },
-      { src: 'bin/lib', dest: 'bin/lib', root: 'agents' },
+      { src: 'skills', dest: 'skills', root: 'codex' },
+      { src: 'bin/lib', dest: 'bin/lib', root: 'codex' },
     ]);
   });
 
@@ -79,26 +79,26 @@ describe('pack registry', () => {
   test('按 host 解析项目级 required/optional packs', () => {
     expect(resolveProjectPacks(projectRoot, 'claude')).toMatchObject({
       root: projectRoot,
-      required: ['gstack'],
+      required: [],
       optional: [],
       optionalPolicy: 'auto',
-      sources: { gstack: 'pinned' },
+      sources: {},
     });
 
     expect(resolveProjectPacks(projectRoot, 'codex')).toMatchObject({
       root: projectRoot,
-      required: ['gstack'],
+      required: [],
       optional: [],
       optionalPolicy: 'auto',
-      sources: { gstack: 'pinned' },
+      sources: {},
     });
 
     expect(resolveProjectPacks(projectRoot, 'gemini')).toMatchObject({
       root: projectRoot,
-      required: ['gstack'],
+      required: [],
       optional: [],
       optionalPolicy: 'auto',
-      sources: { gstack: 'pinned' },
+      sources: {},
     });
   });
 

@@ -67,12 +67,14 @@ function resolvePersona(projectRoot, slug) {
   return personas.find(p => p.slug === slug) || null;
 }
 
-function readPersonaContent(projectRoot, persona) {
+function readPersonaContent(projectRoot, persona, includeLocal = false) {
   const personaPath = path.join(projectRoot, 'config', 'personas', persona.file);
   let content = fs.readFileSync(personaPath, 'utf8');
-  const localOverlayPath = path.join(projectRoot, 'config', 'CLAUDE.local.md');
-  if (fs.existsSync(localOverlayPath)) {
-    content += '\n' + fs.readFileSync(localOverlayPath, 'utf8');
+  if (includeLocal) {
+    const localOverlayPath = path.join(projectRoot, 'config', 'CLAUDE.local.md');
+    if (fs.existsSync(localOverlayPath)) {
+      content += '\n' + fs.readFileSync(localOverlayPath, 'utf8');
+    }
   }
   return content;
 }

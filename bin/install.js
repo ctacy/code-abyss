@@ -832,7 +832,7 @@ function installCore(tgt, selectedStyle, selectedPersona, packPlan) {
 
   // 根据独立选择的 persona 覆盖 CLAUDE.md / GEMINI.md
   if (selectedPersona) {
-    const personaContent = readPersonaContent(PKG_ROOT, selectedPersona);
+    const personaContent = readPersonaContent(PKG_ROOT, selectedPersona, true);
     if (tgt === 'claude') {
       const claudeMdPath = path.join(targetDir, 'CLAUDE.md');
       fs.writeFileSync(claudeMdPath, personaContent);

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- Codex 推荐配置同步到当前 CLI 预设口径：默认 `workspace-write`，并内置 `full_auto` / `full_access` 显式 profiles。
+- 交互式安装 TUI 改为简约两步式组件：先多选目标，再选择 Install / Remove；安装多个 target 时只选择一次 persona / style 并应用到全部目标，persona / style 支持 Tab 横向切换。
+- README、中文 README 与 DESIGN 补充 `codex -p full_access` 用法，避免依赖已移除的 full access UI 预设。
+
 ## [2.1.8] - 2026-04-29
 
 ### Added

@@ -237,7 +237,7 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 #### 2. 沙箱感知执行模型（第七章）
 
 - 问题：Codex CLI 运行在 OS 级沙箱中（workspace-write + 网络禁用），提示词未感知此约束，导致执行受阻时缺乏应对策略。
-- 决策：新增沙箱感知章节，定义默认态、审批高效模式（批量脚本/先读后改/优先编辑）、受阻处理（声明路径/端点/替代位置）。
+- 决策：新增沙箱感知章节，定义默认态、审批高效模式（批量脚本/先读后改/优先编辑）、受阻处理（声明路径/端点/替代位置）；Codex 推荐配置同时提供 `full_auto` 与 `full_access` 显式 profile，避免依赖客户端 UI 预设名称。
 - 取舍：增加提示词长度约 30 行，换取沙箱环境下的执行效率显著提升。
 - 灵感来源：coff0xc.xyz 的 "Sandbox Execution Model" 与 "Approval-efficient patterns"。
 

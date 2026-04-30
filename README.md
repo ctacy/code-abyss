@@ -45,6 +45,8 @@ The installer generates target-specific artifacts for each CLI:
 | Gemini | `~/.gemini/GEMINI.md` + `settings.json` | `~/.gemini/commands/*.toml` + `~/.gemini/skills/` | `GEMINI.md` |
 | OpenClaw | `~/.openclaw/openclaw.json` + `<workspace>/AGENTS.md` + `<workspace>/SOUL.md` | `~/.openclaw/skills/` | `SOUL.md` |
 
+Codex config now ships explicit presets: `full_auto` (`workspace-write` + `on-request`) and `full_access` (`danger-full-access` + `on-request`). Use `codex -p full_access` when you really need full filesystem access without relying on removed UI presets.
+
 ## Personas
 
 5 switchable personas, each with a distinct character, interaction style, and shared proactive assistance bias:

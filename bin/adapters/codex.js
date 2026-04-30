@@ -12,8 +12,21 @@ const CODEX_DEFAULTS = {
   allowLoginShell: true,
   cliAuthCredentialsStore: 'file',
   modelInstructionsFile: './instruction.md',
-  sandboxMode: 'read-only',
+  sandboxMode: 'workspace-write',
   webSearch: 'cached',
+};
+
+const CODEX_DEFAULT_PROFILES = {
+  full_auto: {
+    approval_policy: '"on-request"',
+    sandbox_mode: '"workspace-write"',
+    web_search: '"cached"',
+  },
+  full_access: {
+    approval_policy: '"on-request"',
+    sandbox_mode: '"danger-full-access"',
+    web_search: '"live"',
+  },
 };
 
 const LEGACY_FEATURES = {
@@ -153,6 +166,24 @@ function ensureKeyInSection(content, sectionName, key, valueLiteral, eol) {
   } else if (!hasKeyInSection(merged, sectionName, key)) {
     merged = insertLineAfterSectionHeader(merged, sectionName, `${key} = ${valueLiteral}`, eol);
     added = true;
+  }
+
+  return { merged, added };
+}
+
+function ensureCodexDefaultProfiles(content, eol) {
+  let merged = content;
+  const added = [];
+
+  for (const [profile, values] of Object.entries(CODEX_DEFAULT_PROFILES)) {
+    for (const [key, value] of Object.entries(values)) {
+      const sectionName = `profiles.${profile}`;
+      const ensured = ensureKeyInSection(merged, sectionName, key, value, eol);
+      merged = ensured.merged;
+      if (ensured.added) {
+        added.push(`${sectionName}.${key}`);
+      }
+    }
   }
 
   return { merged, added };
@@ -387,6 +418,10 @@ function mergeCodexConfigDefaults(content) {
     added.push('web_search');
   }
 
+  const profiles = ensureCodexDefaultProfiles(merged, eol);
+  merged = profiles.merged;
+  added.push(...profiles.added);
+
   return { merged, added };
 }
 
@@ -499,7 +534,7 @@ async function postCodex({
       if (fs.existsSync(src)) {
         fs.copyFileSync(src, cfgPath);
         ok('写入: ~/.codex/config.toml (模板)');
-        info('默认值已对齐当前 Codex 样例；如需高自动化全开，可切到 `codex -p abyss`');
+        info('默认值已对齐当前 Codex 样例；如需显式全权限，可切到 `codex -p full_access`');
       }
     } else {
       patchAndReportCodexDefaults({ cfgPath, ok, warn });
@@ -515,7 +550,7 @@ async function postCodex({
       if (fs.existsSync(src)) {
         fs.copyFileSync(src, cfgPath);
         ok('写入: ~/.codex/config.toml');
-        info('默认值已对齐当前 Codex 样例；如需高自动化全开，可切到 `codex -p abyss`');
+        info('默认值已对齐当前 Codex 样例；如需显式全权限，可切到 `codex -p full_access`');
       }
     }
   } else {

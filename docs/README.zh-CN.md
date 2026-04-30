@@ -43,6 +43,8 @@ Code Abyss 是一个三层配置系统：
 | Gemini | `~/.gemini/GEMINI.md` + `settings.json` | `~/.gemini/commands/*.toml` + `~/.gemini/skills/` | `GEMINI.md` |
 | OpenClaw | `~/.openclaw/openclaw.json` + `<workspace>/AGENTS.md` + `<workspace>/SOUL.md` | `~/.openclaw/skills/` | `SOUL.md` |
 
+Codex 配置现在内置显式预设：`full_auto`（`workspace-write` + `on-request`）与 `full_access`（`danger-full-access` + `on-request`）。需要完整文件系统访问时使用 `codex -p full_access`，不再依赖已移除的 UI 预设。
+
 ## 人格系统
 
 5 个可切换人格，各有独特的性格、交互风格，并共享“主动补位、顺手闭环”的执行倾向：

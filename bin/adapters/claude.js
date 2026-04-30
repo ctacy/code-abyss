@@ -34,7 +34,7 @@ const SETTINGS_TEMPLATE = {
   }
 };
 
-const CCSTATUSLINE_CMD = 'npx -y ccstatusline@latest';
+const CCSTATUSLINE_CMD = 'ccline';
 const CCSTATUSLINE_CONFIG = {
   statusLine: {
     type: 'command',

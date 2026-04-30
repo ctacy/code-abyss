@@ -69,7 +69,12 @@ function resolvePersona(projectRoot, slug) {
 
 function readPersonaContent(projectRoot, persona) {
   const personaPath = path.join(projectRoot, 'config', 'personas', persona.file);
-  return fs.readFileSync(personaPath, 'utf8');
+  let content = fs.readFileSync(personaPath, 'utf8');
+  const localOverlayPath = path.join(projectRoot, 'config', 'CLAUDE.local.md');
+  if (fs.existsSync(localOverlayPath)) {
+    content += '\n' + fs.readFileSync(localOverlayPath, 'utf8');
+  }
+  return content;
 }
 
 function loadStyleRegistry(projectRoot) {

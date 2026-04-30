@@ -1,6 +1,6 @@
 {
   "name": "code-abyss-sc",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "description": "为 Claude Code / Codex CLI 注入可切换人格、5种输出风格与21个工程技能",
   "keywords": [
     "claude",

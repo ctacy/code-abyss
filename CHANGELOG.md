@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.10] - 2026-05-13
+
+### Added
+- 新增 Coff0xc 防御安全扩展：在 `skills/domains/security/` 下加入 12 篇授权防御参考文档（AppSec、云/DevSecOps、检测响应、漏洞生命周期、身份零信任、授权评估、逆向/移动/IoT、区块链、合规架构、紫队、网络协议安全 + 总索引），并扩展 security domain 路由。
+- 新增 `NOTICE.coff0xc-security.md` 与 `THIRD_PARTY_LICENSES/Apache-2.0-coffee-skill.txt`，记录上游 `coffee-skill` 的 Apache-2.0 归属，完整许可证全文随仓库与 npm 包分发。
+- `package.json` `files` 字段纳入 `THIRD_PARTY_LICENSES/` 与 `NOTICE.coff0xc-security.md`，确保 npm 再分发时一并携带归因材料。
+
+### Changed
+- README 与 `docs/README.zh-CN.md` 的能力矩阵与许可证段同步标注 Coff0xc 安全扩展与 Apache-2.0 来源。
+
+### Fixed
+- `test/install-tui.test.js` 由 stdout marker 驱动等待，不再依赖绝对 delay；同时清理 `ANTHROPIC_*` env 让测试始终走"未认证"路径，解决 CI 上 jest 5s 默认超时导致的 flaky 失败。
+
 ## [2.1.9] - 2026-04-30
 
 ### Changed

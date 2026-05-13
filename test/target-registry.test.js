@@ -10,8 +10,8 @@ const {
 
 describe('target registry', () => {
   test('安装目标注册表稳定输出', () => {
-    expect(listInstallTargets().map((target) => target.name)).toEqual(['claude', 'codex', 'gemini']);
-    expect(listTargetNames()).toEqual(['claude', 'codex', 'gemini']);
+    expect(listInstallTargets().map((target) => target.name)).toEqual(['claude', 'codex', 'gemini', 'openclaw']);
+    expect(listTargetNames()).toEqual(['claude', 'codex', 'gemini', 'openclaw']);
   });
 
   test('支持检测与 managed roots 一致', () => {
@@ -22,7 +22,7 @@ describe('target registry', () => {
   });
 
   test('target 列表可复用于 CLI 帮助文案', () => {
-    expect(formatTargetList('|')).toBe('claude|codex|gemini');
-    expect(formatTargetList('、')).toBe('claude、codex、gemini');
+    expect(formatTargetList('|')).toBe('claude|codex|gemini|openclaw');
+    expect(formatTargetList('、')).toBe('claude、codex、gemini、openclaw');
   });
 });

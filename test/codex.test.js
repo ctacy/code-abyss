@@ -110,12 +110,18 @@ describe('codex adapter', () => {
       'model_instructions_file',
       'sandbox_mode',
       'web_search',
+      'profiles.full_auto.approval_policy',
+      'profiles.full_auto.sandbox_mode',
+      'profiles.full_auto.web_search',
+      'profiles.full_access.approval_policy',
+      'profiles.full_access.sandbox_mode',
+      'profiles.full_access.web_search',
     ]);
     expect(merged).toContain('approval_policy = "on-request"');
     expect(merged).toContain('allow_login_shell = true');
     expect(merged).toContain('cli_auth_credentials_store = "file"');
     expect(merged).toContain('model_instructions_file = "./instruction.md"');
-    expect(merged).toContain('sandbox_mode = "read-only"');
+    expect(merged).toContain('sandbox_mode = "workspace-write"');
     expect(merged).toContain('web_search = "cached"');
   });
 
@@ -136,12 +142,20 @@ describe('codex adapter', () => {
       'cli_auth_credentials_store',
       'model_instructions_file',
       'web_search',
+      'profiles.full_auto.approval_policy',
+      'profiles.full_auto.sandbox_mode',
+      'profiles.full_auto.web_search',
+      'profiles.full_access.approval_policy',
+      'profiles.full_access.sandbox_mode',
+      'profiles.full_access.web_search',
     ]);
     expect(merged).toContain('sandbox_mode = "workspace-write"');
     expect(merged).toContain('[profiles.abyss]');
     expect(merged).toContain('sandbox_mode = "danger-full-access"');
     expect(merged).toContain('approval_policy = "never"');
     expect(merged).not.toContain('sandbox_mode = "read-only"');
+    expect(merged).toContain('[profiles.full_auto]');
+    expect(merged).toContain('[profiles.full_access]');
   });
 
   test('mergeCodexConfigDefaults: 保留 profiles.* 中合法 root-like 键', () => {
@@ -161,6 +175,12 @@ describe('codex adapter', () => {
       'model_instructions_file',
       'sandbox_mode',
       'web_search',
+      'profiles.full_auto.approval_policy',
+      'profiles.full_auto.sandbox_mode',
+      'profiles.full_auto.web_search',
+      'profiles.full_access.approval_policy',
+      'profiles.full_access.sandbox_mode',
+      'profiles.full_access.web_search',
     ]);
     expect(merged).toContain('[profiles.safe]');
     expect(merged).toContain('approval_policy = "on-request"');
@@ -183,12 +203,18 @@ describe('codex adapter', () => {
       'model_instructions_file',
       'sandbox_mode',
       'web_search',
+      'profiles.full_auto.approval_policy',
+      'profiles.full_auto.sandbox_mode',
+      'profiles.full_auto.web_search',
+      'profiles.full_access.approval_policy',
+      'profiles.full_access.sandbox_mode',
+      'profiles.full_access.web_search',
     ]);
     expect(saved).toContain('approval_policy = "on-request"');
     expect(saved).toContain('allow_login_shell = true');
     expect(saved).toContain('cli_auth_credentials_store = "file"');
     expect(saved).toContain('model_instructions_file = "./instruction.md"');
-    expect(saved).toContain('sandbox_mode = "read-only"');
+    expect(saved).toContain('sandbox_mode = "workspace-write"');
     expect(saved).toContain('web_search = "cached"');
   });
 
@@ -253,6 +279,12 @@ describe('codex adapter', () => {
       'cli_auth_credentials_store',
       'model_instructions_file',
       'sandbox_mode',
+      'profiles.full_auto.approval_policy',
+      'profiles.full_auto.sandbox_mode',
+      'profiles.full_auto.web_search',
+      'profiles.full_access.approval_policy',
+      'profiles.full_access.sandbox_mode',
+      'profiles.full_access.web_search',
     ]);
     expect(report.removed.sort()).toEqual(['remote_models', 'web_search_request']);
     expect(report.migrated).toEqual(['web_search=live']);
@@ -260,7 +292,7 @@ describe('codex adapter', () => {
     expect(saved).toContain('allow_login_shell = true');
     expect(saved).toContain('cli_auth_credentials_store = "file"');
     expect(saved).toContain('model_instructions_file = "./instruction.md"');
-    expect(saved).toContain('sandbox_mode = "read-only"');
+    expect(saved).toContain('sandbox_mode = "workspace-write"');
     expect(saved).toContain('web_search = "live"');
     expect(saved).not.toContain('remote_models = true');
   });
@@ -282,7 +314,7 @@ describe('codex adapter', () => {
 
     expect(firstSection).toBe('[features]');
     expect(merged.indexOf('approval_policy = "on-request"')).toBeLessThan(merged.indexOf('[features]'));
-    expect(merged.indexOf('sandbox_mode = "read-only"')).toBeLessThan(merged.indexOf('[features]'));
+    expect(merged.indexOf('sandbox_mode = "workspace-write"')).toBeLessThan(merged.indexOf('[features]'));
   });
 
   test('patchCodexConfig: full access 下移除 projects trust_level 段', () => {
@@ -331,7 +363,7 @@ describe('codex adapter', () => {
     const saved = fs.readFileSync(cfgPath, 'utf8');
 
     const rootPrefix = saved.split('[profiles.abyss]')[0];
-    expect(rootPrefix).toContain('sandbox_mode = "read-only"');
+    expect(rootPrefix).toContain('sandbox_mode = "workspace-write"');
     expect(rootPrefix).toContain('approval_policy = "on-request"');
     expect(saved).toContain('[profiles.abyss]\nsandbox_mode = "danger-full-access"\napproval_policy = "never"');
     expect(saved).not.toContain(

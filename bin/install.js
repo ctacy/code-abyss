@@ -68,6 +68,12 @@ const {
   detectGeminiAuth: detectGeminiAuthImpl,
   postGemini: postGeminiFlow,
 } = require(path.join(__dirname, 'adapters', 'gemini.js'));
+const {
+  getOpenClawCoreFiles,
+  resolveOpenClawRuntime,
+  detectOpenClawEnvironment: detectOpenClawEnvironmentImpl,
+  postOpenClaw: postOpenClawFlow,
+} = require(path.join(__dirname, 'adapters', 'openclaw.js'));
 
 // ── ANSI ──
 
@@ -80,38 +86,217 @@ const c = {
   blu: s => `\x1b[34m${s}\x1b[0m`,
   mag: s => `\x1b[35m${s}\x1b[0m`,
   cyn: s => `\x1b[36m${s}\x1b[0m`,
+  wht: s => `\x1b[37m${s}\x1b[0m`,
+  gray: s => `\x1b[90m${s}\x1b[0m`,
 };
 
+function stripAnsi(input) {
+  return String(input).replace(/\x1b\[[0-9;]*m/g, '');
+}
+
+function cell(input, width) {
+  const raw = stripAnsi(input);
+  const pad = Math.max(0, width - raw.length);
+  return `${input}${' '.repeat(pad)}`;
+}
+
 function banner() {
-  console.log(c.mag(`
-   ██████╗ ██████╗ ██████╗ ███████╗
-  ██╔════╝██╔═══██╗██╔══██╗██╔════╝
-  ██║     ██║   ██║██║  ██║█████╗
-  ██║     ██║   ██║██║  ██║██╔══╝
-  ╚██████╗╚██████╔╝██████╔╝███████╗
-   ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
-   █████╗ ██████╗ ██╗   ██╗███████╗███████╗
-  ██╔══██╗██╔══██╗╚██╗ ██╔╝██╔════╝██╔════╝
-  ███████║██████╔╝ ╚████╔╝ ███████╗███████╗
-  ██╔══██║██╔══██╗  ╚██╔╝  ╚════██║╚════██║
-  ██║  ██║██████╔╝   ██║   ███████║███████║
-  ╚═╝  ╚═╝╚═════╝    ╚═╝   ╚══════╝╚══════╝`));
-  console.log(c.d(`  ☠ 邪修红尘仙 · 宿命深渊  v${VERSION}\n`));
+  console.log(`\n${c.mag(c.b('Code Abyss'))} ${c.gray(`v${VERSION}`)} ${c.gray('· Claude / Codex / Gemini / OpenClaw')}\n`);
 }
 
 function divider(title) {
-  const line = '─'.repeat(44);
-  const pad = ' '.repeat(Math.max(0, 43 - title.length));
-  console.log(`\n${c.d('┌' + line + '┐')}`);
-  console.log(`${c.d('│')} ${c.b(title)}${pad}${c.d('│')}`);
-  console.log(`${c.d('└' + line + '┘')}`);
+  console.log(`\n${c.gray('─')} ${c.b(title)}`);
 }
 
-function step(n, total, msg) { console.log(`\n  ${c.cyn(`[${n}/${total}]`)} ${c.b(msg)}`); }
-function ok(msg) { console.log(`  ${c.grn('✔')} ${msg}`); }
-function warn(msg) { console.log(`  ${c.ylw('⚠')} ${msg}`); }
-function info(msg) { console.log(`  ${c.blu('ℹ')} ${msg}`); }
-function fail(msg) { console.log(`  ${c.red('✘')} ${msg}`); }
+function step(n, total, msg) { console.log(`\n  ${c.cyn(`${n}/${total}`)} ${c.b(msg)}`); }
+function ok(msg) { console.log(`  ${c.grn('◆')} ${msg}`); }
+function warn(msg) { console.log(`  ${c.ylw('▲')} ${msg}`); }
+function info(msg) { console.log(`  ${c.cyn('◇')} ${msg}`); }
+function fail(msg) { console.log(`  ${c.red('✖')} ${msg}`); }
+
+const TARGET_ICONS = { claude: '◆', codex: '◇', gemini: '✦', openclaw: '◈' };
+const TARGET_HINTS = {
+  claude: 'CLAUDE.md · output-styles · commands · skills',
+  codex: 'AGENTS.md · instruction.md · config.toml · skills',
+  gemini: 'GEMINI.md · commands · skills',
+  openclaw: '~/.openclaw skills · workspace AGENTS/SOUL',
+};
+const PERSONA_ICONS = { male: '♂', female: '♀', other: '⚧' };
+
+const modernPromptTheme = {
+  prefix: { idle: c.mag('◆'), done: c.grn('◆') },
+  icon: { cursor: c.mag('❯') },
+  style: {
+    answer: (text) => c.cyn(text),
+    message: (text) => c.b(text),
+    help: (text) => c.gray(text),
+    highlight: (text) => c.mag(c.b(text)),
+    description: (text) => c.cyn(text),
+    disabled: (text) => c.gray(text),
+    disabledChoice: (text) => c.gray(text),
+    keysHelpTip: (keys) => c.gray(keys.map(([key, action]) => `${key} ${action}`).join(' · ')),
+  },
+  indexMode: 'hidden',
+};
+
+const modernCheckboxTheme = {
+  ...modernPromptTheme,
+  icon: {
+    cursor: c.mag('❯'),
+    checked: c.grn('◉'),
+    unchecked: c.gray('○'),
+  },
+};
+
+async function promptSelect(config) {
+  const { select } = await import('@inquirer/prompts');
+  return select({
+    loop: false,
+    pageSize: 10,
+    theme: modernPromptTheme,
+    instructions: {
+      navigation: '↑↓ navigate · enter select',
+      pager: '↑↓ navigate · page scroll · enter select',
+    },
+    ...config,
+  });
+}
+
+async function promptCheckbox(config) {
+  const { checkbox } = await import('@inquirer/prompts');
+  return checkbox({
+    loop: false,
+    pageSize: 8,
+    theme: modernCheckboxTheme,
+    shortcuts: { all: null, invert: null },
+    ...config,
+  });
+}
+
+let horizontalSelectPrompt = null;
+
+async function promptHorizontalSelect(config) {
+  if (!horizontalSelectPrompt) {
+    const core = await import('@inquirer/core');
+    const ansi = await import('@inquirer/ansi');
+    const {
+      createPrompt,
+      isDownKey,
+      isEnterKey,
+      isTabKey,
+      isUpKey,
+      makeTheme,
+      useKeypress,
+      useMemo,
+      usePrefix,
+      useState,
+    } = core;
+    const { cursorHide } = ansi;
+
+    horizontalSelectPrompt = createPrompt((promptConfig, done) => {
+      const theme = makeTheme(modernPromptTheme, promptConfig.theme);
+      const [status, setStatus] = useState('idle');
+      const prefix = usePrefix({ status, theme });
+      const choices = useMemo(() => promptConfig.choices.map((choice) => ({
+        value: choice.value,
+        name: choice.name ?? String(choice.value),
+        short: choice.short ?? choice.name ?? String(choice.value),
+        description: choice.description,
+      })), [promptConfig.choices]);
+      const defaultIndex = choices.findIndex(choice => choice.value === promptConfig.default);
+      const [active, setActive] = useState(defaultIndex >= 0 ? defaultIndex : 0);
+      const selected = choices[active];
+      const move = (offset) => setActive((active + offset + choices.length) % choices.length);
+
+      useKeypress((key) => {
+        if (isEnterKey(key)) {
+          setStatus('done');
+          done(selected.value);
+        } else if (isTabKey(key) || isDownKey(key)) {
+          move(1);
+        } else if (isUpKey(key) || key.name === 'left') {
+          move(-1);
+        } else if (key.name === 'right') {
+          move(1);
+        }
+      });
+
+      const message = theme.style.message(promptConfig.message, status);
+      if (status === 'done') {
+        return [prefix, message, theme.style.answer(selected.short)].filter(Boolean).join(' ');
+      }
+
+      const tabs = choices.map((choice, index) => {
+        const label = index === active ? `❯ ${choice.name}` : `  ${choice.name}`;
+        return index === active ? theme.style.highlight(`[${label}]`) : theme.style.disabled(`[${label}]`);
+      }).join('  ');
+      const description = selected.description ? theme.style.description(selected.description) : '';
+      const help = theme.style.help('tab/→ next · ↑/← prev · enter select');
+      const lines = [
+        [prefix, message].filter(Boolean).join(' '),
+        tabs,
+        description,
+        help,
+      ].filter(Boolean).join('\n').trimEnd();
+
+      return `${lines}${cursorHide}`;
+    });
+  }
+
+  return horizontalSelectPrompt(config);
+}
+
+function formatPersonaTab(persona) {
+  const icon = PERSONA_ICONS[persona.gender] || PERSONA_ICONS.other;
+  return `${icon} ${persona.label}`;
+}
+
+function formatPersonaDescription(persona) {
+  const suffix = persona.default ? ` ${c.grn('default')}` : '';
+  return `${persona.slug}${suffix} · ${persona.description}`;
+}
+
+function formatStyleDescription(style) {
+  const suffix = style.default ? ` ${c.grn('default')}` : '';
+  return `${style.slug}${suffix} · ${style.description}`;
+}
+
+function formatTargetChoice(targetMeta) {
+  const icon = TARGET_ICONS[targetMeta.name] || '•';
+  return `${icon} ${targetMeta.actionLabel}`;
+}
+
+function formatTargetDescription(targetMeta) {
+  return `${TARGET_HINTS[targetMeta.name] || ''} → ${resolveManagedRootDir(targetMeta.name)}`;
+}
+
+function summarizeSelection({ targetName, persona, style, packPlan }) {
+  const packs = packPlan?.path
+    ? ` · packs ${packPlan.selected.join(', ') || 'none'}`
+    : '';
+  info(`${c.b(targetName)} · ${persona.label} · ${style.slug}${packs}`);
+}
+
+async function installTargetFlow(targetName, installOptions = {}) {
+  const persona = installOptions.persona || await resolveInstallPersona();
+  const style = installOptions.style || await resolveInstallStyle(targetName);
+  const packPlan = await resolveProjectPackPlan(targetName);
+  summarizeSelection({ targetName, persona, style, packPlan });
+  const ctx = installCore(targetName, style, persona, packPlan);
+  if (targetName === 'claude') await postClaude(ctx);
+  else if (targetName === 'codex') await postCodex();
+  else if (targetName === 'gemini') await postGemini(ctx);
+  else await postOpenClaw(ctx);
+  finish(ctx);
+}
+
+function styleTargetForSelection(targetNames) {
+  if (targetNames.length === 1) return targetNames[0];
+  if (targetNames.includes('claude')) return 'claude';
+  if (targetNames.includes('codex')) return 'codex';
+  if (targetNames.includes('gemini')) return 'gemini';
+  return targetNames[0] || 'claude';
+}
 
 // ── 认证 ──
 
@@ -127,7 +312,12 @@ function detectGeminiAuth(settings) {
   return detectGeminiAuthImpl({ settings, HOME, warn });
 }
 
-function resolveManagedRootDir(tgt, rootName = tgt) {
+function detectOpenClawEnvironment() {
+  return detectOpenClawEnvironmentImpl({ HOME, warn });
+}
+
+function resolveManagedRootDir(tgt, rootName = tgt, runtimeRoots = null) {
+  if (runtimeRoots && runtimeRoots[rootName]) return runtimeRoots[rootName];
   return path.join(HOME, getManagedRootRelativeDir(rootName));
 }
 
@@ -180,25 +370,16 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--yes' || args[i] === '-y') { autoYes = true; }
   else if (args[i] === '--help' || args[i] === '-h') {
     banner();
-    console.log(`${c.b('用法:')}  npx code-abyss [选项]
-
-${c.b('选项:')}
-  --target ${c.cyn(`<${formatTargetList('|')}>`)}      安装目标
-  --uninstall ${c.cyn(`<${formatTargetList('|')}>`)}   卸载目标
-  --style ${c.cyn('<slug>')}               指定输出风格
-  --persona ${c.cyn('<slug>')}             指定人格预设
-  --list-styles               列出可用输出风格
-  --list-personas             列出可用人格预设
-  --yes, -y                    全自动模式
-  --help, -h                   显示帮助
-
-${c.b('示例:')}
-  npx code-abyss                        ${c.d('# 交互菜单')}
-  npx code-abyss --list-styles           ${c.d('# 查看可用风格')}
-  npx code-abyss --target claude -y      ${c.d('# 零配置一键安装')}
-  npx code-abyss --target codex --style scholar-classic -y
-                                   ${c.d('# 指定风格安装')}
-  npx code-abyss --uninstall claude      ${c.d('# 直接卸载')}
+    console.log(`${c.b('Usage')}  npx code-abyss [options]
+`);
+    console.log(`  ${c.cyn('--target')} <${formatTargetList('|')}>      install one target`);
+    console.log(`  ${c.cyn('--uninstall')} <${formatTargetList('|')}>   remove one target`);
+    console.log(`  ${c.cyn('--style')} <slug>  ${c.cyn('--persona')} <slug>  ${c.cyn('-y')}
+`);
+    console.log(`${c.b('Examples')}`);
+    console.log(`  npx code-abyss`);
+    console.log(`  npx code-abyss --target codex -y`);
+    console.log(`  npx code-abyss --list-styles
 `);
     process.exit(0);
   }
@@ -217,6 +398,7 @@ function runUninstall(tgt) {
   if (!fs.existsSync(manifestPath)) { fail(`未找到安装记录: ${manifestPath}`); process.exit(1); }
 
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+  const runtimeRoots = manifest.runtime_roots || null;
   if (manifest.manifest_version && manifest.manifest_version > 2) {
     fail(`manifest 版本 ${manifest.manifest_version} 不兼容，请升级 code-abyss 后再卸载`);
     process.exit(1);
@@ -233,7 +415,7 @@ function runUninstall(tgt) {
 
   (manifest.installed || []).forEach((entry) => {
     const normalized = normalizeManifestEntry(entry, tgt);
-    const installRoot = resolveManagedRootDir(tgt, normalized.root);
+    const installRoot = resolveManagedRootDir(tgt, normalized.root, runtimeRoots);
     const targetPath = path.join(installRoot, normalized.path);
     if (fs.existsSync(targetPath)) {
       rmSafe(targetPath);
@@ -255,7 +437,7 @@ function runUninstall(tgt) {
     const backupPath = path.join(backupDir, normalized.root, normalized.path);
     const legacyBackupPath = path.join(backupDir, normalized.path);
     const sourcePath = fs.existsSync(backupPath) ? backupPath : legacyBackupPath;
-    const restoreRoot = resolveManagedRootDir(tgt, normalized.root);
+    const restoreRoot = resolveManagedRootDir(tgt, normalized.root, runtimeRoots);
     const restorePath = path.join(restoreRoot, normalized.path);
     if (fs.existsSync(sourcePath)) {
       fs.mkdirSync(path.dirname(restorePath), { recursive: true });
@@ -499,8 +681,8 @@ function installGeminiContext(targetDir, backupDir, manifest, selectedStyle) {
 }
 
 
-function backupManagedPathIfExists(tgt, rootName, backupDir, relPath, manifest) {
-  const targetRoot = resolveManagedRootDir(tgt, rootName);
+function backupManagedPathIfExists(tgt, rootName, backupDir, relPath, manifest, runtimeRoots = null) {
+  const targetRoot = resolveManagedRootDir(tgt, rootName, runtimeRoots);
   const targetPath = path.join(targetRoot, relPath);
   if (!fs.existsSync(targetPath)) return false;
 
@@ -525,24 +707,20 @@ function pruneLegacyCodexSettings(tgt, backupDir, manifest) {
 
 function printStyleCatalog() {
   banner();
-  divider('可用输出风格');
+  divider('Styles');
   listStyles(PKG_ROOT).forEach((style) => {
-    const tags = [];
-    if (style.default) tags.push('默认');
-    tags.push(style.targets.join('/'));
-    console.log(`  ${c.cyn(style.slug)}  ${style.label} ${c.d(`[${tags.join(', ')}]`)}`);
-    console.log(`  ${c.d(style.description)}`);
+    const tag = style.default ? ` ${c.grn('default')}` : '';
+    console.log(`  ${c.cyn(cell(style.slug, 24))} ${style.label}${tag}`);
   });
   console.log('');
 }
 
 function printPersonaCatalog() {
   banner();
-  divider('可用人格预设');
+  divider('Personas');
   listPersonas(PKG_ROOT).forEach((persona) => {
-    const tag = persona.default ? ' [默认]' : '';
-    console.log(`  ${c.cyn(persona.slug)}  ${persona.label}${c.d(tag)}`);
-    console.log(`  ${c.d(persona.description)}`);
+    const tag = persona.default ? ` ${c.grn('default')}` : '';
+    console.log(`  ${c.cyn(cell(persona.slug, 18))} ${persona.label}${tag}`);
   });
   console.log('');
 }
@@ -586,16 +764,15 @@ async function resolveInstallPersona() {
   }
   if (autoYes) return getDefaultPersona(PKG_ROOT);
 
-  const { select } = await import('@inquirer/prompts');
   const personas = listPersonas(PKG_ROOT);
   const defaultPersona = getDefaultPersona(PKG_ROOT);
-  const genderLabel = { male: '♂', female: '♀', other: '⚧' };
-
-  const slug = await select({
-    message: '选择人格预设（心）',
+  const slug = await promptHorizontalSelect({
+    message: `${c.mag('选择人格')} ${c.d('Tab 横向切换')}`,
     choices: personas.map(p => ({
-      name: `${genderLabel[p.gender] || '⚧'} ${p.label} (${p.slug})${p.default ? ' [默认]' : ''} — ${p.description}`,
+      name: formatPersonaTab(p),
       value: p.slug,
+      short: p.label,
+      description: formatPersonaDescription(p),
     })),
     default: defaultPersona.slug,
   });
@@ -612,15 +789,16 @@ async function resolveInstallStyle(targetName) {
 
   if (autoYes) return getDefaultStyle(PKG_ROOT, targetName);
 
-  const { select } = await import('@inquirer/prompts');
   const styles = listStyles(PKG_ROOT, targetName);
   const defaultStyle = getDefaultStyle(PKG_ROOT, targetName);
 
-  const slug = await select({
-    message: '选择输出风格（口）',
+  const slug = await promptHorizontalSelect({
+    message: `${c.cyn('选择输出风格')} ${c.d('Tab 横向切换')}`,
     choices: styles.map(style => ({
-      name: `${style.label} (${style.slug})${style.default ? ' [默认]' : ''} — ${style.description}`,
+      name: style.label,
       value: style.slug,
+      short: style.label,
+      description: formatStyleDescription(style),
     })),
     default: defaultStyle.slug,
   });
@@ -628,13 +806,22 @@ async function resolveInstallStyle(targetName) {
 }
 
 function installCore(tgt, selectedStyle, selectedPersona, packPlan) {
-  const targetDir = resolveManagedRootDir(tgt);
+  const openClawRuntime = tgt === 'openclaw' ? resolveOpenClawRuntime({ HOME, warn }) : null;
+  const runtimeRoots = openClawRuntime
+    ? {
+      openclaw: openClawRuntime.rootDir,
+      'openclaw-workspace': openClawRuntime.workspaceDir,
+    }
+    : null;
+  const targetDir = resolveManagedRootDir(tgt, tgt, runtimeRoots);
   const backupDir = path.join(targetDir, '.sage-backup');
   const manifestPath = path.join(backupDir, 'manifest.json');
 
   const installSummary = tgt === 'codex'
-    ? `${c.cyn(resolveManagedRootDir(tgt, 'codex'))} + ${c.cyn(resolveManagedRootDir(tgt, 'agents'))}`
-    : c.cyn(targetDir);
+    ? `${c.cyn(resolveManagedRootDir(tgt, 'codex', runtimeRoots))} + ${c.cyn(resolveManagedRootDir(tgt, 'agents', runtimeRoots))}`
+    : tgt === 'openclaw'
+      ? `${c.cyn(targetDir)} + ${c.cyn(resolveManagedRootDir(tgt, 'openclaw-workspace', runtimeRoots))}`
+      : c.cyn(targetDir);
   step(1, 3, `安装核心文件 → ${installSummary}`);
   rmSafe(backupDir);
   fs.mkdirSync(backupDir, { recursive: true });
@@ -647,11 +834,14 @@ function installCore(tgt, selectedStyle, selectedPersona, packPlan) {
     ? getCodexCoreFiles()
     : tgt === 'gemini'
       ? getGeminiCoreFiles()
-      : getClaudeCoreFiles();
+      : tgt === 'openclaw'
+        ? getOpenClawCoreFiles()
+        : getClaudeCoreFiles();
 
   const manifest = {
     manifest_version: 2, version: VERSION, target: tgt,
     timestamp: new Date().toISOString(), style: selectedStyle.slug, persona: selectedPersona.slug, installed: [], backups: [],
+    runtime_roots: runtimeRoots || undefined,
     project_packs: packPlan.selected,
     optional_policy: packPlan.optionalPolicy || 'auto',
     pack_reports: [],
@@ -660,7 +850,7 @@ function installCore(tgt, selectedStyle, selectedPersona, packPlan) {
   filesToInstall.forEach(({ src, dest, root }) => {
     const rootName = root || tgt;
     const srcPath = path.join(PKG_ROOT, src);
-    const destRoot = resolveManagedRootDir(tgt, rootName);
+    const destRoot = resolveManagedRootDir(tgt, rootName, runtimeRoots);
     const destPath = path.join(destRoot, dest);
     if (!fs.existsSync(srcPath)) {
       if (src === 'skills') {
@@ -790,6 +980,25 @@ function installCore(tgt, selectedStyle, selectedPersona, packPlan) {
         reason: sourceMode === 'disabled' ? 'source-disabled' : `optional-policy-${packPlan.optionalPolicy || 'auto'}`,
       });
     }
+  } else if (tgt === 'openclaw') {
+    const workspaceDir = resolveManagedRootDir(tgt, 'openclaw-workspace', runtimeRoots);
+    fs.mkdirSync(workspaceDir, { recursive: true });
+
+    backupManagedPathIfExists(tgt, 'openclaw-workspace', backupDir, 'AGENTS.md', manifest, runtimeRoots);
+    backupManagedPathIfExists(tgt, 'openclaw-workspace', backupDir, 'SOUL.md', manifest, runtimeRoots);
+
+    const agentsMdPath = path.join(workspaceDir, 'AGENTS.md');
+    const soulMdPath = path.join(workspaceDir, 'SOUL.md');
+    const agentsContent = fs.readFileSync(path.join(PKG_ROOT, 'config', 'AGENTS.md'), 'utf8');
+    const soulContent = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
+
+    fs.writeFileSync(agentsMdPath, agentsContent);
+    fs.writeFileSync(soulMdPath, soulContent);
+    pushManifestEntry(manifest.installed, 'openclaw-workspace', 'AGENTS.md');
+    pushManifestEntry(manifest.installed, 'openclaw-workspace', 'SOUL.md');
+
+    ok(`AGENTS.md ${c.d(`(OpenClaw workspace: ${workspaceDir})`)}`);
+    ok(`SOUL.md ${c.d(`(动态生成: ${selectedPersona.slug} + ${selectedStyle.slug})`)}`);
   }
 
   let settingsPath = null;
@@ -877,6 +1086,7 @@ async function postClaude(ctx) {
     deepMergeNew,
     printMergeLog,
     installCcstatusline,
+    promptCheckbox,
   });
 }
 
@@ -910,6 +1120,21 @@ async function postGemini(ctx) {
   });
 }
 
+async function postOpenClaw(ctx) {
+  await postOpenClawFlow({
+    runtime: resolveOpenClawRuntime({ HOME, warn }),
+    autoYes,
+    HOME,
+    PKG_ROOT,
+    step,
+    ok,
+    warn,
+    info,
+    c,
+    detected: detectOpenClawEnvironment(),
+  });
+}
+
 // ── 主流程 ──
 
 async function main() {
@@ -932,74 +1157,36 @@ async function main() {
       fail(formatActionableError(`--target 必须是 ${listTargetNames().join('、')}`, 'Try: node bin/install.js --target claude'));
       process.exit(1);
     }
-    const persona = await resolveInstallPersona();
-    const style = await resolveInstallStyle(target);
-    const packPlan = await resolveProjectPackPlan(target);
-    info(`人格（心）: ${c.mag(persona.label)} (${persona.slug})`);
-    info(`风格（口）: ${c.mag(style.slug)} (${style.label})`);
-    if (packPlan.path) {
-      info(`项目 packs: required=[${packPlan.required.join(', ')}] optional=[${packPlan.optional.join(', ')}] policy=${packPlan.optionalPolicy}`);
-    }
-    const ctx = installCore(target, style, persona, packPlan);
-    if (target === 'claude') await postClaude(ctx);
-    else if (target === 'codex') await postCodex();
-    else await postGemini(ctx);
-    finish(ctx);
+    await installTargetFlow(target);
     return;
   }
 
-  const { select } = await import('@inquirer/prompts');
-  const action = await select({
-    message: '请选择操作',
-    choices: listInstallTargets().flatMap((targetMeta) => {
-      const targetDir = resolveManagedRootDir(targetMeta.name);
-      return [
-        { name: `安装到 ${targetMeta.actionLabel} ${c.d(`(${targetDir})`)}`, value: `install-${targetMeta.name}` },
-        { name: `${c.red('卸载')} ${targetMeta.actionLabel}`, value: `uninstall-${targetMeta.name}` },
-      ];
-    }),
+  const selectedTargets = await promptCheckbox({
+    message: '选择目标（可多选）',
+    choices: listInstallTargets().map((targetMeta) => ({
+      name: formatTargetChoice(targetMeta),
+      value: targetMeta.name,
+      description: formatTargetDescription(targetMeta),
+    })),
+    required: true,
   });
 
-  switch (action) {
-    case 'install-claude': {
-      const persona = await resolveInstallPersona();
-      const style = await resolveInstallStyle('claude');
-      const packPlan = await resolveProjectPackPlan('claude');
-      info(`人格（心）: ${c.mag(persona.label)}`);
-      info(`风格（口）: ${c.mag(style.slug)}`);
-      if (packPlan.path) {
-        info(`项目 packs: required=[${packPlan.required.join(', ')}] optional=[${packPlan.optional.join(', ')}] policy=${packPlan.optionalPolicy}`);
-      }
-      const ctx = installCore('claude', style, persona, packPlan);
-      await postClaude(ctx);
-      finish(ctx); break;
+  const action = await promptSelect({
+    message: '选择动作',
+    choices: [
+      { name: `${c.grn('+')} Install / Update`, value: 'install', description: '安装或覆盖更新所选目标' },
+      { name: `${c.red('−')} Remove`, value: 'remove', description: '按 .sage-backup/manifest.json 卸载并恢复备份' },
+    ],
+  });
+
+  if (action === 'install') {
+    const persona = await resolveInstallPersona();
+    const style = await resolveInstallStyle(styleTargetForSelection(selectedTargets));
+    for (const targetName of selectedTargets) {
+      await installTargetFlow(targetName, { persona, style });
     }
-    case 'install-codex': {
-      const persona = await resolveInstallPersona();
-      const style = await resolveInstallStyle('codex');
-      const packPlan = await resolveProjectPackPlan('codex');
-      info(`人格（心）: ${c.mag(persona.label)}`);
-      info(`风格（口）: ${c.mag(style.slug)}`);
-      if (packPlan.path) {
-        info(`项目 packs: required=[${packPlan.required.join(', ')}] optional=[${packPlan.optional.join(', ')}] policy=${packPlan.optionalPolicy}`);
-      }
-      const ctx = installCore('codex', style, persona, packPlan);
-      await postCodex();
-      finish(ctx); break;
-    }
-    case 'install-gemini': {
-      const persona = await resolveInstallPersona();
-      const style = await resolveInstallStyle('gemini');
-      const packPlan = await resolveProjectPackPlan('gemini');
-      info(`人格（心）: ${c.mag(persona.label)}`);
-      info(`风格（口）: ${c.mag(style.slug)}`);
-      const ctx = installCore('gemini', style, persona, packPlan);
-      await postGemini(ctx);
-      finish(ctx); break;
-    }
-    case 'uninstall-claude': runUninstall('claude'); break;
-    case 'uninstall-codex': runUninstall('codex'); break;
-    case 'uninstall-gemini': runUninstall('gemini'); break;
+  } else {
+    for (const targetName of selectedTargets) runUninstall(targetName);
   }
 }
 

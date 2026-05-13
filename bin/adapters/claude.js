@@ -119,7 +119,8 @@ async function postClaude({
   c,
   deepMergeNew,
   printMergeLog,
-  installCcstatusline
+  installCcstatusline,
+  promptCheckbox = null
 }) {
   step(2, 3, '认证检测');
   const auth = detectClaudeAuth({ settings: ctx.settings, HOME, warn });
@@ -139,12 +140,25 @@ async function postClaude({
     return;
   }
 
-  const { checkbox } = await import('@inquirer/prompts');
-  const choices = await checkbox({
-    message: '选择要安装的配置 (空格选择, 回车确认)',
+  const checkboxPrompt = promptCheckbox || (async (config) => {
+    const { checkbox } = await import('@inquirer/prompts');
+    return checkbox(config);
+  });
+  const choices = await checkboxPrompt({
+    message: '选择要安装的配置',
     choices: [
-      { name: '精细合并推荐 settings.json (保留现有配置)', value: 'settings', checked: true },
-      { name: '安装 ccstatusline 状态栏 (需要 Nerd Font)', value: 'ccstatusline', checked: true },
+      {
+        name: 'settings.json 推荐配置',
+        value: 'settings',
+        checked: true,
+        description: '精细合并，保留现有配置，只补齐 Code Abyss 推荐项',
+      },
+      {
+        name: 'ccstatusline 状态栏',
+        value: 'ccstatusline',
+        checked: true,
+        description: '安装多行美化状态栏；需要 Nerd Font 才能完整显示图标',
+      },
     ],
   });
 

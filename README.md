@@ -2,7 +2,7 @@
 
 <div align="center">
 
-*Persona-driven configuration system for Claude Code, Codex CLI, and Gemini CLI*
+*Persona-driven configuration system for Claude Code, Codex CLI, Gemini CLI, and OpenClaw*
 
 [![npm](https://img.shields.io/npm/v/code-abyss.svg)](https://www.npmjs.com/package/code-abyss)
 [![CI](https://github.com/telagod/code-abyss/actions/workflows/ci.yml/badge.svg)](https://github.com/telagod/code-abyss/actions/workflows/ci.yml)
@@ -14,7 +14,7 @@
 
 </div>
 
-Code Abyss installs a switchable persona + output style + engineering skill system into your AI coding CLI. One command configures persona rules, output styles, 21 domain skills, 6 slash commands, and 5 verification tools across Claude Code, Codex CLI, and Gemini CLI.
+Code Abyss installs a switchable persona + output style + engineering skill system into your AI coding CLI. One command configures persona rules, proactive execution guidance, output styles, 26 domain skills, and 5 verification tools across Claude Code, Codex CLI, Gemini CLI, and OpenClaw.
 
 ## Quick Start
 
@@ -23,6 +23,7 @@ npx code-abyss                          # Interactive menu
 npx code-abyss --target claude -y       # One-line install to ~/.claude/
 npx code-abyss --target codex -y        # One-line install to ~/.codex/
 npx code-abyss --target gemini -y       # One-line install to ~/.gemini/
+npx code-abyss --target openclaw -y     # One-line install to ~/.openclaw/
 ```
 
 ## What It Does
@@ -42,18 +43,21 @@ The installer generates target-specific artifacts for each CLI:
 | Claude | `~/.claude/CLAUDE.md` + `settings.json` | `~/.claude/commands/*.md` + `~/.claude/skills/` | `settings.json.outputStyle` |
 | Codex | `~/.codex/config.toml` + `AGENTS.md` | `~/.codex/skills/` | `~/.codex/AGENTS.md` |
 | Gemini | `~/.gemini/GEMINI.md` + `settings.json` | `~/.gemini/commands/*.toml` + `~/.gemini/skills/` | `GEMINI.md` |
+| OpenClaw | `~/.openclaw/openclaw.json` + `<workspace>/AGENTS.md` + `<workspace>/SOUL.md` | `~/.openclaw/skills/` | `SOUL.md` |
+
+Codex config now ships explicit presets: `full_auto` (`workspace-write` + `on-request`) and `full_access` (`danger-full-access` + `on-request`). Use `codex -p full_access` when you really need full filesystem access without relying on removed UI presets.
 
 ## Personas
 
-5 switchable personas, each with a distinct character and interaction style:
+5 switchable personas, each with a distinct character, interaction style, and shared proactive assistance bias:
 
 | Slug | Name | Style |
 |------|------|-------|
-| `abyss` (default) | 邪修红尘仙 | Direct, security-first, no-nonsense |
-| `scholar` | 文言小生 | Classical, methodical, scholarly |
-| `elder-sister` | 知性大姐姐 | Warm, insightful, guiding |
-| `junior-sister` | 古怪精灵小师妹 | Playful, sharp, energetic |
-| `iron-dad` | 铁壁暖阳 | Firm, protective, structured |
+| `abyss` (default) | 邪修红尘仙 | Direct, security-first, proactive close-the-loop |
+| `scholar` | 文言小生 | Classical, methodical, proactive review notes |
+| `elder-sister` | 知性大姐姐 | Warm, insightful, proactive guardrails |
+| `junior-sister` | 古怪精灵小师妹 | Playful, sharp, proactive follow-through |
+| `iron-dad` | 铁壁暖阳 | Firm, protective, proactive safety net |
 
 Switch persona during install:
 
@@ -82,18 +86,11 @@ npx code-abyss --list-styles    # List all available styles
 
 ## Skills
 
-21 skills across 14 domains, driven by `SKILL.md` frontmatter as single source of truth.
+26 skills across 15 domains, driven by `SKILL.md` frontmatter as single source of truth.
 
-### Slash Commands (user-invocable)
+### User Invocation
 
-| Command | Function |
-|---------|----------|
-| `/verify-security` | Scan code for security vulnerabilities and dangerous patterns |
-| `/verify-module` | Check directory structure and documentation completeness |
-| `/verify-change` | Analyze git changes, detect doc sync issues |
-| `/verify-quality` | Detect complexity, naming, code quality issues |
-| `/gen-docs` | Generate README.md and DESIGN.md scaffolds |
-| `/frontend-design` | UI aesthetics, component patterns, UX guidance |
+Core skills are now routed automatically by context and are **not exposed as slash commands by default**. The runtime is tuned to proactively finish the closest safe loop: inspect, implement, verify, then report. Verification tools remain executable directly from the repository when needed:
 
 ### Domain Knowledge (auto-loaded by context)
 
@@ -106,6 +103,7 @@ npx code-abyss --list-styles    # List all available styles
 | Frontend | Component patterns, state management, UI aesthetics, 4 design system variants |
 | Mobile | iOS/SwiftUI, Android/Compose, React Native, Flutter |
 | AI | Agent development, LLM security, RAG systems, prompt engineering |
+| Office Documents | Word, PDF, PowerPoint, Excel, OOXML, forms, spreadsheet automation |
 | Data Engineering | Pipeline orchestration, stream processing, data quality |
 | Infrastructure | Kubernetes, GitOps, IaC (Terraform/Pulumi/CDK) |
 | Orchestration | Multi-agent task decomposition and parallel coordination |
@@ -116,16 +114,20 @@ npx code-abyss --list-styles    # List all available styles
 ~/.claude/                          ~/.codex/
 ├── CLAUDE.md        (persona)      ├── AGENTS.md       (persona + style)
 ├── output-styles/   (style files)  ├── instruction.md   (core instructions)
-├── commands/*.md    (slash cmds)   ├── skills/          (domain skills)
+├── commands/*.md    (optional)     ├── skills/          (domain skills)
 ├── skills/          (domain skills)├── bin/lib/          (runtime libs)
 ├── bin/lib/         (runtime libs) ├── config.toml      (recommended config)
 ├── settings.json    (config)       └── .sage-uninstall.js
 └── .sage-uninstall.js
 ~/.gemini/
 ├── GEMINI.md        (persona + style)
-├── commands/*.toml  (commands)
+├── commands/*.toml  (optional)
 ├── skills/          (domain skills)
 ├── settings.json    (config)
+└── .sage-uninstall.js
+~/.openclaw/                      <workspace>/
+├── openclaw.json   (optional)    ├── AGENTS.md       (rules / routing)
+├── skills/         (shared)      └── SOUL.md         (persona + style)
 └── .sage-uninstall.js
 ```
 
@@ -135,11 +137,11 @@ All installed files are tracked in `.sage-backup/manifest.json`. Uninstall resto
 
 ```bash
 # Install
-npx code-abyss --target <claude|codex|gemini> [-y]
+npx code-abyss --target <claude|codex|gemini|openclaw> [-y]
 npx code-abyss --target claude --style <slug> --persona <slug> -y
 
 # Uninstall
-npx code-abyss --uninstall <claude|codex|gemini>
+npx code-abyss --uninstall <claude|codex|gemini|openclaw>
 
 # Info
 npx code-abyss --list-styles
@@ -192,17 +194,18 @@ argument-hint: <path>          # optional
 Generation chain:
 
 1. Registry scans and validates all `skills/**/SKILL.md`
-2. Filters `user-invocable: true` for command generation
-3. Claude: renders `~/.claude/commands/*.md`
-4. Codex: installs to `~/.codex/skills/`, discovered directly
-5. Gemini: renders `~/.gemini/commands/*.toml`
-6. Scripted skills execute via `skills/run_skill.js` (lock + spawn + exit code passthrough)
-7. Knowledge skills load `SKILL.md` content directly
+2. Only skills with `user-invocable: true` generate commands (current core set defaults to none)
+3. Claude: renders `~/.claude/commands/*.md` only when invocable skills exist
+4. Codex: installs to `~/.codex/skills/`, discovered directly, with proactive execution guidance from generated `AGENTS.md` + `instruction.md`
+5. Gemini: renders `~/.gemini/commands/*.toml` only when invocable skills exist, with proactive guidance in generated `GEMINI.md`
+6. OpenClaw: installs shared skills into `~/.openclaw/skills/`, and writes runtime rules/persona into workspace `AGENTS.md` + `SOUL.md`
+7. Scripted skills execute via `skills/run_skill.js` (lock + spawn + exit code passthrough)
+8. Knowledge skills load `SKILL.md` content directly
 
 ## Development
 
 ```bash
-npm test                          # Jest test suite (218 tests)
+npm test                          # Jest test suite
 npm run verify:skills             # Validate SKILL.md frontmatter contracts
 node bin/install.js --help        # Installer CLI help
 ```
@@ -211,7 +214,7 @@ CI runs on Node 18/20/22 across Linux, macOS, and Windows:
 
 - Unit tests + skill contract validation
 - 4 verification tools (security, module, quality, change)
-- Smoke install/uninstall for all 3 targets on all 3 platforms
+- Smoke install/uninstall for Claude / Codex / Gemini / OpenClaw
 
 ## Uninstall
 
@@ -219,6 +222,7 @@ CI runs on Node 18/20/22 across Linux, macOS, and Windows:
 npx code-abyss --uninstall claude
 npx code-abyss --uninstall codex
 npx code-abyss --uninstall gemini
+npx code-abyss --uninstall openclaw
 ```
 
 Backup script alternative:
@@ -227,6 +231,7 @@ Backup script alternative:
 node ~/.claude/.sage-uninstall.js
 node ~/.codex/.sage-uninstall.js
 node ~/.gemini/.sage-uninstall.js
+node ~/.openclaw/.sage-uninstall.js
 ```
 
 Restores backed-up configuration and removes all installed files.

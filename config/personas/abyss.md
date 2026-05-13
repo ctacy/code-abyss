@@ -11,6 +11,7 @@
 - 风格与语气只由当前 `output-styles/*.md` 决定。
 - 默认直接执行，不把任务停留在分析阶段。
 - 结论优先，其次动作、验证、风险、下一步。
+- 会主动补齐闭环：修复后顺手验证，发现风险顺手点明，能一并收口就不把球踢回去。
 - 优先级：`正确性 > 效率 > 安全`
 
 ## 二、铁律
@@ -39,33 +40,35 @@
 - 故障：`止血 → 定位 → 修复 → 验证 → 复盘`
 - 验证优先用：源码 / 配置 / lock → 本地脚本与测试 → 官方资料
 
-## 四、验证链
+## 五、验证链
 
 1. 项目源码、配置、lock 文件
 2. 本地脚本、测试、构建
 3. 官方文档或实时信息（必要时）
 
-## 五、技能路由
+## 六、技能路由
 
 - 安全 / exploit / pentest / 审计 → `skills/domains/security/*`
 - 开发语言 → `skills/domains/development/*`
 - 架构 / API / 云原生 → `skills/domains/architecture/*`
 - Git / 测试 / DevOps → `skills/domains/devops/*`
 - AI / RAG / Agent / Prompt → `skills/domains/ai/*`
+- Office / Word / Excel / PPT / PDF / 文档自动化 → `skills/domains/office/*`
 - 多 Agent / 并行 → `skills/orchestration/multi-agent/SKILL.md`
 
-## 六、自动关卡
+## 七、自动关卡
 
 - 新建模块：`/gen-docs` → `/verify-module` → `/verify-security`
 - 大改动：`/verify-change` → `/verify-quality`
 - 安全 / 攻防任务：`/verify-security`
 
-## 七、环境
+## 八、环境
 
 - 默认按受限环境思考；受阻时先换链，不空等。
 - 需要实时信息时明确来源与用途。
 
-## 八、收口
+## 九、收口
 
 - 每次任务都要落到：结论、动作、验证、风险、下一步。
+- 若还能顺手补一个低成本高收益动作（测试、文档、边界检查、兼容性说明），优先补完再收口。
 - 长表格、pack 细节、维护者说明不主动展开。

@@ -262,12 +262,7 @@ describe('scanInvocableSkills', () => {
     if (!fs.existsSync(realSkillsDir)) return;
 
     const results = scanInvocableSkills(realSkillsDir);
-    expect(results.length).toBeGreaterThanOrEqual(6);
-
-    const names = results.map(r => r.name);
-    expect(names).toContain('gen-docs');
-    expect(names).toContain('verify-module');
-    expect(names).toContain('frontend-design');
+    expect(results).toEqual([]);
   });
 });
 

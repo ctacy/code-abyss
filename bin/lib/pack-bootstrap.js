@@ -18,7 +18,7 @@ function renderReadmeSnippet(lock) {
   ];
 
   listTargetNames().forEach((host) => {
-    const cfg = lock.hosts[host];
+    const cfg = (lock.hosts && lock.hosts[host]) || { required: [], optional: [], optional_policy: 'auto' };
     lines.push(`- ${host}: required=[${cfg.required.join(', ') || 'none'}], optional=[${cfg.optional.join(', ') || 'none'}], optional_policy=${cfg.optional_policy}`);
   });
 
@@ -46,7 +46,7 @@ function renderContributingSnippet(lock) {
     '- Validate it with `npm run packs:check`.',
     `- Re-run \`npx code-abyss --target ${targetNames.join('|')} -y\` after pack changes.`,
     '',
-    `Current host policies: ${targetNames.map((host) => `${host}=${lock.hosts[host].optional_policy}`).join(', ')}`,
+    `Current host policies: ${targetNames.map((host) => `${host}=${((lock.hosts && lock.hosts[host]) || { optional_policy: 'auto' }).optional_policy}`).join(', ')}`,
     '',
   ].join('\n');
 }

@@ -185,8 +185,8 @@ describe('斜杠命令回归防护', () => {
       invocableSkills = scanInvocableSkills(realSkillsDir);
     });
 
-    test('至少存在 6 个 user-invocable skill', () => {
-      expect(invocableSkills.length).toBeGreaterThanOrEqual(6);
+    test('当前核心仓库默认不暴露 user-invocable skill', () => {
+      expect(invocableSkills).toEqual([]);
     });
 
     test('所有 user-invocable skill 的 SKILL.md 路径必须真实存在', () => {

@@ -20,6 +20,7 @@ disable-model-invocation: false
 | 架构/API/云原生/缓存/消息队列 | `domains/architecture/` |
 | Git/测试/CI·CD/DB/性能/可观测/FinOps | `domains/devops/` |
 | AI/LLM/Agent/RAG/Prompt | `domains/ai/` |
+| Office/Word/Excel/PPT/PDF/文档自动化 | `domains/office/` |
 | K8s/Helm/GitOps/IaC/Terraform | `domains/infrastructure/` |
 | 数据管道/ETL/流处理/数据质量 | `domains/data-engineering/` |
 | 移动/iOS/Android/RN/Flutter | `domains/mobile/` |

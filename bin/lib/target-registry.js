@@ -19,6 +19,12 @@ const INSTALL_TARGETS = Object.freeze([
     actionLabel: 'Gemini CLI',
     homeDir: '.gemini',
   },
+  {
+    name: 'openclaw',
+    label: 'OpenClaw',
+    actionLabel: 'OpenClaw',
+    homeDir: '.openclaw',
+  },
 ]);
 
 const MANAGED_ROOTS = Object.freeze({
@@ -26,6 +32,7 @@ const MANAGED_ROOTS = Object.freeze({
   codex: '.codex',
   agents: '.agents',
   gemini: '.gemini',
+  openclaw: '.openclaw',
 });
 
 function listInstallTargets() {

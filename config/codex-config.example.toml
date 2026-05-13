@@ -5,14 +5,19 @@ model_reasoning_summary = "auto"
 model_verbosity = "medium"
 approval_policy = "on-request"
 allow_login_shell = true
-sandbox_mode = "read-only"
+sandbox_mode = "workspace-write"
 cli_auth_credentials_store = "file"
 model_instructions_file = "./instruction.md"
 project_doc_max_bytes = 32768
 web_search = "cached"
 
-[profiles.abyss]
-approval_policy = "never"
+[profiles.full_auto]
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "cached"
+
+[profiles.full_access]
+approval_policy = "on-request"
 sandbox_mode = "danger-full-access"
 web_search = "live"
 

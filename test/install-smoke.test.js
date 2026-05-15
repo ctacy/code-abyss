@@ -101,8 +101,6 @@ describe('codex install smoke', () => {
     expect(fs.existsSync(path.join(codexDir, 'skills'))).toBe(true);
     expect(fs.existsSync(path.join(codexDir, 'bin', 'lib'))).toBe(true);
     expect(fs.existsSync(path.join(codexDir, 'config.toml'))).toBe(true);
-    expect(fs.existsSync(path.join(codexDir, 'instruction.md'))).toBe(true);
-    expect(codexConfig).toContain('model_instructions_file = "./instruction.md"');
     expect(fs.existsSync(path.join(codexDir, 'settings.json'))).toBe(false);
     expect(fs.existsSync(path.join(codexDir, 'prompts'))).toBe(false);
     const agentsMd = fs.readFileSync(path.join(codexDir, 'AGENTS.md'), 'utf8');

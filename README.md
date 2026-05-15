@@ -32,7 +32,7 @@ Code Abyss is a three-layer configuration system:
 
 | Layer | What | Where |
 |-------|------|-------|
-| Persona | Character identity, rules, execution chains | `config/personas/*.md` + `config/CLAUDE.md` |
+| Persona | Character identity, rules, execution chains | `config/personas/*.md` + `config/personas/_shared/*.md` |
 | Output Style | Tone, formatting, response structure | `output-styles/*.md` + `index.json` |
 | Skills | Domain knowledge + executable verification tools | `skills/**/*.md` + `scripts/*.js` |
 

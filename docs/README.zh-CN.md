@@ -30,7 +30,7 @@ Code Abyss 是一个三层配置系统：
 
 | 层级 | 内容 | 位置 |
 |------|------|------|
-| 人格 | 角色身份、规则、执行链 | `config/personas/*.md` + `config/CLAUDE.md` |
+| 人格 | 角色身份、规则、执行链 | `config/personas/*.md` + `config/personas/_shared/*.md` |
 | 输出风格 | 语气、格式、回复结构 | `output-styles/*.md` + `index.json` |
 | 技能 | 领域知识 + 可执行校验工具 | `skills/**/*.md` + `scripts/*.js` |
 

@@ -52,7 +52,7 @@ Each host block may define `files`, `uninstall`, and host-specific runtime metad
   "hosts": {
     "claude": {
       "files": [
-        { "src": "config/CLAUDE.md", "dest": "CLAUDE.md", "root": "claude" }
+        { "src": "output-styles", "dest": "output-styles", "root": "claude" }
       ],
       "uninstall": {
         "runtimeRoot": { "root": "claude", "path": "skills/example-pack" },

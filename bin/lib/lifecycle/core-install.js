@@ -301,15 +301,14 @@ function createInstallCore(deps) {
 
       const agentsMdPath = path.join(workspaceDir, 'AGENTS.md');
       const soulMdPath = path.join(workspaceDir, 'SOUL.md');
-      const agentsContent = fs.readFileSync(path.join(PKG_ROOT, 'config', 'AGENTS.md'), 'utf8');
-      const soulContent = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
+      const unifiedContent = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
 
-      fs.writeFileSync(agentsMdPath, agentsContent);
-      fs.writeFileSync(soulMdPath, soulContent);
+      fs.writeFileSync(agentsMdPath, unifiedContent);
+      fs.writeFileSync(soulMdPath, unifiedContent);
       pushManifestEntry(manifest.installed, 'openclaw-workspace', 'AGENTS.md');
       pushManifestEntry(manifest.installed, 'openclaw-workspace', 'SOUL.md');
 
-      ok(`AGENTS.md ${c.d(`(OpenClaw workspace: ${workspaceDir})`)}`);
+      ok(`AGENTS.md ${c.d(`(动态生成: ${selectedPersona.slug} + ${selectedStyle.slug})`)}`);
       ok(`SOUL.md ${c.d(`(动态生成: ${selectedPersona.slug} + ${selectedStyle.slug})`)}`);
 
       // gstack 可选 pack（与 claude/codex/gemini 三家保持一致的调度语义）
@@ -375,11 +374,13 @@ function createInstallCore(deps) {
     }
 
     if (selectedPersona) {
-      const personaContent = readPersonaContent(PKG_ROOT, selectedPersona);
       if (tgt === 'claude') {
         const claudeMdPath = path.join(targetDir, 'CLAUDE.md');
-        fs.writeFileSync(claudeMdPath, personaContent);
+        const guidance = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
+        fs.writeFileSync(claudeMdPath, guidance);
+        pushManifestEntry(manifest.installed, 'claude', 'CLAUDE.md');
         ok(`人格（心）→ ${c.mag(selectedPersona.label)} (${selectedPersona.slug})`);
+        ok(`风格（口）→ ${c.mag(selectedStyle.label)} → ~/.claude/CLAUDE.md`);
       } else if (tgt === 'gemini') {
         const geminiMdPath = path.join(targetDir, 'GEMINI.md');
         const guidance = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);

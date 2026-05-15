@@ -91,13 +91,7 @@ const { runUninstall: runUninstallImpl } = require(path.join(__dirname, 'lib', '
 const {
   CLAUDE_COMMAND_TARGET,
   GEMINI_COMMAND_TARGET,
-  buildCommandFrontmatter,
-  buildClaudeCommandSpec,
-  buildClaudeBody,
   generateCommandContent,
-  buildGeminiCommandSpec,
-  escapeTomlMultiline,
-  buildGeminiPromptBody,
   generateGeminiCommandContent,
 } = require(path.join(__dirname, 'lib', 'lifecycle', 'command-generation.js'));
 const {
@@ -141,36 +135,12 @@ const {
   step, ok, warn, info, fail, c,
 });
 
-function formatPersonaTab(persona) {
-  const icon = PERSONA_ICONS[persona.gender] || PERSONA_ICONS.other;
-  return `${icon} ${persona.label}`;
-}
-
-function formatPersonaDescription(persona) {
-  const suffix = persona.default ? ` ${c.grn('default')}` : '';
-  return `${persona.slug}${suffix} · ${persona.description}`;
-}
-
-function formatStyleDescription(style) {
-  const suffix = style.default ? ` ${c.grn('default')}` : '';
-  return `${style.slug}${suffix} · ${style.description}`;
-}
-
-function formatTargetChoice(targetMeta) {
-  const icon = TARGET_ICONS[targetMeta.name] || '•';
-  return `${icon} ${targetMeta.actionLabel}`;
-}
-
-function formatTargetDescription(targetMeta) {
-  return `${TARGET_HINTS[targetMeta.name] || ''} → ${resolveManagedRootDir(targetMeta.name)}`;
-}
-
-function summarizeSelection({ targetName, persona, style, packPlan }) {
-  const packs = packPlan?.path
-    ? ` · packs ${packPlan.selected.join(', ') || 'none'}`
-    : '';
-  info(`${c.b(targetName)} · ${persona.label} · ${style.slug}${packs}`);
-}
+const { createFinish } = require(path.join(__dirname, 'lib', 'lifecycle', 'finish.js'));
+const finish = createFinish({
+  VERSION,
+  writeReportArtifact, syncProjectBootstrapArtifacts, readProjectPackLock,
+  c, divider,
+});
 
 async function installTargetFlow(targetName, installOptions = {}) {
   const persona = installOptions.persona || await resolveInstallPersona();
@@ -247,6 +217,35 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
+// ── Select flows (must be assembled after CLI parsing) ──
+
+const { createSelectFlows } = require(path.join(__dirname, 'lib', 'select.js'));
+const {
+  formatPersonaTab,
+  formatPersonaDescription,
+  formatStyleDescription,
+  formatTargetChoice,
+  formatTargetDescription,
+  summarizeSelection,
+  printStyleCatalog,
+  printPersonaCatalog,
+  resolveProjectPackPlan,
+  resolveInstallPersona,
+  resolveInstallStyle,
+} = createSelectFlows({
+  PKG_ROOT,
+  getRequestedPersonaSlug: () => requestedPersonaSlug,
+  getRequestedStyleSlug: () => requestedStyleSlug,
+  getAutoYes: () => autoYes,
+  listPersonas, getDefaultPersona, resolvePersona,
+  listStyles, getDefaultStyle, resolveStyle,
+  resolveProjectPacks, selectProjectPacksForInstall,
+  promptHorizontalSelect,
+  TARGET_ICONS, TARGET_HINTS, PERSONA_ICONS,
+  resolveManagedRootDir,
+  c, info, banner, divider, cell,
+});
+
 // ── 卸载 ──
 
 function runUninstall(tgt) {
@@ -269,106 +268,6 @@ function runUninstall(tgt) {
 
 function scanInvocableSkills(skillsDir) {
   return collectInvocableSkills(skillsDir);
-}
-
-function printStyleCatalog() {
-  banner();
-  divider('Styles');
-  listStyles(PKG_ROOT).forEach((style) => {
-    const tag = style.default ? ` ${c.grn('default')}` : '';
-    console.log(`  ${c.cyn(cell(style.slug, 24))} ${style.label}${tag}`);
-  });
-  console.log('');
-}
-
-function printPersonaCatalog() {
-  banner();
-  divider('Personas');
-  listPersonas(PKG_ROOT).forEach((persona) => {
-    const tag = persona.default ? ` ${c.grn('default')}` : '';
-    console.log(`  ${c.cyn(cell(persona.slug, 18))} ${persona.label}${tag}`);
-  });
-  console.log('');
-}
-
-async function resolveProjectPackPlan(targetName) {
-  const projectPacks = resolveProjectPacks(process.cwd(), targetName);
-  if (!projectPacks.path) {
-    return {
-      ...projectPacks,
-      selected: [],
-      optionalSelected: [],
-      sources: {},
-    };
-  }
-
-  let confirmOptional = null;
-  if (projectPacks.optionalPolicy === 'prompt' && projectPacks.optional.length > 0 && !autoYes) {
-    const { confirm } = await import('@inquirer/prompts');
-    confirmOptional = async (optionalPacks) => confirm({
-      message: `当前仓库声明了 optional packs: ${optionalPacks.join(', ')}，是否一并安装?`,
-      default: true,
-    });
-  }
-
-  const selection = await selectProjectPacksForInstall(projectPacks, {
-    autoYes,
-    confirm: confirmOptional,
-  });
-
-  return {
-    ...projectPacks,
-    ...selection,
-  };
-}
-
-async function resolveInstallPersona() {
-  if (requestedPersonaSlug) {
-    const persona = resolvePersona(PKG_ROOT, requestedPersonaSlug);
-    if (!persona) throw new Error(`未知人格预设: ${requestedPersonaSlug}`);
-    return persona;
-  }
-  if (autoYes) return getDefaultPersona(PKG_ROOT);
-
-  const personas = listPersonas(PKG_ROOT);
-  const defaultPersona = getDefaultPersona(PKG_ROOT);
-  const slug = await promptHorizontalSelect({
-    message: `${c.mag('选择人格')} ${c.d('Tab 横向切换')}`,
-    choices: personas.map(p => ({
-      name: formatPersonaTab(p),
-      value: p.slug,
-      short: p.label,
-      description: formatPersonaDescription(p),
-    })),
-    default: defaultPersona.slug,
-  });
-  return resolvePersona(PKG_ROOT, slug);
-}
-
-async function resolveInstallStyle(targetName) {
-  if (requestedStyleSlug) {
-    const style = resolveStyle(PKG_ROOT, requestedStyleSlug, targetName === 'gemini' || targetName === 'codex' ? 'claude' : targetName)
-      || resolveStyle(PKG_ROOT, requestedStyleSlug, 'claude');
-    if (!style) throw new Error(`未知输出风格: ${requestedStyleSlug}`);
-    return style;
-  }
-
-  if (autoYes) return getDefaultStyle(PKG_ROOT, targetName);
-
-  const styles = listStyles(PKG_ROOT, targetName);
-  const defaultStyle = getDefaultStyle(PKG_ROOT, targetName);
-
-  const slug = await promptHorizontalSelect({
-    message: `${c.cyn('选择输出风格')} ${c.d('Tab 横向切换')}`,
-    choices: styles.map(style => ({
-      name: style.label,
-      value: style.slug,
-      short: style.label,
-      description: formatStyleDescription(style),
-    })),
-    default: defaultStyle.slug,
-  });
-  return resolveStyle(PKG_ROOT, slug, targetName);
 }
 
 
@@ -490,66 +389,6 @@ async function main() {
   } else {
     for (const targetName of selectedTargets) runUninstall(targetName);
   }
-}
-
-function finish(ctx) {
-  const tgt = ctx.manifest.target;
-  let reportPath = null;
-  if (ctx.packPlan && ctx.packPlan.root) {
-    reportPath = writeReportArtifact(ctx.packPlan.root, `install-${tgt}`, {
-      version: VERSION,
-      target: tgt,
-      timestamp: new Date().toISOString(),
-      cwd: process.cwd(),
-      pack_plan: {
-        required: ctx.packPlan.required,
-        optional: ctx.packPlan.optional,
-        selected: ctx.packPlan.selected,
-        optional_policy: ctx.packPlan.optionalPolicy,
-        sources: ctx.packPlan.sources,
-      },
-      pack_reports: ctx.manifest.pack_reports || [],
-      installed: ctx.manifest.installed || [],
-      backups: ctx.manifest.backups || [],
-    });
-  }
-  divider('安装完成');
-  console.log('');
-  console.log(`  ${c.b('目标:')}     ${c.cyn(ctx.targetDir)}`);
-  console.log(`  ${c.b('版本:')}     v${VERSION}`);
-  if (ctx.manifest.style && tgt !== 'codex') {
-    console.log(`  ${c.b('风格:')}     ${c.mag(ctx.manifest.style)}`);
-  }
-  if (Array.isArray(ctx.manifest.project_packs) && ctx.manifest.project_packs.length > 0) {
-    console.log(`  ${c.b('Packs:')}    ${ctx.manifest.project_packs.join(', ')}`);
-  }
-  if (ctx.manifest.optional_policy) {
-    console.log(`  ${c.b('Pack策略:')} ${ctx.manifest.optional_policy}`);
-  }
-  if (Array.isArray(ctx.manifest.pack_reports) && ctx.manifest.pack_reports.length > 0) {
-    ctx.manifest.pack_reports.forEach((report) => {
-      const source = report.source ? ` source=${report.source}` : '';
-      const reason = report.reason ? ` reason=${report.reason}` : '';
-      console.log(`  ${c.b('Pack报告:')} ${report.pack}@${report.host} ${report.status}${source}${reason}`);
-    });
-  }
-  if (ctx.packPlan && ctx.packPlan.root) {
-    const projectLock = readProjectPackLock(ctx.packPlan.root);
-    if (projectLock) {
-      const bootstrap = syncProjectBootstrapArtifacts(ctx.packPlan.root, projectLock.lock);
-      const updatedDocs = bootstrap.docs.filter((entry) => entry.action !== 'skipped');
-      if (updatedDocs.length > 0) {
-        updatedDocs.forEach((entry) => console.log(`  ${c.b('文档同步:')} ${entry.action} ${entry.filePath}`));
-      }
-    }
-  }
-  if (reportPath) {
-    console.log(`  ${c.b('Report:')}   ${reportPath}`);
-  }
-  console.log(`  ${c.b('文件:')}     ${ctx.manifest.installed.length} 个安装, ${ctx.manifest.backups.length} 个备份`);
-  console.log(`  ${c.b('卸载:')}     ${c.d(`npx code-abyss --uninstall ${tgt}`)}`);
-  console.log('');
-  console.log(c.mag(`  ⚚ 劫——破——了——！！！\n`));
 }
 
 if (require.main === module) {

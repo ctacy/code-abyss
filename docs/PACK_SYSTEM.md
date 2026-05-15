@@ -94,11 +94,11 @@ What happens:
 Entry points:
 
 ```bash
-npm run packs:vendor:pull -- gstack
+node bin/packs.js vendor-pull gstack
 npm run packs:vendor:sync
 npm run packs:vendor:sync -- --check
-npm run packs:vendor:status -- gstack
-npm run packs:vendor:dirty -- gstack
+node bin/packs.js vendor-status gstack
+node bin/packs.js vendor-dirty gstack
 ```
 
 ### Provider model
@@ -135,10 +135,10 @@ Vendor status reports:
 Entry points:
 
 ```bash
-npm run packs:report -- list
-npm run packs:report -- latest --kind install-codex
-npm run packs:report -- summary
-npm run packs:report -- summary --json
+node bin/packs.js report list
+node bin/packs.js report latest --kind install-codex
+node bin/packs.js report summary
+node bin/packs.js report summary --json
 ```
 
 Reports are written to:
@@ -169,7 +169,7 @@ Current artifact families:
 Pack uninstall is manifest-driven:
 
 ```bash
-npm run packs:uninstall -- gstack --host all --remove-lock --remove-vendor
+node bin/packs.js uninstall gstack --host all --remove-lock --remove-vendor
 ```
 
 The uninstall flow reads `hosts.<host>.uninstall` from the pack manifest and removes:

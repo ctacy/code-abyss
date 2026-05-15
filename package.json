@@ -41,17 +41,10 @@
   "scripts": {
     "test": "jest",
     "verify:skills": "node bin/verify-skills-contract.js",
-    "packs:init": "node bin/packs.js init",
     "packs:bootstrap": "node bin/packs.js bootstrap",
     "packs:update": "node bin/packs.js update",
     "packs:check": "node bin/packs.js check",
-    "packs:diff": "node bin/packs.js diff",
-    "packs:report": "node bin/packs.js report",
-    "packs:vendor:pull": "node bin/packs.js vendor-pull",
-    "packs:vendor:sync": "node bin/packs.js vendor-sync",
-    "packs:vendor:status": "node bin/packs.js vendor-status",
-    "packs:vendor:dirty": "node bin/packs.js vendor-dirty",
-    "packs:uninstall": "node bin/packs.js uninstall"
+    "packs:vendor:sync": "node bin/packs.js vendor-sync"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.10.1"

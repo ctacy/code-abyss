@@ -87,7 +87,7 @@ npm run packs:bootstrap
 npm run packs:bootstrap -- --apply-docs
 npm run packs:update -- --host codex --add-optional gstack --optional-policy prompt --set-source gstack=local
 npm run packs:check
-npm run packs:diff
+node bin/packs.js diff
 ```
 
 ## Vendor workflow
@@ -95,15 +95,15 @@ npm run packs:diff
 When a pack uses `source=local`:
 
 ```bash
-npm run packs:vendor:pull -- gstack
+node bin/packs.js vendor-pull gstack
 npm run packs:vendor:sync
 npm run packs:vendor:sync -- --check
-npm run packs:vendor:status -- gstack
+node bin/packs.js vendor-status gstack
 ```
 
 ## Drift reporting
 
-- `packs:diff` compares the current lock against the manifest-derived defaults
+- `node bin/packs.js diff` compares the current lock against the manifest-derived defaults
 - install/uninstall actions write JSON artifacts to `.code-abyss/reports/`
 - `node bin/packs.js report list`
 - `node bin/packs.js report latest --kind install-codex`

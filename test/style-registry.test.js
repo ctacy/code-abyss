@@ -85,6 +85,25 @@ describe('style registry', () => {
     expect(result).toBe('Hello me, greet you');
   });
 
+  test('5×5 全量跨配 smoke：所有 persona×style 组合无 crash 且无残留模板变量', () => {
+    const personas = listPersonas(projectRoot);
+    const styles = listStyles(projectRoot);
+    expect(personas.length).toBe(5);
+    expect(styles.length).toBe(5);
+
+    for (const persona of personas) {
+      for (const style of styles) {
+        const content = renderGeminiContext(projectRoot, style.slug, persona.slug);
+        expect(content.length).toBeGreaterThan(500);
+        expect(content).not.toContain('{{self}}');
+        expect(content).not.toContain('{{user}}');
+        expect(content).not.toContain('{{language}}');
+        expect(content).toContain(`自称「${persona.self}」`);
+        expect(content).toContain(`称用户「${persona.user}」`);
+      }
+    }
+  });
+
   test('所有 runtime guidance 保持在预算内', () => {
     const styles = listStyles(projectRoot);
     styles.forEach(style => {
@@ -115,5 +134,14 @@ describe('persona registry', () => {
       slug: 'junior-sister',
       label: '古怪精灵小师妹',
     });
+  });
+
+  test('persona index.json 每个条目都有 self/user/language 字段', () => {
+    const personas = listPersonas(projectRoot);
+    for (const persona of personas) {
+      expect(persona.self).toBeTruthy();
+      expect(persona.user).toBeTruthy();
+      expect(persona.language).toBeTruthy();
+    }
   });
 });

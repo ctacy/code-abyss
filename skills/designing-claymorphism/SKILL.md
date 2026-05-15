@@ -1,6 +1,6 @@
 ---
 name: designing-claymorphism
-description: Claymorphism design system skill. Use when building soft, puffy, clay-like UI components with large radii, dual inner shadows, and offset outer shadows.
+description: Claymorphism design system. Use when building soft, puffy, clay-like UI components with large radii, dual inner shadows, and offset outer shadows. Provides CSS tokens, component patterns, and implementation specs.
 user-invocable: false
 ---
 

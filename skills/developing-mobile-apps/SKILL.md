@@ -1,6 +1,6 @@
 ---
 name: developing-mobile-apps
-description: 移动开发。iOS、Android、SwiftUI、Jetpack Compose、React Native、Flutter、跨平台。当用户提到移动开发、iOS、Android、跨平台时路由到此。
+description: Mobile development knowledge reference covering iOS (SwiftUI), Android (Jetpack Compose), React Native, and Flutter. Use when building mobile apps, working with cross-platform frameworks, or implementing native UI patterns.
 user-invocable: false
 ---
 

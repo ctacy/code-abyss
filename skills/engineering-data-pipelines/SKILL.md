@@ -1,6 +1,6 @@
 ---
 name: engineering-data-pipelines
-description: 数据工程。Airflow、Dagster、Kafka Streams、Flink、dbt、数据管道、流处理、数据质量。当用户提到数据管道、ETL、流处理、数据质量时路由到此。
+description: Data engineering knowledge reference covering Airflow, Dagster, Kafka Streams, Flink, dbt, and data quality patterns. Use when building data pipelines, ETL workflows, stream processing, or data quality checks.
 user-invocable: false
 ---
 

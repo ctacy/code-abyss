@@ -1,6 +1,6 @@
 ---
 name: generating-docs
-description: 文档生成器。自动分析模块结构，生成 README.md 和 DESIGN.md 骨架。当魔尊提到生成文档、创建README、创建DESIGN、文档骨架、文档模板时使用。在新建模块开始时自动触发。
+description: Generates README.md and DESIGN.md scaffolds by analyzing module structure. Use when creating documentation templates for new modules. Automatically triggered at module creation.
 compatibility: node>=18
 user-invocable: false
 allowed-tools: Bash, Read, Write, Glob

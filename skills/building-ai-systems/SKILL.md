@@ -1,6 +1,6 @@
 ---
 name: building-ai-systems
-description: AI/LLM 能力索引。Agent 开发、LLM 安全、RAG 系统。当用户提到 AI、LLM、Agent、RAG、Prompt 时路由到此。
+description: AI and LLM knowledge reference covering agent development, LLM security, RAG systems, prompt engineering, and evaluation. Use when building AI agents, working with LLMs, designing RAG pipelines, or writing prompts.
 user-invocable: false
 ---
 

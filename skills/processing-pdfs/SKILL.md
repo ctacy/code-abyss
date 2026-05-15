@@ -1,6 +1,6 @@
 ---
 name: processing-pdfs
-description: Office PDF 能力。支持 PDF 文本/表格提取、表单填写、合并拆分、批量处理、图片转换与程序化生成，适用于票据、表单、报告和归档流转。
+description: Processes PDF files. Extracts text and tables, fills forms, merges and splits documents, batch-processes files, converts to images, and generates PDFs programmatically. Use when working with .pdf files. Do NOT use for Word documents, spreadsheets, or presentations.
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob
 argument-hint: <file.pdf | task>

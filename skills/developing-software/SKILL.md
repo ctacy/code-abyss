@@ -1,6 +1,6 @@
 ---
 name: developing-software
-description: 开发语言能力索引。Python、Go、Rust、TypeScript、Java、C++、Shell。当用户提到编程、开发、代码、语言时路由到此。
+description: Software development knowledge reference covering Python, Go, Rust, TypeScript, Java, C++, and Shell. Use when writing code, debugging, or following language-specific best practices.
 user-invocable: false
 ---
 

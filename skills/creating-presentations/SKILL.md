@@ -1,6 +1,6 @@
 ---
 name: creating-presentations
-description: Office PowerPoint 能力。支持 .pptx 创建、模板改写、HTML 转幻灯片、缩略图校验、版式替换、演讲备注与 OOXML 深度编辑。
+description: Processes PowerPoint presentation files (.pptx). Creates slides, rewrites templates, converts HTML to presentations, validates thumbnails, swaps layouts, and performs deep OOXML editing. Use when working with presentation files or slide decks. Do NOT use for Word documents, spreadsheets, or PDF files.
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob
 argument-hint: <file.pptx | task>

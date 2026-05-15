@@ -1,6 +1,6 @@
 ---
 name: processing-docx
-description: Office Word 文档能力。支持 .docx 创建、编辑、批注、修订跟踪、OOXML 分析与格式保留，适用于合同、制度、学术、商务、公文等专业文档场景。
+description: Processes Word document files (.docx). Creates, edits, annotates, tracks revisions, analyzes OOXML structure, and preserves formatting for contracts, policies, academic papers, and business documents. Use when working with .docx files or Word documents. Do NOT use for PDFs, spreadsheets, presentations, or plain text files.
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob
 argument-hint: <file.docx | task>

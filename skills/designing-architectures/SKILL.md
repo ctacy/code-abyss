@@ -1,6 +1,6 @@
 ---
 name: designing-architectures
-description: 架构设计能力索引。API设计、安全架构、云原生、数据安全。当用户提到架构、设计、API、云原生时路由到此。
+description: Architecture knowledge reference covering API design, security architecture, cloud-native patterns, caching strategies, message queues, and data security. Use when designing system architecture, APIs, or cloud-native infrastructure.
 user-invocable: false
 ---
 

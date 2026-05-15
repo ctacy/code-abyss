@@ -1,6 +1,6 @@
 ---
 name: designing-glassmorphism
-description: Glassmorphism design system skill. Use when building frosted-glass UI components with blur, transparency, and layered depth effects.
+description: Glassmorphism design system. Use when building frosted-glass UI components with backdrop-filter blur, transparency layers, and layered depth effects. Provides CSS tokens, component patterns, and implementation specs.
 user-invocable: false
 ---
 

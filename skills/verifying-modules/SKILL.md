@@ -1,6 +1,6 @@
 ---
 name: verifying-modules
-description: 模块完整性校验关卡。扫描目录结构、检测缺失文档、验证代码与文档同步。当魔尊提到模块校验、文档检查、结构完整性、README检查、DESIGN检查时使用。在新建模块完成时自动触发。
+description: Scans directory structure, detects missing documentation, and verifies code-doc synchronization. Use when checking module completeness, README presence, or DESIGN.md alignment. Automatically triggered after creating new modules.
 compatibility: node>=18
 user-invocable: false
 allowed-tools: Bash, Read, Glob

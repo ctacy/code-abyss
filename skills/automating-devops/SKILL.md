@@ -1,6 +1,6 @@
 ---
 name: automating-devops
-description: DevOps 能力索引。Git、测试、DevSecOps、数据库。当用户提到 DevOps、CI/CD、Git、测试时路由到此。
+description: DevOps knowledge reference covering Git workflows, testing strategies, DevSecOps, CI/CD pipelines, database management, observability, and performance optimization. Use when working with Git, CI/CD, testing, monitoring, or infrastructure automation.
 user-invocable: false
 ---
 

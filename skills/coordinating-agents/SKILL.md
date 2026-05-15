@@ -1,6 +1,6 @@
 ---
 name: coordinating-agents
-description: 天罗秘典·多Agent协同。融合蚁群仿生设计，定义Agent角色、生命周期、信息素通信、任务分解、冲突解决。当需要多Agent并行协作时路由到此。
+description: Multi-agent coordination knowledge covering agent roles, lifecycle management, swarm communication, task decomposition, and conflict resolution. Use when orchestrating multiple agents in parallel, designing multi-agent workflows, or using TeamCreate.
 user-invocable: false
 ---
 

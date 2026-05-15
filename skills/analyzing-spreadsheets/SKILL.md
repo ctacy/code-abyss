@@ -1,6 +1,6 @@
 ---
 name: analyzing-spreadsheets
-description: Office Excel 能力。支持 .xlsx/.xlsm/.csv 等表格创建、公式建模、格式保留、数据分析、财务模型和重算校验，强调零公式错误交付。
+description: Processes Excel spreadsheet files (.xlsx, .xlsm, .csv). Creates workbooks, builds formulas, preserves formatting, analyzes tabular data, and validates financial models with zero-formula-error delivery. Use when working with spreadsheet files or tabular data analysis. Do NOT use for Word documents, PDFs, presentations, or database pipelines.
 user-invocable: false
 allowed-tools: Bash, Read, Write, Edit, Glob
 argument-hint: <file.xlsx | task>

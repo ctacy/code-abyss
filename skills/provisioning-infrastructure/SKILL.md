@@ -1,6 +1,6 @@
 ---
 name: provisioning-infrastructure
-description: 云原生基础设施。Kubernetes、Helm、Kustomize、Operator、CRD、GitOps、ArgoCD、Flux、IaC、Terraform、Pulumi、CDK。当用户提到 K8s、Helm、GitOps、IaC 时路由到此。
+description: Cloud-native infrastructure knowledge reference covering Kubernetes, Helm, Kustomize, Operators, CRDs, GitOps (ArgoCD, Flux), and IaC (Terraform, Pulumi, CDK). Use when provisioning infrastructure, managing clusters, or working with GitOps workflows.
 user-invocable: false
 ---
 

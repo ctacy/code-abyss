@@ -1,6 +1,6 @@
 ---
 name: designing-neubrutalism
-description: Neubrutalism design system skill. Use when building bold UI with thick borders, offset solid shadows, high saturation colors, and minimal border radius.
+description: Neubrutalism design system. Use when building bold UI with thick borders, offset solid shadows, high-saturation colors, and minimal border radius. Provides CSS tokens, component patterns, and implementation specs.
 user-invocable: false
 ---
 

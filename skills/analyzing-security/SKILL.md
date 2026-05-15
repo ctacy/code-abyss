@@ -1,6 +1,6 @@
 ---
 name: analyzing-security
-description: 安全校验关卡。自动扫描代码安全漏洞，检测危险模式，确保安全决策有文档记录。当魔尊提到安全扫描、漏洞检测、安全审计、代码安全、OWASP、注入检测、敏感信息泄露时使用。在新建模块、安全相关变更、攻防任务、重构完成时自动触发。
+description: Scans code for security vulnerabilities, detects dangerous patterns, and ensures security decisions are documented. Use when running security scans, auditing code, or checking for OWASP issues, injection risks, or sensitive data leaks. Automatically triggered on new modules, security-related changes, or post-refactor.
 compatibility: node>=18
 user-invocable: false
 allowed-tools: Bash, Read, Grep

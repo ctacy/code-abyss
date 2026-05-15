@@ -6,13 +6,53 @@ const { listTargetNames } = require('./target-registry');
 
 const SUPPORTED_TARGETS = new Set(listTargetNames());
 
-// Module-level cache: projectRoot → normalized styles / personas
 const _cache = new Map();
 const _personaCache = new Map();
 
 function clearStyleCache() {
   _cache.clear();
   _personaCache.clear();
+}
+
+// ── Shared Behavior Layer ──
+
+const SHARED_FILES_ORDER = [
+  'proactive.md',
+  'iron-laws.md',
+  'big-picture.md',
+  'execution-chains.md',
+  'skill-routing.md',
+  'environment.md',
+];
+
+function loadSharedBehavior(projectRoot) {
+  const sharedDir = path.join(projectRoot, 'config', 'personas', '_shared');
+  const parts = [];
+  for (const file of SHARED_FILES_ORDER) {
+    const filePath = path.join(sharedDir, file);
+    if (fs.existsSync(filePath)) {
+      parts.push(fs.readFileSync(filePath, 'utf8').replace(/\s+$/, ''));
+    }
+  }
+  return parts.join('\n\n');
+}
+
+// ── Template Variable Substitution ──
+
+function applyPersonaVars(content, persona) {
+  if (!persona) return content;
+  const vars = {
+    '{{self}}': persona.self || '',
+    '{{user}}': persona.user || '',
+    '{{language}}': persona.language || '',
+  };
+  let result = content;
+  for (const [key, value] of Object.entries(vars)) {
+    if (value) {
+      result = result.split(key).join(value);
+    }
+  }
+  return result;
 }
 
 // ── Persona Registry ──
@@ -42,6 +82,9 @@ function loadPersonaRegistry(projectRoot) {
       description: requireNonEmptyString(p.description, `persona.${slug}.description`),
       file: requireNonEmptyString(p.file || `${slug}.md`, `persona.${slug}.file`),
       default: p.default === true,
+      self: p.self || '',
+      user: p.user || '',
+      language: p.language || '',
     };
   });
 
@@ -71,6 +114,8 @@ function readPersonaContent(projectRoot, persona) {
   const personaPath = path.join(projectRoot, 'config', 'personas', persona.file);
   return fs.readFileSync(personaPath, 'utf8');
 }
+
+// ── Style Registry ──
 
 function loadStyleRegistry(projectRoot) {
   if (_cache.has(projectRoot)) return _cache.get(projectRoot);
@@ -175,20 +220,22 @@ function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', per
     throw new Error(`未知输出风格: ${styleSlug}. Try: node bin/install.js --list-styles`);
   }
 
-  let base;
+  let persona;
   if (personaSlug) {
-    const persona = resolvePersona(projectRoot, personaSlug);
-    if (persona) {
-      base = readPersonaContent(projectRoot, persona).replace(/\s+$/, '');
-    }
+    persona = resolvePersona(projectRoot, personaSlug);
   }
-  if (!base) {
-    const defaultPersona = getDefaultPersona(projectRoot);
-    base = readPersonaContent(projectRoot, defaultPersona).replace(/\s+$/, '');
+  if (!persona) {
+    persona = getDefaultPersona(projectRoot);
   }
 
-  const styleContent = readStyleContent(projectRoot, style).replace(/^\s+/, '');
-  return `${base}\n\n${styleContent}\n`;
+  const identity = readPersonaContent(projectRoot, persona).replace(/\s+$/, '');
+  const shared = loadSharedBehavior(projectRoot);
+  const styleContent = applyPersonaVars(
+    readStyleContent(projectRoot, style).replace(/^\s+/, ''),
+    persona
+  );
+
+  return `${identity}\n\n${shared}\n\n${styleContent}\n`;
 }
 
 function renderCodexAgents(projectRoot, styleSlug, personaSlug = null) {
@@ -211,4 +258,6 @@ module.exports = {
   renderGeminiContext,
   renderRuntimeGuidance,
   clearStyleCache,
+  applyPersonaVars,
+  loadSharedBehavior,
 };

@@ -41,11 +41,11 @@ CI runs on Node 18/20/22: `npm ci && npm test && npm run verify:skills` plus all
 
 | Layer | Source | Purpose |
 |-------|--------|---------|
-| Identity & Rules | `config/CLAUDE.md` | Persona, rules, scene routing, execution chains |
-| Output Style | `output-styles/*.md` + `index.json` | Style registry + per-style templates |
-| Knowledge | `skills/**/*.md` | Domain skill documents + executable tools |
+| Identity | `config/personas/*.md` | Per-persona identity: role, personality, tone, scenario scripts |
+| Shared Behavior | `config/personas/_shared/*.md` | Iron laws, execution chains, skill routing, proactive protocol |
+| Output Style | `output-styles/*.md` + `index.json` | Style registry + per-style templates with `{{self}}`/`{{user}}`/`{{language}}` template variables |
 
-`config/AGENTS.md` remains a repository snapshot. Codex runtime installation writes a generated `~/.codex/AGENTS.md` containing persona + output style; OpenClaw installation writes runtime rules to workspace `AGENTS.md` and persona/style to workspace `SOUL.md` while installing shared skills under `~/.openclaw/skills/`.
+All four targets use a single composition function `renderRuntimeGuidance()` that assembles: identity + shared behavior + style (with template variable substitution). Persona registry `config/personas/index.json` declares `self`/`user`/`language` fields per persona for cross-combination safety.
 
 ### Skill Registry (Single Source of Truth)
 

@@ -34,6 +34,50 @@ code-abyss 自 v1.0 演进到 v2.1.11 期间，逐步生长出两套被认为是
 | **4** | skills 内容打磨 | B + C + P8 | 否（frontmatter 迁子键 + 描述重写） | 2 | v3.0.0-beta.2 |
 | **5** | 生态接入 | δ | 否（新增） | 1 | v3.0.0 |
 
+### Phase 1 实际成果（2026-05-16，retrospective）
+
+Phase 1 实际产出 **9 个 commit / 7 个 sub-PR**，全程 `main` 保持可发布、4-target smoke 全绿、零回归。
+
+| Sub-PR | 动作 | 实际结果 | LOC 变动 |
+|---|---|---|---:|
+| α-1 | 抽 UI 层 → `bin/lib/ui/` | install.js -160 | +331 / -170 |
+| α-2 | 抽 uninstall lifecycle | install.js -47 | +226 / -62 |
+| α-3a | 抽 command-generation 纯函数 | install.js -123 | +337 / -135 |
+| α-3b | 抽 install-helpers | install.js -39 | +278 / -57 |
+| α-3c | 抽 installCore + side-effect installs | install.js -329 | +387 / -351 |
+| α-4 | 抽 select + finish flows | install.js -161 | +273 / -196 |
+| **α 小计** | install.js 拆分完成 | **install.js 1265 → 406 LOC（-67.9%）** | — |
+| P17 | 删 7 个低频 npm script | -7 个 alias | +13 / -20 |
+| η | ccstatusline 解耦到 `bin/optional/` + schema guard | 防 v2.1.11 类回归 | +256 / -88 |
+| γ-a | gstack 三件套 → `bin/lib/gstack/` 统一架构 | DRY，新增 host 成本 -65% | +876 / -624 |
+| γ-b | OpenClaw gstack 支持 | 4 host 完整覆盖 | +235 / -2 |
+| β-1 | pack-docs 合并到 pack-bootstrap | 删冗余文件 | +59 / -65 |
+| β-2 | 删 archive + local-dir 内建 provider | -2 个未用 provider | +47 / -140 |
+
+**Phase 1 累计 LOC**：+2818 / -1910，**净 +908 LOC**（含约 1100 LOC 新增测试）。
+
+**与 ADR 初版预估的差异（诚实记录）**：
+
+- **α** 预估"install.js 拆解"：✅ 完全达成，-67.9% 与预期一致
+- **β** 预估"-1500 LOC 大杀刀"：⚠️ **高估**。实际深入调研后只删了 -198 LOC：
+  - pack-docs.js 仅 1 个内部消费者，可合并（-5）
+  - vendor-providers 内建 archive/local-dir 0 真实消费者，可删（-93）
+  - 但 **pack-registry / pack-vendor / pack-reports / pack-bootstrap / packs.js 都有真实消费者**（CI、用户脚本、bootstrap 流程），不能删
+  - 教训：ADR 当初的 1500 LOC 数字是"不删 pack-registry 也不行"的乐观估计，没核对消费者
+- **γ** 预估"~400 LOC 删除"：⚠️ **统计口径错**。实际是**架构升级而非减肥**：
+  - 净 +252 LOC（core + 4 strategy + facade）
+  - 真实价值在"加新 host 成本从 ~350 LOC 降到 ~120 LOC"，是 DRY 收益不是 LOC 收益
+  - γ-b 顺带补齐 OpenClaw gstack 支持
+- **ε** 预估"删 target-registry 81 LOC → 一行常量"：❌ **撤刀**。调研后发现：
+  - target-registry 有 5 个外部消费者（不是 ADR 说的"只有 install.js 一家"）
+  - INSTALL_TARGETS 含 label/actionLabel/homeDir 等 UI 元数据，不是简单字符串数组
+  - MANAGED_ROOTS 含 'agents' 这个非-target root（codex 用 ~/.agents/skills）
+  - 真删会破坏 codex 安装；保留比删值得
+- **η** 预估"~80 LOC 解耦"：✅ + 顺手加 schema guard 防 v2.1.11 ZodError 类回归
+- **P17** 预估"~100 LOC 删 9 个 script"：⚠️ **保守化**。实际删 7 个 alias（保留 4 个 CI/bootstrap 依赖项），bin/packs.js 子命令完整保留可被 `node bin/packs.js xxx` 调用
+
+**Phase 1 完成度对原始 ADR**：α/η/γ/P17 ✅；β 砍量大幅缩水（-198 vs ADR -1500）但路径正确；ε 撤刀。**实际可发布 v3.0.0-alpha.1**。
+
 ### 迁移策略（2026-05-16 决策）
 
 **旧路径处理**：v3.0 install 时检测 `~/.{target}/skills/domains/...` 旧路径仅打 warning，要求用户先 `--uninstall` 旧版再装新版。**不做自动迁移**。理由：
@@ -269,3 +313,4 @@ code-abyss 自 v1.0 演进到 v2.1.11 期间，逐步生长出两套被认为是
 
 - 2026-05-16：本 ADR 初版提交，决策位待 telagod scope 选择
 - 2026-05-16：telagod 选定 Scope-L（v3.0 大重构），状态由 proposed → accepted；新增 5 阶段 Phase 路线图
+- 2026-05-16：Phase 1 完成（9 commits / 7 sub-PR），追加 retrospective 段；ε 撤刀、β 砍量从 -1500 修正为 -198；准备发 v3.0.0-alpha.1

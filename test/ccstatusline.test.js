@@ -3,7 +3,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { detectCcstatusline, deployCcstatuslineConfig, installCcstatusline } = require(path.join(__dirname, '..', 'bin', 'lib', 'ccstatusline.js'));
+const { detectCcstatusline, deployCcstatuslineConfig, installCcstatusline } = require(path.join(__dirname, '..', 'bin', 'optional', 'ccstatusline', 'index.js'));
 
 describe('detectCcstatusline', () => {
   test('返回 boolean', () => {
@@ -26,10 +26,8 @@ describe('deployCcstatuslineConfig', () => {
   test('部署 bundled config 到目标目录', () => {
     const errors = [];
     const logs = [];
-    const PKG_ROOT = path.join(__dirname, '..');
     deployCcstatuslineConfig(errors, {
       HOME: tmpDir,
-      PKG_ROOT,
       ok: (msg) => logs.push(msg),
     });
     expect(errors).toHaveLength(0);
@@ -41,27 +39,23 @@ describe('deployCcstatuslineConfig', () => {
   });
 
   test('已有配置时创建备份', () => {
-    const PKG_ROOT = path.join(__dirname, '..');
     const configDir = path.join(tmpDir, '.config', 'ccstatusline');
     fs.mkdirSync(configDir, { recursive: true });
     fs.writeFileSync(path.join(configDir, 'settings.json'), '{"old":true}');
     const errors = [];
-    deployCcstatuslineConfig(errors, { HOME: tmpDir, PKG_ROOT, ok: () => {} });
+    deployCcstatuslineConfig(errors, { HOME: tmpDir, ok: () => {} });
     expect(errors).toHaveLength(0);
     const backup = path.join(tmpDir, '.claude', '.sage-backup', 'ccstatusline-settings.json');
     expect(fs.existsSync(backup)).toBe(true);
     expect(JSON.parse(fs.readFileSync(backup, 'utf8'))).toEqual({ old: true });
   });
 
-  test('bundled config 不存在时记录错误', () => {
-    const errors = [];
-    deployCcstatuslineConfig(errors, {
-      HOME: tmpDir,
-      PKG_ROOT: '/nonexistent/path',
-      ok: () => {},
-    });
-    expect(errors).toHaveLength(1);
-    expect(errors[0]).toMatch(/settings\.json 不存在/);
+  test('bundled settings.json 必须通过 schema guard', () => {
+    // 验证 bundled config 本身的 flexMode 等枚举字段都合法
+    const bundledPath = path.join(__dirname, '..', 'bin', 'optional', 'ccstatusline', 'settings.json');
+    const content = JSON.parse(fs.readFileSync(bundledPath, 'utf8'));
+    const { validateCcstatuslineSettings } = require(path.join(__dirname, '..', 'bin', 'optional', 'ccstatusline', 'schema-guard.js'));
+    expect(validateCcstatuslineSettings(content)).toEqual([]);
   });
 });
 

@@ -3,6 +3,10 @@
 const fs = require('fs');
 const path = require('path');
 const { getPackHostFiles } = require(path.join(__dirname, '..', 'lib', 'pack-registry.js'));
+const {
+  CCSTATUSLINE_CMD,
+  CCSTATUSLINE_CONFIG,
+} = require(path.join(__dirname, '..', 'optional', 'ccstatusline', 'index.js'));
 
 const PROJECT_ROOT = path.join(__dirname, '..', '..');
 
@@ -31,15 +35,6 @@ const SETTINGS_TEMPLATE = {
       'Agent', 'Glob', 'Grep', 'WebFetch', 'WebSearch',
       'TodoWrite', 'NotebookRead', 'NotebookEdit', 'mcp__*'
     ]
-  }
-};
-
-const CCSTATUSLINE_CMD = 'npx -y ccstatusline@latest';
-const CCSTATUSLINE_CONFIG = {
-  statusLine: {
-    type: 'command',
-    command: CCSTATUSLINE_CMD,
-    padding: 0
   }
 };
 

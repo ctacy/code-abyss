@@ -45,7 +45,7 @@ const {
   renderCodexAgents,
   renderGeminiContext,
 } = require(path.join(__dirname, 'lib', 'style-registry.js'));
-const { detectCcstatusline, installCcstatusline } = require(path.join(__dirname, 'lib', 'ccstatusline.js'));
+const { detectCcstatusline, installCcstatusline } = require(path.join(__dirname, 'optional', 'ccstatusline', 'index.js'));
 const { installGstackClaudePack } = require(path.join(__dirname, 'lib', 'gstack-claude.js'));
 const { installGstackGeminiPack } = require(path.join(__dirname, 'lib', 'gstack-gemini.js'));
 

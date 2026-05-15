@@ -1,0 +1,13 @@
+{
+  "name": "ccstatusline",
+  "version": "1.0.0",
+  "description": "Claude Code 状态栏（多行 token / cost / git 预设）",
+  "type": "opt-in",
+  "targets": ["claude"],
+  "upstream": {
+    "package": "ccstatusline",
+    "minVersion": "2.2.18"
+  },
+  "config": "settings.json",
+  "schemaGuard": "schema-guard.js"
+}

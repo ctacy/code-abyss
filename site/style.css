@@ -385,6 +385,30 @@ footer { padding: 40px 24px; border-top: 1px solid var(--border); }
   width: 6px; height: 6px; background: var(--accent); border-radius: 50%;
 }
 
+/* Submit Steps */
+.submit-step { padding: 28px; margin-bottom: 16px; }
+.step-header { display: flex; gap: 16px; align-items: flex-start; margin-bottom: 20px; }
+.step-header h3 { font-size: 1rem; margin-bottom: 4px; }
+.step-header p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
+
+.review-checklist { display: flex; flex-direction: column; gap: 10px; }
+.review-checklist label {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 0.85rem; color: var(--text-dim); cursor: pointer;
+}
+.review-checklist input[type="checkbox"] {
+  width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0;
+}
+
+.example-collapse { margin-top: 24px; }
+.example-collapse summary {
+  padding: 16px 24px; cursor: pointer; font-size: 0.9rem; font-weight: 600;
+  list-style: none; display: flex; align-items: center; gap: 8px;
+}
+.example-collapse summary::before { content: '+ '; color: var(--accent); font-weight: 800; }
+.example-collapse[open] summary::before { content: '- '; }
+.example-collapse .example-split { margin-top: 16px; }
+
 /* Form additions */
 .form-intro { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 24px; }
 .form-section { padding: 0 24px 100px; }

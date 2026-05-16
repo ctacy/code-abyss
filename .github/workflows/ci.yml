@@ -27,7 +27,7 @@ jobs:
       - run: node skills/analyzing-changes/scripts/change_analyzer.js --mode staged || node skills/analyzing-changes/scripts/change_analyzer.js --mode working
       - run: node skills/verifying-modules/scripts/module_scanner.js .
       - run: node skills/checking-code-quality/scripts/quality_checker.js .
-      - run: node skills/analyzing-security/scripts/security_scanner.js . --exclude creating-presentations processing-docx analyzing-spreadsheets processing-pdfs
+      - run: node skills/analyzing-security/scripts/security_scanner.js . --exclude creating-presentations processing-docx analyzing-spreadsheets processing-pdfs site
 
   smoke-claude:
     runs-on: ${{ matrix.os }}

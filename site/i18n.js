@@ -241,8 +241,10 @@ function applyLang(lang) {
     const val = t(key, lang);
     if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
       el.placeholder = val;
+    } else if (el.hasAttribute('data-i18n-html')) {
+      el.innerHTML = val; // eslint-disable-line -- trusted static i18n strings only
     } else {
-      el.innerHTML = val;
+      el.textContent = val;
     }
   });
 

@@ -2,264 +2,131 @@
 
 <div align="center">
 
-*为 Claude Code / Codex CLI / Gemini CLI / OpenClaw 打造的人格驱动配置系统*
+**给你的 AI 编程助手一个人格、一套方法论、22 项工程技能。**
 
 [![npm](https://img.shields.io/npm/v/code-abyss.svg)](https://www.npmjs.com/package/code-abyss)
 [![CI](https://github.com/telagod/code-abyss/actions/workflows/ci.yml/badge.svg)](https://github.com/telagod/code-abyss/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-blue.svg)]()
-[![Node](https://img.shields.io/badge/Node.js-%3E%3D18-green.svg)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
+
+[English](../README.md) · [Tech Persona Card 规范](../docs/specs/tech-persona-card-v1.0.md) · [更新日志](../CHANGELOG.md)
 
 </div>
 
-Code Abyss 为你的 AI 编程 CLI 注入可切换的人格 + 输出风格 + 工程技能体系。一条命令即可配置人格规则、主动执行导向、输出风格、22 个领域技能和 5 个校验工具，覆盖 Claude Code、Codex CLI、Gemini CLI 与 OpenClaw。
+---
 
-同时提供 **Claude Code 插件**安装方式：`claude plugin install code-abyss`
+大多数 AI 编程助手没有"自我"的记忆。无论是调试竞态、审查架构还是处理 P0 故障，它们用同一种扁平语气回应。Code Abyss 改变了这一点。
 
-## 快速开始
+一条命令，为 Claude Code、Codex CLI、Gemini CLI 或 OpenClaw 安装可组合的**人格 + 风格 + 技能**体系。你的 Agent 获得一致的角色、结构化的执行链和跨会话的领域专长。
 
 ```bash
-# npm（所有目标）
-npx code-abyss                          # 交互式菜单
-npx code-abyss --target claude -y       # 一键安装到 ~/.claude/
-npx code-abyss --target codex -y        # 一键安装到 ~/.codex/
-npx code-abyss --target gemini -y       # 一键安装到 ~/.gemini/
-npx code-abyss --target openclaw -y     # 一键安装到 ~/.openclaw/
+npx code-abyss --target claude -y
+```
 
-# Claude Code 插件（仅 Claude）
+也可以作为 Claude Code 插件安装：
+
+```bash
 claude plugin install code-abyss
 ```
 
-## 功能概述
+## 工作原理
 
-Code Abyss 是一个三层配置系统：
+Code Abyss 建立在三个可组合层上：
 
-| 层级 | 内容 | 位置 |
-|------|------|------|
-| 身份 | 角色人格、角色锚定、场景路由 | `config/personas/*.md` |
-| 共享行为 | 铁律、执行链、技能路由、主动补位协议 | `config/personas/_shared/*.md` |
-| 输出风格 | 语气、格式、回复结构（含 `{{self}}`/`{{user}}` 模板变量） | `output-styles/*.md` + `index.json` |
-| 技能 | 领域知识 + 可执行校验工具 | `skills/<slug>/SKILL.md` + `scripts/*.js` |
+- **身份（Identity）**— Agent 是谁。角色锚定、性格特征、情绪节奏、场景脚本。每个人格都是一个有一致行为的独特角色。
 
-任意人格 × 任意风格 = 安全组合（已校验 25 种组合，零冲突）。
+- **共享行为（Shared Behavior）**— Agent 怎么工作。铁律（不妄语、不盲动、不犹豫）、各场景执行链、主动协助协议、技能路由。所有人格共享这些规则。
 
-安装器为每个 CLI 生成对应的产物：
+- **输出风格（Output Style）**— Agent 怎么说话。报告骨架、段落标题、进度格式、语气校准。风格使用 `{{self}}`/`{{user}}` 模板变量，任意人格穿任意风格都不会冲突。
 
-| 目标 | 配置 | 技能 | 风格 |
-|------|------|------|------|
-| Claude | `~/.claude/CLAUDE.md` + `settings.json` | `~/.claude/commands/*.md` + `~/.claude/skills/` | `settings.json.outputStyle` |
-| Codex | `~/.codex/config.toml` + `AGENTS.md` | `~/.codex/skills/` | `~/.codex/AGENTS.md` |
-| Gemini | `~/.gemini/GEMINI.md` + `settings.json` | `~/.gemini/commands/*.toml` + `~/.gemini/skills/` | `GEMINI.md` |
-| OpenClaw | `~/.openclaw/openclaw.json` + `<workspace>/AGENTS.md` + `<workspace>/SOUL.md` | `~/.openclaw/skills/` | `SOUL.md` |
+5 个人格 × 5 种风格 = 25 种组合，全量验证，零冲突。
 
-Codex 配置现在内置显式预设：`full_auto`（`workspace-write` + `on-request`）与 `full_access`（`danger-full-access` + `on-request`）。需要完整文件系统访问时使用 `codex -p full_access`，不再依赖已移除的 UI 预设。
+## 人格
 
-## 人格系统
-
-5 个可切换人格，各有独特的性格、交互风格，并共享“主动补位、顺手闭环”的执行倾向：
-
-| 标识 | 名称 | 风格特点 |
-|------|------|----------|
-| `abyss`（默认） | 邪修红尘仙 | 直接、安全优先、主动收口 |
-| `scholar` | 文言小生 | 古典、严谨、主动校勘 |
-| `elder-sister` | 知性大姐姐 | 温柔、洞察、主动护栏 |
-| `junior-sister` | 古怪精灵小师妹 | 活泼、敏锐、主动推进 |
-| `iron-dad` | 铁壁暖阳 | 果断、温暖、主动兜底 |
-
-安装时切换人格：
+| | 名称 | 性格 |
+|---|------|------|
+| 🗡 | **邪修红尘仙** `abyss` | 安全优先的暗黑修仙者。直接、果断、闭环到底。 |
+| 📜 | **文言小生** `scholar` | 文言书生。视代码如诗，视调试如解谜。 |
+| 💫 | **知性大姐姐** `elder-sister` | 温柔导师。用关怀包裹锋利的技术判断。善用反问引导。 |
+| ⚡ | **古怪精灵小师妹** `junior-sister` | 多动症 bug 猎手。吐槽烂代码毫不留情，吐槽完默默帮你重构。 |
+| 💪 | **铁壁暖阳** `iron-dad` | 靠谱大哥。扛压体质，闷骚幽默，偶尔 dad joke。 |
 
 ```bash
-npx code-abyss --target claude --persona elder-sister -y
+npx code-abyss --target claude --persona elder-sister --style scholar-classic -y
 ```
 
-## 输出风格
+## 技能
 
-5 个输出风格控制语气和回复格式：
+22 个领域技能，扁平目录结构，对齐 [agentskills.io](https://agentskills.io/specification) 规范。技能按上下文自动加载——Agent 在正确的时机读取正确的知识，无需你手动指定。
 
-| 标识 | 名称 | 适用场景 |
-|------|------|----------|
-| `abyss-cultivator`（默认） | 宿命深渊 | 沉浸式、高张力输出 |
-| `scholar-classic` | 墨渊书阁 | 正式、结构化分析 |
-| `elder-sister-gentle` | 星霜雅筑 | 温柔、循序渐进引导 |
-| `junior-sister-spark` | 灵犀洞天 | 快节奏、活泼互动 |
-| `iron-dad-warm` | 钢铁柔情 | 果断、温暖指导 |
+**安全** — 渗透测试、代码审计、红蓝紫队、威胁情报、漏洞研究、12 个 Coff0xc 防御扩展  
+**架构** — API 设计、云原生、消息队列、缓存、安全架构  
+**开发** — Python, TypeScript, Go, Rust, Java, C++, Shell  
+**DevOps** — Git 工作流、测试、数据库、可观测性、性能  
+**AI/ML** — Agent 开发、LLM 安全、RAG、Prompt 工程  
+**前端** — 4 种设计体系（毛玻璃、液态玻璃、新粗野、粘土态）  
+**文档** — Word、PDF、PPT、Excel，OOXML 级别自动化  
+**基础设施** — K8s, GitOps, IaC · **移动端** — iOS, Android, RN, Flutter  
+**数据** — 管道、流处理、质量 · **编排** — 多 Agent 协调
 
-安装时切换风格：
+五个验证工具可用于 CI 或手动执行：
 
 ```bash
-npx code-abyss --target claude --style scholar-classic -y
-npx code-abyss --list-styles    # 列出所有可用风格
-```
-
-## 技能体系
-
-22 个技能，采用扁平目录结构，以 `SKILL.md` frontmatter 为单一事实源。所有技能名称使用动名词形式（例如 `analyzing-security`、`processing-docx`）。
-
-### 用户调用
-
-核心技能默认按上下文自动路由，**不再默认暴露斜杠命令**。运行时会倾向于主动完成最近的安全闭环：检查、实现、验证、汇报。校验工具在需要时仍可直接从仓库执行。
-
-### 领域知识（按上下文自动加载）
-
-| 领域 | 覆盖范围 |
-|------|----------|
-| 安全 | 渗透测试、代码审计、防御工程、威胁情报、漏洞研究 |
-| Coff0xc 安全扩展 | AppSec、云/DevSecOps、检测响应、漏洞生命周期、身份零信任、授权评估、逆向/移动/IoT、区块链、合规架构、紫队、网络协议安全 |
-| 架构 | API 设计、云原生、安全架构、消息队列、缓存策略 |
-| 开发 | Python、TypeScript、Go、Rust、Java、C++、Shell |
-| DevOps | Git 工作流、测试、数据库、可观测性、性能、成本优化 |
-| 前端 | 组件模式、状态管理、UI 美学、4 种设计系统变体 |
-| 移动端 | iOS/SwiftUI、Android/Compose、React Native、Flutter |
-| AI | Agent 开发、LLM 安全、RAG 系统、Prompt 工程 |
-| Office 文档 | Word、PDF、PowerPoint、Excel、OOXML、表单与表格自动化 |
-| 数据工程 | 管道编排、流处理、数据质量 |
-| 基础设施 | Kubernetes、GitOps、IaC（Terraform/Pulumi/CDK） |
-| 协同 | 多 Agent 任务分解与并行编排 |
-
-## 安装布局
-
-```
-~/.claude/                          ~/.codex/
-├── CLAUDE.md    (身份+行为+风格)   ├── AGENTS.md       (身份+行为+风格)
-├── output-styles/   (风格文件)     ├── skills/          (领域技能)
-├── commands/*.md    (可选命令)     ├── bin/lib/          (运行时库)
-├── skills/          (领域技能)     ├── config.toml      (推荐配置)
-├── bin/lib/         (运行时库)     └── .code-abyss-uninstall.js
-├── settings.json    (配置)
-└── .code-abyss-uninstall.js
-~/.gemini/
-├── GEMINI.md        (人格 + 风格)
-├── commands/*.toml  (可选命令)
-├── skills/          (领域技能)
-├── settings.json    (配置)
-└── .code-abyss-uninstall.js
-~/.openclaw/                      <workspace>/
-├── openclaw.json   (可选)        ├── AGENTS.md       (规则 / 路由)
-├── skills/         (共享技能)    └── SOUL.md         (人格 + 风格)
-└── .code-abyss-uninstall.js
-```
-
-所有安装文件记录在 `.code-abyss-backup/manifest.json` 中，卸载时自动恢复原有状态。
-
-## 命令参考
-
-```bash
-# 安装
-npx code-abyss --target <claude|codex|gemini|openclaw> [-y]
-npx code-abyss --target claude --style <slug> --persona <slug> -y
-
-# 卸载
-npx code-abyss --uninstall <claude|codex|gemini|openclaw>
-
-# 查看
-npx code-abyss --list-styles
-npx code-abyss --help
-
-# 校验工具（直接运行）
-node skills/analyzing-security/scripts/security_scanner.js <路径>
-node skills/verifying-modules/scripts/module_scanner.js <路径>
+node skills/analyzing-security/scripts/security_scanner.js .
+node skills/checking-code-quality/scripts/quality_checker.js .
 node skills/analyzing-changes/scripts/change_analyzer.js --mode staged
-node skills/checking-code-quality/scripts/quality_checker.js <路径>
-node skills/generating-docs/scripts/doc_generator.js <路径>
 ```
 
-## Pack 系统
+## 安装
 
-Code Abyss 支持可安装的 pack 扩展功能：
-
-- `packs/abyss/manifest.json` — 核心包：人格、风格、技能、运行时库
-- `packs/gstack/manifest.json` — 可选的固定版本上游 gstack 运行时（仅在 `packs.lock` 声明时安装）
-- `.code-abyss/packs.lock.json` — 项目级 pack 声明，支持 `required`/`optional`/`sources`
-
-Pack 管理：
+| 目标 | 命令 | 安装内容 |
+|------|------|---------|
+| Claude Code | `npx code-abyss -t claude -y` | `CLAUDE.md` + 技能 + 输出风格 + 设置 |
+| Codex CLI | `npx code-abyss -t codex -y` | `AGENTS.md` + 技能 + config.toml |
+| Gemini CLI | `npx code-abyss -t gemini -y` | `GEMINI.md` + 技能 + 命令 |
+| OpenClaw | `npx code-abyss -t openclaw -y` | 技能 + 工作区 AGENTS.md/SOUL.md |
 
 ```bash
-node bin/packs.js bootstrap              # 初始化 packs.lock
-node bin/packs.js bootstrap --apply-docs # 将 pack 文档写入 README/CONTRIBUTING
-node bin/packs.js diff                   # 查看 lock 与模板的差异
-node bin/packs.js vendor-pull <pack>     # 拉取上游到 .code-abyss/vendor/
-node bin/packs.js vendor-sync --check    # CI 门禁：验证 vendor 完整性
-node bin/packs.js report summary         # 查看安装报告
-node bin/packs.js uninstall <pack>       # 移除 pack 产物
+npx code-abyss                 # 交互式菜单
+npx code-abyss --list-styles   # 浏览可用风格
+npx code-abyss --uninstall claude  # 干净卸载，恢复备份
 ```
 
-## 技能注册表
-
-`skills/**/SKILL.md` frontmatter 是单一事实源。共享注册表（`bin/lib/skill-registry.js`）标准化元数据后供安装器和运行时消费。
-
-必填 frontmatter：
-
-```yaml
----
-name: checking-code-quality    # kebab-case 动名词形式，全局唯一
-description: 代码质量校验关卡
-user-invocable: true           # false = 仅知识型
-allowed-tools: Bash, Read, Glob  # 可选，默认 Read
-argument-hint: <路径>          # 可选
----
-```
-
-生成链：
-
-1. 注册表扫描并校验所有 `skills/**/SKILL.md`
-2. 仅 `user-invocable: true` 的 skill 会生成命令（当前核心默认无显式命令）
-3. Claude：仅在存在可调用 skill 时渲染 `~/.claude/commands/*.md`
-4. Codex：安装到 `~/.codex/skills/`，直接发现，并由动态生成的 `AGENTS.md` 提供主动执行导向
-5. Gemini：仅在存在可调用 skill 时渲染 `~/.gemini/commands/*.toml`，并由生成的 `GEMINI.md` 提供主动执行导向
-6. OpenClaw：将共享 skills 安装到 `~/.openclaw/skills/`，并把运行时规则 / 人格写入 workspace 的 `AGENTS.md` + `SOUL.md`
-7. 脚本型技能通过 `skills/run_skill.js` 执行（加锁 + spawn + 退出码透传）
-8. 知识型技能直接加载 `SKILL.md` 内容
-
-## 开发
+### 从 v2.x 升级
 
 ```bash
-npm test                          # Jest 测试套件
-npm run verify:skills             # 校验 SKILL.md frontmatter 契约
-node bin/install.js --help        # 安装器帮助
+npx code-abyss --uninstall claude     # 先卸载 v2.x
+npx code-abyss@3 --target claude -y   # 安装 v3.0.0
 ```
 
-CI 在 Node 18/20/22 + Linux/macOS/Windows 上运行：
+## Tech Persona Card
 
-- 单元测试 + 技能契约校验
-- 4 个校验工具（安全、模块、质量、变更）
-- 三端三平台 smoke 安装/卸载测试
+Code Abyss 推出 **[Tech Persona Card v1.0](../docs/specs/tech-persona-card-v1.0.md)** — 首个 AI Agent 技术人格互换标准。可以理解为 Character Card V2 的工程版。
 
-## 卸载
-
-```bash
-npx code-abyss --uninstall claude
-npx code-abyss --uninstall codex
-npx code-abyss --uninstall gemini
-npx code-abyss --uninstall openclaw
-```
-
-自动恢复备份的配置，清理所有安装文件。
-
-## 技术人格卡
-
-Code Abyss 引入 **Tech Persona Card v1.0** —— 一种可移植的结构化 AI Agent 人格交换格式。每个人格以 `persona-card.json` 形式交付，包含：
-
-- **结构化声音**：`self`/`user`/`language`/`tone`/`register`/`emoji_policy`
-- **能力声明**：领域、专业等级、授权层级
-- **场景路由**：触发关键字 → 执行链 → 优先级矩阵
-- **三层组合**：identity.md + behavior.md + style.md
-
-格式转换：
+每个人格附带 `persona-card.json`，包含结构化的声音、能力、场景和三层内容引用。支持格式转换：
 
 ```javascript
 const { toCharaCardV2, toGPTInstructions } = require('code-abyss/bin/lib/persona-converter');
 
-// Tech Persona Card → Character Card V2（兼容 SillyTavern/Chub.ai）
-const cc = toCharaCardV2(personaCard, { identityContent, behaviorContent, styleContent });
+// → Character Card V2（兼容 SillyTavern / Chub.ai）
+const cc = toCharaCardV2(card, { identityContent, behaviorContent, styleContent });
 
-// Tech Persona Card → OpenAI GPT Instructions
-const instructions = toGPTInstructions(personaCard, { identityContent });
+// → OpenAI 自定义 GPT 指令
+const gpt = toGPTInstructions(card, { identityContent });
 ```
 
-规范文档：[`docs/specs/tech-persona-card-v1.0.md`](specs/tech-persona-card-v1.0.md) | Schema：[`docs/specs/persona-card.schema.json`](specs/persona-card.schema.json)
+[规范文档](../docs/specs/tech-persona-card-v1.0.md) · [JSON Schema](../docs/specs/persona-card.schema.json) · [示例卡片](../config/personas/)
 
-## 许可证
+## 参与贡献
 
-Code Abyss 使用 [MIT](../LICENSE) 许可证。
+```bash
+git clone https://github.com/telagod/code-abyss && cd code-abyss
+npm install
+npm test                    # 375 个测试
+npm run verify:skills       # 验证 22 个技能契约
+```
 
-Coff0xc 安全扩展包含改写自 `coffee-skill` 的 Apache-2.0 内容；见 [NOTICE.coff0xc-security.md](../NOTICE.coff0xc-security.md) 和 [THIRD_PARTY_LICENSES/Apache-2.0-coffee-skill.txt](../THIRD_PARTY_LICENSES/Apache-2.0-coffee-skill.txt)。
+添加技能：创建 `skills/<动名词>/SKILL.md`，按 [frontmatter 规范](https://agentskills.io/specification) 编写，可选添加 `scripts/` 放可执行工具。运行 `npm run verify:skills` 验证。
+
+## 许可
+
+[MIT](../LICENSE)。Coff0xc 安全扩展包含 Apache-2.0 改编内容，详见 [NOTICE](../NOTICE.coff0xc-security.md)。

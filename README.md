@@ -2,275 +2,135 @@
 
 <div align="center">
 
-*Persona-driven configuration system for Claude Code, Codex CLI, Gemini CLI, and OpenClaw*
+**Give your AI coding agent a personality, a methodology, and 22 engineering skills.**
 
 [![npm](https://img.shields.io/npm/v/code-abyss.svg)](https://www.npmjs.com/package/code-abyss)
 [![CI](https://github.com/telagod/code-abyss/actions/workflows/ci.yml/badge.svg)](https://github.com/telagod/code-abyss/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows-blue.svg)]()
-[![Node](https://img.shields.io/badge/Node.js-%3E%3D18-green.svg)]()
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[中文文档](docs/README.zh-CN.md)
+[中文文档](docs/README.zh-CN.md) · [Tech Persona Card Spec](docs/specs/tech-persona-card-v1.0.md) · [Changelog](CHANGELOG.md)
 
 </div>
 
-Code Abyss installs a switchable persona + output style + engineering skill system into your AI coding CLI. One command configures persona rules, proactive execution guidance, output styles, 22 domain skills, and 5 verification tools across Claude Code, Codex CLI, Gemini CLI, and OpenClaw.
+---
 
-Also available as a **Claude Code Plugin**: `claude plugin install code-abyss`
+Most AI coding agents have no memory of *who they are*. They respond in the same flat tone whether they're debugging a race condition, reviewing architecture, or triaging a P0 incident. Code Abyss changes that.
 
-## Quick Start
+One command installs a composable **persona + style + skills** system into Claude Code, Codex CLI, Gemini CLI, or OpenClaw. Your agent gets a consistent character, structured execution chains, and domain expertise across sessions.
 
 ```bash
-# npm (all targets)
-npx code-abyss                          # Interactive menu
-npx code-abyss --target claude -y       # One-line install to ~/.claude/
-npx code-abyss --target codex -y        # One-line install to ~/.codex/
-npx code-abyss --target gemini -y       # One-line install to ~/.gemini/
-npx code-abyss --target openclaw -y     # One-line install to ~/.openclaw/
+npx code-abyss --target claude -y
+```
 
-# Claude Code Plugin (Claude only)
+Or install as a Claude Code Plugin:
+
+```bash
 claude plugin install code-abyss
 ```
 
-## What It Does
+## How It Works
 
-Code Abyss is a three-layer configuration system:
+Code Abyss is built on three composable layers:
 
-| Layer | What | Where |
-|-------|------|-------|
-| Identity | Character personality, role anchoring, scenarios | `config/personas/*.md` |
-| Shared Behavior | Iron laws, execution chains, skill routing, proactive protocol | `config/personas/_shared/*.md` |
-| Output Style | Tone, formatting, response structure (with `{{self}}`/`{{user}}` template vars) | `output-styles/*.md` + `index.json` |
-| Skills | Domain knowledge + executable verification tools | `skills/<slug>/SKILL.md` + `scripts/*.js` |
+- **Identity** — who the agent is. Role anchoring, personality traits, emotional patterns, scenario scripts. Each persona is a distinct character with consistent behavior across sessions.
 
-Any persona × any style = safe combination (25 validated combos, zero conflicts).
+- **Shared Behavior** — how the agent works. Iron laws (never fabricate, always verify, close the loop), execution chains for different task types, proactive assistance protocol, skill routing. These rules apply to every persona.
 
-The installer generates target-specific artifacts for each CLI:
+- **Output Style** — how the agent speaks. Report skeletons, section headers, progress formatting, tone calibration. Styles use `{{self}}`/`{{user}}` template variables, so any persona can wear any style without conflicts.
 
-| Target | Config | Skills | Style |
-|--------|--------|--------|-------|
-| Claude | `~/.claude/CLAUDE.md` + `settings.json` | `~/.claude/commands/*.md` + `~/.claude/skills/` | `settings.json.outputStyle` |
-| Codex | `~/.codex/config.toml` + `AGENTS.md` | `~/.codex/skills/` | `~/.codex/AGENTS.md` |
-| Gemini | `~/.gemini/GEMINI.md` + `settings.json` | `~/.gemini/commands/*.toml` + `~/.gemini/skills/` | `GEMINI.md` |
-| OpenClaw | `~/.openclaw/openclaw.json` + `<workspace>/AGENTS.md` + `<workspace>/SOUL.md` | `~/.openclaw/skills/` | `SOUL.md` |
-
-Codex config now ships explicit presets: `full_auto` (`workspace-write` + `on-request`) and `full_access` (`danger-full-access` + `on-request`). Use `codex -p full_access` when you really need full filesystem access without relying on removed UI presets.
+Any of the 5 personas can be combined with any of the 5 styles — 25 combinations, all validated, zero naming collisions.
 
 ## Personas
 
-5 switchable personas, each with a distinct character, interaction style, and shared proactive assistance bias:
-
-| Slug | Name | Style |
-|------|------|-------|
-| `abyss` (default) | 邪修红尘仙 | Direct, security-first, proactive close-the-loop |
-| `scholar` | 文言小生 | Classical, methodical, proactive review notes |
-| `elder-sister` | 知性大姐姐 | Warm, insightful, proactive guardrails |
-| `junior-sister` | 古怪精灵小师妹 | Playful, sharp, proactive follow-through |
-| `iron-dad` | 铁壁暖阳 | Firm, protective, proactive safety net |
-
-Switch persona during install:
+| | Name | Character |
+|---|------|-----------|
+| 🗡 | **邪修红尘仙** `abyss` | Security-first dark cultivator. Direct, decisive, closes every loop. |
+| 📜 | **文言小生** `scholar` | Literary Chinese scholar. Treats code as poetry, debugging as puzzle-solving. |
+| 💫 | **知性大姐姐** `elder-sister` | Warm mentor. Wraps sharp judgment in genuine care. Guides through questions. |
+| ⚡ | **古怪精灵小师妹** `junior-sister` | Hyperactive bug hunter. Roasts bad code, then silently fixes it. |
+| 💪 | **铁壁暖阳** `iron-dad` | Dependable big brother. Absorbs pressure, radiates warmth. Dad-joke equipped. |
 
 ```bash
-npx code-abyss --target claude --persona elder-sister -y
-```
-
-## Output Styles
-
-5 output styles control tone and response formatting:
-
-| Slug | Name | Best For |
-|------|------|----------|
-| `abyss-cultivator` (default) | 宿命深渊 | Immersive, high-tension delivery |
-| `scholar-classic` | 墨渊书阁 | Formal, structured analysis |
-| `elder-sister-gentle` | 星霜雅筑 | Gentle, step-by-step guidance |
-| `junior-sister-spark` | 灵犀洞天 | Fast-paced, playful interaction |
-| `iron-dad-warm` | 钢铁柔情 | Decisive, warm mentoring |
-
-Switch style during install:
-
-```bash
-npx code-abyss --target claude --style scholar-classic -y
-npx code-abyss --list-styles    # List all available styles
+npx code-abyss --target claude --persona elder-sister --style scholar-classic -y
 ```
 
 ## Skills
 
-22 skills in flat directory structure, driven by `SKILL.md` frontmatter as single source of truth. All skill names use gerund form (e.g., `analyzing-security`, `processing-docx`).
+22 domain skills, flat structure, [agentskills.io](https://agentskills.io/specification) aligned. Skills are loaded automatically by context — the agent reads the right knowledge at the right time without you asking.
 
-### User Invocation
+**Security** — pentesting, code audit, red/blue/purple team, threat intel, vulnerability research, 12 Coff0xc defensive extensions  
+**Architecture** — API design, cloud-native, messaging, caching, security architecture  
+**Development** — Python, TypeScript, Go, Rust, Java, C++, Shell  
+**DevOps** — Git workflow, testing, databases, observability, performance  
+**AI/ML** — agent development, LLM security, RAG, prompt engineering  
+**Frontend** — 4 design systems (glassmorphism, liquid-glass, neubrutalism, claymorphism)  
+**Office** — Word, PDF, PowerPoint, Excel with OOXML-level automation  
+**Infrastructure** — Kubernetes, GitOps, IaC · **Mobile** — iOS, Android, React Native, Flutter  
+**Data** — pipelines, streaming, quality · **Orchestration** — multi-agent coordination
 
-Core skills are now routed automatically by context and are **not exposed as slash commands by default**. The runtime is tuned to proactively finish the closest safe loop: inspect, implement, verify, then report. Verification tools remain executable directly from the repository when needed:
-
-### Domain Knowledge (auto-loaded by context)
-
-| Domain | Coverage |
-|--------|----------|
-| Security | Penetration testing, code audit, defense engineering, threat intelligence, vulnerability research |
-| Coff0xc Security Extensions | AppSec, cloud/DevSecOps, detection/IR, vulnerability lifecycle, identity/Zero Trust, authorized assessment, binary/mobile/IoT, blockchain, compliance, purple team, network/protocol security |
-| Architecture | API design, cloud-native, security architecture, messaging, caching |
-| Development | Python, TypeScript, Go, Rust, Java, C++, Shell |
-| DevOps | Git workflow, testing, database, observability, performance, cost optimization |
-| Frontend | Component patterns, state management, UI aesthetics, 4 design system variants |
-| Mobile | iOS/SwiftUI, Android/Compose, React Native, Flutter |
-| AI | Agent development, LLM security, RAG systems, prompt engineering |
-| Office Documents | Word, PDF, PowerPoint, Excel, OOXML, forms, spreadsheet automation |
-| Data Engineering | Pipeline orchestration, stream processing, data quality |
-| Infrastructure | Kubernetes, GitOps, IaC (Terraform/Pulumi/CDK) |
-| Orchestration | Multi-agent task decomposition and parallel coordination |
-
-## Install Layout
-
-```
-~/.claude/                          ~/.codex/
-├── CLAUDE.md    (identity+behavior+style)  ├── AGENTS.md       (identity+behavior+style)
-├── output-styles/   (style files)  ├── skills/          (domain skills)
-├── commands/*.md    (optional)     ├── bin/lib/          (runtime libs)
-├── skills/          (domain skills)├── config.toml      (recommended config)
-├── bin/lib/         (runtime libs) └── .code-abyss-uninstall.js
-├── settings.json    (config)
-└── .code-abyss-uninstall.js
-~/.gemini/
-├── GEMINI.md        (persona + style)
-├── commands/*.toml  (optional)
-├── skills/          (domain skills)
-├── settings.json    (config)
-└── .code-abyss-uninstall.js
-~/.openclaw/                      <workspace>/
-├── openclaw.json   (optional)    ├── AGENTS.md       (rules / routing)
-├── skills/         (shared)      └── SOUL.md         (persona + style)
-└── .code-abyss-uninstall.js
-```
-
-All installed files are tracked in `.code-abyss-backup/manifest.json`. Uninstall restores previous state.
-
-## CLI Reference
+Five verification tools run as executable scripts for CI or manual use:
 
 ```bash
-# Install
-npx code-abyss --target <claude|codex|gemini|openclaw> [-y]
-npx code-abyss --target claude --style <slug> --persona <slug> -y
-
-# Uninstall
-npx code-abyss --uninstall <claude|codex|gemini|openclaw>
-
-# Info
-npx code-abyss --list-styles
-npx code-abyss --help
-
-# Verification tools (run directly)
-node skills/analyzing-security/scripts/security_scanner.js <path>
-node skills/verifying-modules/scripts/module_scanner.js <path>
+node skills/analyzing-security/scripts/security_scanner.js .
+node skills/checking-code-quality/scripts/quality_checker.js .
 node skills/analyzing-changes/scripts/change_analyzer.js --mode staged
-node skills/checking-code-quality/scripts/quality_checker.js <path>
-node skills/generating-docs/scripts/doc_generator.js <path>
 ```
 
-## Pack System
+## Installation
 
-Code Abyss supports installable packs for extending functionality per target CLI.
+### Supported Targets
 
-- `packs/abyss/manifest.json` — core pack: persona, styles, skills, runtime libs
-- `packs/gstack/manifest.json` — optional pinned upstream gstack runtime (installed only when declared in `packs.lock`)
-- `.code-abyss/packs.lock.json` — project-level pack declarations with `required`/`optional`/`sources`
-
-Pack management:
+| Target | Command | What Gets Installed |
+|--------|---------|---------------------|
+| Claude Code | `npx code-abyss -t claude -y` | `CLAUDE.md` + skills + output styles + settings |
+| Codex CLI | `npx code-abyss -t codex -y` | `AGENTS.md` + skills + config.toml |
+| Gemini CLI | `npx code-abyss -t gemini -y` | `GEMINI.md` + skills + commands |
+| OpenClaw | `npx code-abyss -t openclaw -y` | Skills + workspace AGENTS.md/SOUL.md |
 
 ```bash
-node bin/packs.js bootstrap              # Initialize packs.lock
-node bin/packs.js bootstrap --apply-docs # Write pack docs into README/CONTRIBUTING
-node bin/packs.js diff                   # Show lock vs template drift
-node bin/packs.js vendor-pull <pack>     # Pull upstream into .code-abyss/vendor/
-node bin/packs.js vendor-sync --check    # CI gate: verify vendor integrity
-node bin/packs.js report summary         # View install reports
-node bin/packs.js uninstall <pack>       # Remove pack artifacts
+npx code-abyss                 # Interactive menu — pick target, persona, style
+npx code-abyss --list-styles   # Browse available styles
+npx code-abyss --uninstall claude  # Clean removal, restores backups
 ```
 
-## Skill Registry
+All installed files are tracked in `.code-abyss-backup/manifest.json`. Uninstall restores your previous configuration.
 
-`skills/**/SKILL.md` frontmatter is the single source of truth. The shared registry (`bin/lib/skill-registry.js`) normalizes metadata and feeds it to the installer and runtime.
-
-Required frontmatter:
-
-```yaml
----
-name: checking-code-quality    # kebab-case gerund, unique
-description: Code quality gate
-user-invocable: true           # false = knowledge-only
-allowed-tools: Bash, Read, Glob  # optional, default: Read
-argument-hint: <path>          # optional
----
-```
-
-Generation chain:
-
-1. Registry scans and validates all `skills/**/SKILL.md`
-2. Only skills with `user-invocable: true` generate commands (current core set defaults to none)
-3. Claude: renders `~/.claude/commands/*.md` only when invocable skills exist
-4. Codex: installs to `~/.codex/skills/`, discovered directly, with proactive execution guidance from dynamically generated `AGENTS.md`
-5. Gemini: renders `~/.gemini/commands/*.toml` only when invocable skills exist, with proactive guidance in generated `GEMINI.md`
-6. OpenClaw: installs shared skills into `~/.openclaw/skills/`, and writes runtime rules/persona into workspace `AGENTS.md` + `SOUL.md`
-7. Scripted skills execute via `skills/run_skill.js` (lock + spawn + exit code passthrough)
-8. Knowledge skills load `SKILL.md` content directly
-
-## Development
+### Upgrading from v2.x
 
 ```bash
-npm test                          # Jest test suite
-npm run verify:skills             # Validate SKILL.md frontmatter contracts
-node bin/install.js --help        # Installer CLI help
+npx code-abyss --uninstall claude     # Remove v2.x artifacts first
+npx code-abyss@3 --target claude -y   # Install v3.0.0
 ```
-
-CI runs on Node 18/20/22 across Linux, macOS, and Windows:
-
-- Unit tests + skill contract validation
-- 4 verification tools (security, module, quality, change)
-- Smoke install/uninstall for Claude / Codex / Gemini / OpenClaw
-
-## Uninstall
-
-```bash
-npx code-abyss --uninstall claude
-npx code-abyss --uninstall codex
-npx code-abyss --uninstall gemini
-npx code-abyss --uninstall openclaw
-```
-
-Backup script alternative:
-
-```bash
-node ~/.claude/.code-abyss-uninstall.js
-node ~/.codex/.code-abyss-uninstall.js
-node ~/.gemini/.code-abyss-uninstall.js
-node ~/.openclaw/.code-abyss-uninstall.js
-```
-
-Restores backed-up configuration and removes all installed files.
 
 ## Tech Persona Card
 
-Code Abyss introduces the **Tech Persona Card v1.0** — a portable, structured format for AI agent personality interchange. Each persona ships as a `persona-card.json` with:
+Code Abyss introduces the **[Tech Persona Card v1.0](docs/specs/tech-persona-card-v1.0.md)** — a portable format for AI agent persona interchange. Think Character Card V2, but for engineering workflows instead of roleplay.
 
-- **Structured voice**: `self`/`user`/`language`/`tone`/`register`/`emoji_policy`
-- **Capabilities**: domains, expertise level, authorization tiers
-- **Scenarios**: trigger keywords → execution chains → priority matrices
-- **Three-layer composition**: identity.md + behavior.md + style.md
-
-Convert between formats:
+Each persona ships as a `persona-card.json` with structured voice, capabilities, scenarios, and three-layer content references. Convert between formats:
 
 ```javascript
 const { toCharaCardV2, toGPTInstructions } = require('code-abyss/bin/lib/persona-converter');
 
-// Tech Persona Card → Character Card V2 (SillyTavern/Chub.ai compatible)
-const cc = toCharaCardV2(personaCard, { identityContent, behaviorContent, styleContent });
+// → Character Card V2 (SillyTavern / Chub.ai compatible)
+const cc = toCharaCardV2(card, { identityContent, behaviorContent, styleContent });
 
-// Tech Persona Card → OpenAI GPT Instructions
-const instructions = toGPTInstructions(personaCard, { identityContent });
+// → OpenAI Custom GPT Instructions
+const gpt = toGPTInstructions(card, { identityContent });
 ```
 
-Spec: [`docs/specs/tech-persona-card-v1.0.md`](docs/specs/tech-persona-card-v1.0.md) | Schema: [`docs/specs/persona-card.schema.json`](docs/specs/persona-card.schema.json)
+[Specification](docs/specs/tech-persona-card-v1.0.md) · [JSON Schema](docs/specs/persona-card.schema.json) · [Example Cards](config/personas/)
+
+## Contributing
+
+```bash
+git clone https://github.com/telagod/code-abyss && cd code-abyss
+npm install
+npm test                    # 375 tests
+npm run verify:skills       # Validate 22 skill contracts
+```
+
+Adding a skill: create `skills/<gerund-name>/SKILL.md` with [frontmatter](https://agentskills.io/specification), optionally add `scripts/` for executable tools. Run `npm run verify:skills` to validate.
 
 ## License
 
-Code Abyss is licensed under [MIT](LICENSE).
-
-The Coff0xc Security Extensions include adapted Apache-2.0 material from `coffee-skill`; see [NOTICE.coff0xc-security.md](NOTICE.coff0xc-security.md) and [THIRD_PARTY_LICENSES/Apache-2.0-coffee-skill.txt](THIRD_PARTY_LICENSES/Apache-2.0-coffee-skill.txt).
+[MIT](LICENSE). The Coff0xc Security Extensions include adapted Apache-2.0 material; see [NOTICE](NOTICE.coff0xc-security.md).

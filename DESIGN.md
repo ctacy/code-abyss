@@ -2,15 +2,27 @@
 
 ## 项目概述
 
-Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 Codex CLI），采用三层架构提供「邪修红尘仙·宿命深渊」风格体验。
+Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code、Codex CLI、Gemini CLI 与 OpenClaw），采用三层架构 + 模板变量系统提供可组合的人格体验。v3.0.0 引入 **Tech Persona Card** 标准，实现跨平台人格互换。
 
 ## 三层架构分工
 
 | 层 | 文件 | 职责 |
 |---|------|------|
-| **身份与规则** | `config/personas/*.md` + `config/personas/_shared/*.md` | 定义"做什么"：各 persona 身份 + 共享铁律、执行链、场景路由 |
-| **输出风格** | `output-styles/*.md` + `output-styles/index.json` | 定义"怎么说"：风格目录 + registry |
-| **技术知识** | `skills/**/*.md` | 定义"会什么"：技术知识 + 道语浸染首尾 |
+| **身份（Identity）** | `config/personas/*.md` | 每个 persona 独有的角色锚定、性格层、情绪节奏 |
+| **共享行为（Shared Behavior）** | `config/personas/_shared/*.md` | 所有 persona 共享的铁律、执行链、验证链、技能路由、主动协助协议 |
+| **输出风格（Output Style）** | `output-styles/*.md` + `index.json` | 输出骨架、场景加权、情绪锚点；使用 `{{self}}`/`{{user}}`/`{{language}}` 模板变量 |
+| **技术知识（Skills）** | `skills/<slug>/SKILL.md` | 22 个 flat skill，gerund 命名，spec 合规 |
+
+**组装公式**：`renderRuntimeGuidance(persona, style, target)` = identity + shared + style（模板变量替换后）
+
+**跨配安全**：5 persona × 5 style = 25 种组合全量 smoke 验证，零冲突。
+
+## 分发方式
+
+| 通道 | 命令 | 覆盖 |
+|------|------|------|
+| npm | `npx code-abyss --target <tgt>` | Claude/Codex/Gemini/OpenClaw |
+| Claude Code Plugin | `claude plugin install code-abyss` | Claude |
 
 ## 设计决策
 

@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-05-16
+
+### BREAKING CHANGES
+- **Skills flattened**: all 22 skill paths changed from nested `skills/domains/office/docx/` to flat `skills/processing-docx/`. Old installations require `--uninstall` before upgrading.
+- **Skill names gerund**: all slugs renamed to gerund form (`verify-quality` → `checking-code-quality`, `gen-docs` → `generating-docs`, etc.)
+- **Persona files restructured**: `config/CLAUDE.md`, `config/AGENTS.md`, `config/instruction.md` deleted. Persona system now uses three-layer composition (identity + shared behavior + style).
+- **`.sage-*` renamed to `.code-abyss-*`**: automatic migration on install, but manual `--uninstall` of v2.x recommended before upgrading.
+
+### Added
+- **Tech Persona Card v1.0 specification** (`docs/specs/tech-persona-card-v1.0.md`): first open standard for AI agent persona interchange. Includes JSON Schema, 5 reference persona cards, and three-way converter.
+- **Persona three-layer architecture**: identity (who I am) + shared behavior (iron laws, execution chains, skill routing) + style (output format with `{{self}}`/`{{user}}`/`{{language}}` template variables).
+- **5×5 persona×style cross-combination**: 25 combinations validated, zero conflicts via template variable substitution.
+- **Persona converter** (`bin/lib/persona-converter.js`): Tech Persona Card ↔ Character Card V2 ↔ OpenAI GPT Instructions. 39 tests.
+- **5 persona-card.json**: structured Tech Persona Card for all 5 personas, schema-validated.
+- **Claude Code Plugin support**: `.claude-plugin/plugin.json` + `marketplace.json` for `/plugin install` distribution alongside npm.
+- **Proactive Assistance Protocol**: rescued from dead `config/CLAUDE.md`, now shared across all personas via `_shared/proactive.md`.
+- **Unified assembly**: all 4 targets (Claude/Codex/Gemini/OpenClaw) use single `renderRuntimeGuidance()` function.
+
+### Changed
+- `install.js` split from 1265 → 406 LOC (-67.9%) across 6 lifecycle modules.
+- gstack three-pack merged to strategy pattern; adding new host costs ~120 LOC (was ~350).
+- `config/personas/index.json` gains `self`/`user`/`language` fields per persona.
+- All 5 output styles use `{{self}}`/`{{user}}`/`{{language}}` template variables instead of hardcoded names.
+- OpenClaw `AGENTS.md` + `SOUL.md` now both dynamically generated (was static 609-line monolith + dynamic).
+- Claude `CLAUDE.md` now contains full identity + shared behavior + style (was persona-only).
+- Skills category inference simplified to runtimeType-based (`scripted → tool`, `knowledge → domain`).
+- 22 skill descriptions rewritten to English third-person with trigger keywords and anti-triggers.
+- `ccstatusline` decoupled to `bin/optional/` with schema guard.
+
+### Removed
+- `config/CLAUDE.md` (82 lines, dead code — pack copied then immediately overwritten)
+- `config/AGENTS.md` (609 lines, v4.0 frozen monolith)
+- `config/instruction.md` (100 lines, CTF content merged into abyss identity)
+- 11 router SKILL.md files (replaced by flat structure)
+- `skills/SKILL.md` root router (zero runtime value)
+- 7 unused npm script aliases
+- 2 unused vendor providers (archive, local-dir)
+
+### Verification
+- Jest: **35 suites / 375 tests passed** (1 skipped)
+- Skill contract gate: `npm run verify:skills` — 22 skills passed
+- 5×5 persona×style cross-combination smoke: 25 combos green
+- Schema validation: 5/5 persona-card.json valid
+- CI: Node 18/20/22 × Linux/macOS/Windows — all green
+
 ## [2.1.11] - 2026-05-16
 
 ### Fixed

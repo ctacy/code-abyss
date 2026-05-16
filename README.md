@@ -14,16 +14,22 @@
 
 </div>
 
-Code Abyss installs a switchable persona + output style + engineering skill system into your AI coding CLI. One command configures persona rules, proactive execution guidance, output styles, 26 domain skills, and 5 verification tools across Claude Code, Codex CLI, Gemini CLI, and OpenClaw.
+Code Abyss installs a switchable persona + output style + engineering skill system into your AI coding CLI. One command configures persona rules, proactive execution guidance, output styles, 22 domain skills, and 5 verification tools across Claude Code, Codex CLI, Gemini CLI, and OpenClaw.
+
+Also available as a **Claude Code Plugin**: `claude plugin install code-abyss`
 
 ## Quick Start
 
 ```bash
+# npm (all targets)
 npx code-abyss                          # Interactive menu
 npx code-abyss --target claude -y       # One-line install to ~/.claude/
 npx code-abyss --target codex -y        # One-line install to ~/.codex/
 npx code-abyss --target gemini -y       # One-line install to ~/.gemini/
 npx code-abyss --target openclaw -y     # One-line install to ~/.openclaw/
+
+# Claude Code Plugin (Claude only)
+claude plugin install code-abyss
 ```
 
 ## What It Does
@@ -32,9 +38,12 @@ Code Abyss is a three-layer configuration system:
 
 | Layer | What | Where |
 |-------|------|-------|
-| Persona | Character identity, rules, execution chains | `config/personas/*.md` + `config/personas/_shared/*.md` |
-| Output Style | Tone, formatting, response structure | `output-styles/*.md` + `index.json` |
-| Skills | Domain knowledge + executable verification tools | `skills/**/*.md` + `scripts/*.js` |
+| Identity | Character personality, role anchoring, scenarios | `config/personas/*.md` |
+| Shared Behavior | Iron laws, execution chains, skill routing, proactive protocol | `config/personas/_shared/*.md` |
+| Output Style | Tone, formatting, response structure (with `{{self}}`/`{{user}}` template vars) | `output-styles/*.md` + `index.json` |
+| Skills | Domain knowledge + executable verification tools | `skills/<slug>/SKILL.md` + `scripts/*.js` |
+
+Any persona × any style = safe combination (25 validated combos, zero conflicts).
 
 The installer generates target-specific artifacts for each CLI:
 
@@ -86,7 +95,7 @@ npx code-abyss --list-styles    # List all available styles
 
 ## Skills
 
-26 skills across 15 domains, driven by `SKILL.md` frontmatter as single source of truth.
+22 skills in flat directory structure, driven by `SKILL.md` frontmatter as single source of truth. All skill names use gerund form (e.g., `analyzing-security`, `processing-docx`).
 
 ### User Invocation
 
@@ -113,12 +122,12 @@ Core skills are now routed automatically by context and are **not exposed as sla
 
 ```
 ~/.claude/                          ~/.codex/
-├── CLAUDE.md        (persona)      ├── AGENTS.md       (persona + style)
-├── output-styles/   (style files)  ├── instruction.md   (core instructions)
-├── commands/*.md    (optional)     ├── skills/          (domain skills)
-├── skills/          (domain skills)├── bin/lib/          (runtime libs)
-├── bin/lib/         (runtime libs) ├── config.toml      (recommended config)
-├── settings.json    (config)       └── .code-abyss-uninstall.js
+├── CLAUDE.md    (identity+behavior+style)  ├── AGENTS.md       (identity+behavior+style)
+├── output-styles/   (style files)  ├── skills/          (domain skills)
+├── commands/*.md    (optional)     ├── bin/lib/          (runtime libs)
+├── skills/          (domain skills)├── config.toml      (recommended config)
+├── bin/lib/         (runtime libs) └── .code-abyss-uninstall.js
+├── settings.json    (config)
 └── .code-abyss-uninstall.js
 ~/.gemini/
 ├── GEMINI.md        (persona + style)
@@ -184,7 +193,7 @@ Required frontmatter:
 
 ```yaml
 ---
-name: verify-quality          # kebab-case, unique
+name: checking-code-quality    # kebab-case gerund, unique
 description: Code quality gate
 user-invocable: true           # false = knowledge-only
 allowed-tools: Bash, Read, Glob  # optional, default: Read
@@ -197,7 +206,7 @@ Generation chain:
 1. Registry scans and validates all `skills/**/SKILL.md`
 2. Only skills with `user-invocable: true` generate commands (current core set defaults to none)
 3. Claude: renders `~/.claude/commands/*.md` only when invocable skills exist
-4. Codex: installs to `~/.codex/skills/`, discovered directly, with proactive execution guidance from generated `AGENTS.md` + `instruction.md`
+4. Codex: installs to `~/.codex/skills/`, discovered directly, with proactive execution guidance from dynamically generated `AGENTS.md`
 5. Gemini: renders `~/.gemini/commands/*.toml` only when invocable skills exist, with proactive guidance in generated `GEMINI.md`
 6. OpenClaw: installs shared skills into `~/.openclaw/skills/`, and writes runtime rules/persona into workspace `AGENTS.md` + `SOUL.md`
 7. Scripted skills execute via `skills/run_skill.js` (lock + spawn + exit code passthrough)
@@ -236,6 +245,29 @@ node ~/.openclaw/.code-abyss-uninstall.js
 ```
 
 Restores backed-up configuration and removes all installed files.
+
+## Tech Persona Card
+
+Code Abyss introduces the **Tech Persona Card v1.0** — a portable, structured format for AI agent personality interchange. Each persona ships as a `persona-card.json` with:
+
+- **Structured voice**: `self`/`user`/`language`/`tone`/`register`/`emoji_policy`
+- **Capabilities**: domains, expertise level, authorization tiers
+- **Scenarios**: trigger keywords → execution chains → priority matrices
+- **Three-layer composition**: identity.md + behavior.md + style.md
+
+Convert between formats:
+
+```javascript
+const { toCharaCardV2, toGPTInstructions } = require('code-abyss/bin/lib/persona-converter');
+
+// Tech Persona Card → Character Card V2 (SillyTavern/Chub.ai compatible)
+const cc = toCharaCardV2(personaCard, { identityContent, behaviorContent, styleContent });
+
+// Tech Persona Card → OpenAI GPT Instructions
+const instructions = toGPTInstructions(personaCard, { identityContent });
+```
+
+Spec: [`docs/specs/tech-persona-card-v1.0.md`](docs/specs/tech-persona-card-v1.0.md) | Schema: [`docs/specs/persona-card.schema.json`](docs/specs/persona-card.schema.json)
 
 ## License
 

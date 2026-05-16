@@ -12,16 +12,22 @@
 
 </div>
 
-Code Abyss 为你的 AI 编程 CLI 注入可切换的人格 + 输出风格 + 工程技能体系。一条命令即可配置人格规则、主动执行导向、输出风格、26 个领域技能和 5 个校验工具，覆盖 Claude Code、Codex CLI、Gemini CLI 与 OpenClaw。
+Code Abyss 为你的 AI 编程 CLI 注入可切换的人格 + 输出风格 + 工程技能体系。一条命令即可配置人格规则、主动执行导向、输出风格、22 个领域技能和 5 个校验工具，覆盖 Claude Code、Codex CLI、Gemini CLI 与 OpenClaw。
+
+同时提供 **Claude Code 插件**安装方式：`claude plugin install code-abyss`
 
 ## 快速开始
 
 ```bash
+# npm（所有目标）
 npx code-abyss                          # 交互式菜单
 npx code-abyss --target claude -y       # 一键安装到 ~/.claude/
 npx code-abyss --target codex -y        # 一键安装到 ~/.codex/
 npx code-abyss --target gemini -y       # 一键安装到 ~/.gemini/
 npx code-abyss --target openclaw -y     # 一键安装到 ~/.openclaw/
+
+# Claude Code 插件（仅 Claude）
+claude plugin install code-abyss
 ```
 
 ## 功能概述
@@ -30,9 +36,12 @@ Code Abyss 是一个三层配置系统：
 
 | 层级 | 内容 | 位置 |
 |------|------|------|
-| 人格 | 角色身份、规则、执行链 | `config/personas/*.md` + `config/personas/_shared/*.md` |
-| 输出风格 | 语气、格式、回复结构 | `output-styles/*.md` + `index.json` |
-| 技能 | 领域知识 + 可执行校验工具 | `skills/**/*.md` + `scripts/*.js` |
+| 身份 | 角色人格、角色锚定、场景路由 | `config/personas/*.md` |
+| 共享行为 | 铁律、执行链、技能路由、主动补位协议 | `config/personas/_shared/*.md` |
+| 输出风格 | 语气、格式、回复结构（含 `{{self}}`/`{{user}}` 模板变量） | `output-styles/*.md` + `index.json` |
+| 技能 | 领域知识 + 可执行校验工具 | `skills/<slug>/SKILL.md` + `scripts/*.js` |
+
+任意人格 × 任意风格 = 安全组合（已校验 25 种组合，零冲突）。
 
 安装器为每个 CLI 生成对应的产物：
 
@@ -84,7 +93,7 @@ npx code-abyss --list-styles    # 列出所有可用风格
 
 ## 技能体系
 
-26 个技能覆盖 15 个领域，以 `SKILL.md` frontmatter 为单一事实源。
+22 个技能，采用扁平目录结构，以 `SKILL.md` frontmatter 为单一事实源。所有技能名称使用动名词形式（例如 `analyzing-security`、`processing-docx`）。
 
 ### 用户调用
 
@@ -111,12 +120,12 @@ npx code-abyss --list-styles    # 列出所有可用风格
 
 ```
 ~/.claude/                          ~/.codex/
-├── CLAUDE.md        (人格)         ├── AGENTS.md       (人格 + 风格)
-├── output-styles/   (风格文件)     ├── instruction.md   (核心指令)
-├── commands/*.md    (可选命令)     ├── skills/          (领域技能)
-├── skills/          (领域技能)     ├── bin/lib/          (运行时库)
-├── bin/lib/         (运行时库)     ├── config.toml      (推荐配置)
-├── settings.json    (配置)         └── .code-abyss-uninstall.js
+├── CLAUDE.md    (身份+行为+风格)   ├── AGENTS.md       (身份+行为+风格)
+├── output-styles/   (风格文件)     ├── skills/          (领域技能)
+├── commands/*.md    (可选命令)     ├── bin/lib/          (运行时库)
+├── skills/          (领域技能)     ├── config.toml      (推荐配置)
+├── bin/lib/         (运行时库)     └── .code-abyss-uninstall.js
+├── settings.json    (配置)
 └── .code-abyss-uninstall.js
 ~/.gemini/
 ├── GEMINI.md        (人格 + 风格)
@@ -182,9 +191,9 @@ node bin/packs.js uninstall <pack>       # 移除 pack 产物
 
 ```yaml
 ---
-name: verify-quality          # kebab-case，全局唯一
+name: checking-code-quality    # kebab-case 动名词形式，全局唯一
 description: 代码质量校验关卡
-user-invocable: false          # true 才会生成显式命令；当前核心默认不暴露
+user-invocable: true           # false = 仅知识型
 allowed-tools: Bash, Read, Glob  # 可选，默认 Read
 argument-hint: <路径>          # 可选
 ---
@@ -195,7 +204,7 @@ argument-hint: <路径>          # 可选
 1. 注册表扫描并校验所有 `skills/**/SKILL.md`
 2. 仅 `user-invocable: true` 的 skill 会生成命令（当前核心默认无显式命令）
 3. Claude：仅在存在可调用 skill 时渲染 `~/.claude/commands/*.md`
-4. Codex：安装到 `~/.codex/skills/`，并由生成的 `AGENTS.md` + `instruction.md` 提供主动执行导向
+4. Codex：安装到 `~/.codex/skills/`，直接发现，并由动态生成的 `AGENTS.md` 提供主动执行导向
 5. Gemini：仅在存在可调用 skill 时渲染 `~/.gemini/commands/*.toml`，并由生成的 `GEMINI.md` 提供主动执行导向
 6. OpenClaw：将共享 skills 安装到 `~/.openclaw/skills/`，并把运行时规则 / 人格写入 workspace 的 `AGENTS.md` + `SOUL.md`
 7. 脚本型技能通过 `skills/run_skill.js` 执行（加锁 + spawn + 退出码透传）
@@ -225,6 +234,29 @@ npx code-abyss --uninstall openclaw
 ```
 
 自动恢复备份的配置，清理所有安装文件。
+
+## 技术人格卡
+
+Code Abyss 引入 **Tech Persona Card v1.0** —— 一种可移植的结构化 AI Agent 人格交换格式。每个人格以 `persona-card.json` 形式交付，包含：
+
+- **结构化声音**：`self`/`user`/`language`/`tone`/`register`/`emoji_policy`
+- **能力声明**：领域、专业等级、授权层级
+- **场景路由**：触发关键字 → 执行链 → 优先级矩阵
+- **三层组合**：identity.md + behavior.md + style.md
+
+格式转换：
+
+```javascript
+const { toCharaCardV2, toGPTInstructions } = require('code-abyss/bin/lib/persona-converter');
+
+// Tech Persona Card → Character Card V2（兼容 SillyTavern/Chub.ai）
+const cc = toCharaCardV2(personaCard, { identityContent, behaviorContent, styleContent });
+
+// Tech Persona Card → OpenAI GPT Instructions
+const instructions = toGPTInstructions(personaCard, { identityContent });
+```
+
+规范文档：[`docs/specs/tech-persona-card-v1.0.md`](specs/tech-persona-card-v1.0.md) | Schema：[`docs/specs/persona-card.schema.json`](specs/persona-card.schema.json)
 
 ## 许可证
 

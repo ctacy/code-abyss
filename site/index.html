@@ -44,6 +44,7 @@
       </a>
       <div class="nav-links">
         <a href="#how" data-i18n="nav.how">How</a>
+        <a href="#security" data-i18n="nav.security">Security</a>
         <a href="#personas" data-i18n="nav.personas">Personas</a>
         <a href="#spec" data-i18n="nav.spec">Spec</a>
         <a href="#install" data-i18n="nav.install">Install</a>
@@ -70,7 +71,7 @@
             <span data-i18n="hero.title.1">Give your AI agent</span><br>
             <span class="accent" data-i18n="hero.title.2">a personality.</span>
           </h1>
-          <p class="lead" data-i18n="hero.sub" data-i18n-html>Composable identity, style, and 22 engineering skills.<br>One command. Four platforms.</p>
+          <p class="lead" data-i18n="hero.sub" data-i18n-html>Composable identity, style, and <b>22 engineering skills</b><br>— including <b>4 native security domains, 4073 lines of original defense</b>.</p>
           <div class="hero-install">
             <span class="prompt-sign">$</span>
             <code>npx code-abyss -t claude -y</code>
@@ -150,6 +151,63 @@
         <span class="num">6</span><span class="word" data-i18n="how.formula.mid">styles</span>
         <span class="op">=</span>
         <span class="total">36</span><span class="word" data-i18n="how.formula.post">validated combos</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="security-section" id="security">
+    <div class="container">
+      <div class="eyebrow" data-i18n="security.label">Security Spine</div>
+      <h2 data-i18n="security.title">Four native security domains</h2>
+      <p class="section-desc" data-i18n="security.desc" data-i18n-html>v4 ships <b>4073 lines of original defense engineering</b>, replacing the Apache-2.0 coff0xc upstream. Builders, blue/purple teams, and architects each get their own dedicated skill.</p>
+
+      <div class="security-grid">
+        <a class="security-card" href="https://github.com/telagod/code-abyss/tree/main/skills/defending-applications">
+          <div class="sec-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+          </div>
+          <h3 data-i18n="security.app.title">defending-applications</h3>
+          <p data-i18n="security.app.desc">Web/API/GraphQL hardening, OAuth/OIDC/JWT/Session, LLM AppSec (prompt injection, RAG poisoning, agent authz). 785 lines.</p>
+          <span class="sec-tag">785 lines</span>
+        </a>
+        <a class="security-card" href="https://github.com/telagod/code-abyss/tree/main/skills/securing-cloud-and-supply-chain">
+          <div class="sec-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.5 19a4.5 4.5 0 0 0 0-9 6 6 0 0 0-11.7 1.5A4 4 0 0 0 6 19h11.5z"/>
+              <path d="M12 13v6M9 16l3 3 3-3"/>
+            </svg>
+          </div>
+          <h3 data-i18n="security.cloud.title">securing-cloud-and-supply-chain</h3>
+          <p data-i18n="security.cloud.desc">Container escape defense, K8s RBAC/PSS/NetworkPolicy, SLSA/Sigstore/SBOM, cloud IAM, IaC security. 1246 lines.</p>
+          <span class="sec-tag">1246 lines</span>
+        </a>
+        <a class="security-card" href="https://github.com/telagod/code-abyss/tree/main/skills/detecting-and-responding">
+          <div class="sec-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"/>
+              <path d="m21 21-4.3-4.3"/>
+            </svg>
+          </div>
+          <h3 data-i18n="security.detect.title">detecting-and-responding</h3>
+          <p data-i18n="security.detect.desc">Sigma/YARA rule writing, EDR primitives, NIST 800-61 IR, forensics (Win/Linux/Mac/Cloud), threat hunting. 942 lines.</p>
+          <span class="sec-tag">942 lines</span>
+        </a>
+        <a class="security-card" href="https://github.com/telagod/code-abyss/tree/main/skills/architecting-security">
+          <div class="sec-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-7h6v7"/>
+            </svg>
+          </div>
+          <h3 data-i18n="security.arch.title">architecting-security</h3>
+          <p data-i18n="security.arch.desc">STRIDE/PASTA/LINDDUN threat modeling, zero-trust identity (WebAuthn, Kerberos, PAM JIT), SOC2/PCI/HIPAA/GDPR. 1100 lines.</p>
+          <span class="sec-tag">1100 lines</span>
+        </a>
+      </div>
+
+      <div class="security-actions">
+        <a href="https://github.com/telagod/code-abyss/tree/main/skills" class="btn btn-ghost" data-i18n="security.cta">Browse on GitHub</a>
       </div>
     </div>
   </section>

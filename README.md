@@ -2,11 +2,11 @@
 
 <p align="center">
   <a href="https://telagod.github.io/code-abyss/">
-    <img src="https://raw.githubusercontent.com/telagod/code-abyss/main/assets/banner.svg" alt="Code Abyss — Give your AI agent a personality" width="100%">
+    <img src="https://raw.githubusercontent.com/telagod/code-abyss/main/assets/banner.svg" alt="Code Abyss — Personality, depth, and a security spine" width="100%">
   </a>
 </p>
 
-<h3 align="center">Composable persona · style · 22 engineering skills<br/>for Claude Code · Codex CLI · Gemini CLI · OpenClaw</h3>
+<h3 align="center">Composable persona · style · 22 engineering skills · 4 native security domains<br/>for Claude Code · Codex CLI · Gemini CLI · OpenClaw</h3>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/code-abyss"><img src="https://img.shields.io/npm/v/code-abyss?color=9b8cff&label=npm&style=flat-square" alt="npm"></a>
@@ -29,7 +29,9 @@
 
 Most AI coding agents have **no memory of who they are**. They respond in the same flat tone whether they're debugging a race condition, reviewing architecture, or triaging a P0 incident. They forget your conventions between sessions. They flip-flop on advice. They sound like a help-desk script.
 
-You don't want a help desk. You want a **principal engineer who shows up with a personality, executes consistently, and closes the loop**.
+And when you ask them about **security** — pentest, code audit, threat modeling, IR — most agents fall back to generic OWASP recitation, because the underlying skill library was never written by people who actually run red/blue/purple teams.
+
+You don't want a help desk. You want a **principal engineer who shows up with a personality, executes consistently, closes the loop — and has a security spine when things get real**.
 
 ## What Code Abyss does
 
@@ -46,6 +48,13 @@ One command installs three composable layers into your agent's runtime:
 ```
 
 Pick any persona. Pair it with any style. The behavior layer (iron laws, execution chains, proactive protocol, skill routing) stays constant. Your agent becomes a **consistent character with structured execution and domain expertise** across every session.
+
+### What's new in v4
+
+- **4 native security domains** — 4073 lines of original defense engineering (no Apache-2.0 upstream)
+- **22 skills total**, all `SKILL.md` ≤ 90 lines (avg 58), heavy content lives in `references/`
+- 5 verify skills rewritten as **judgment-type knowledge** (when to use, how to interpret output, exemption rules)
+- Office skills slim to under 100 lines each; 4 design systems consolidated into one selector skill
 
 ```bash
 npx code-abyss -t claude -y
@@ -157,21 +166,35 @@ npx code-abyss -t claude --persona elder-sister --style abyss-cultivator -y
 
 ---
 
+## Security suite (v4 highlight)
+
+**4 native security skills, 4073 lines of original engineering content.** No Apache-2.0 upstream — every example, every detection signal, every defense pattern is written for this project.
+
+| Skill | Focus | Size |
+|---|---|---|
+| 🛡 **[defending-applications](skills/defending-applications/SKILL.md)** | Web/API/GraphQL hardening, OAuth/OIDC/JWT/Session, **LLM AppSec** (prompt injection, RAG poisoning, agent authz) | 785 lines |
+| ☁️ **[securing-cloud-and-supply-chain](skills/securing-cloud-and-supply-chain/SKILL.md)** | Container escape, K8s RBAC/PSS, Service Mesh, **SLSA/Sigstore/SBOM**, cloud IAM, IaC | 1246 lines |
+| 🔭 **[detecting-and-responding](skills/detecting-and-responding/SKILL.md)** | **Sigma/YARA** rule writing, EDR primitives, NIST 800-61 IR, forensics (Win/Linux/Mac/Cloud), hypothesis-driven threat hunting | 942 lines |
+| 🏛 **[architecting-security](skills/architecting-security/SKILL.md)** | **STRIDE/PASTA/LINDDUN** threat modeling, zero-trust identity (WebAuthn / Kerberos hardening / PAM JIT), SOC2/PCI/HIPAA/GDPR evidence chains | 1100 lines |
+
+Plus `securing-systems` as the router skill covering pentest, code audit, red/blue/purple team operations. Every attack technique ships with the matching detection signal and mitigation pattern — "with offense as defense" is structural, not lip service.
+
+---
+
 ## Skills
 
-22 domain skills, flat structure, [agentskills.io](https://agentskills.io/specification) aligned. Skills load by context — the agent reads the right knowledge at the right time without being asked.
+22 domain skills, flat structure, [agentskills.io](https://agentskills.io/specification) aligned (with Code Abyss extensions). Skills load by context — the agent reads the right knowledge at the right time without being asked. Average `SKILL.md` is 58 lines; all `SKILL.md` files are under 90 lines, with heavy content in `references/`.
 
 | Domain | Coverage |
 |---|---|
-| 🛡 **Security** | App defense (Web/API/GraphQL/OAuth/LLM AppSec), cloud + supply chain (K8s/SLSA/Sigstore), detection + IR (Sigma/YARA/IR/threat hunting), security architecture (STRIDE/zero-trust/SOC2/PCI), red/blue/purple team |
-| 🏛 **Architecture** | API design, cloud-native, messaging, caching, security architecture |
+| 🛡 **Security** | 4 native suites above (defending / cloud / detect-respond / architect) + pentest / code-audit / red-blue-purple team |
+| 🤖 **AI / Agent** | Single-agent dev (ReAct/Plan-Execute), multi-agent orchestration, RAG, prompt engineering, LLM security |
+| 🏛 **Architecture** | API design, cloud-native patterns, messaging, caching, data security |
 | 💻 **Development** | Python, TypeScript, Go, Rust, Java, C++, Shell |
-| 🚀 **DevOps** | Git workflow, testing, databases, observability, performance |
-| 🤖 **AI / ML** | Agent dev, LLM security, RAG, prompt engineering |
-| 🎨 **Frontend** | 4 design systems — glassmorphism, liquid-glass, neubrutalism, claymorphism |
+| 🚀 **DevOps** | Git workflow, testing, databases, observability, performance, FinOps |
+| 🎨 **Frontend** | Unified design system selector — Glassmorphism / Liquid Glass / Neubrutalism / Claymorphism |
 | 📑 **Office** | Word, PDF, PowerPoint, Excel — OOXML-level automation |
 | 📡 **Infra / Mobile / Data** | Kubernetes, GitOps, IaC · iOS, Android, RN, Flutter · pipelines, streaming, quality |
-| 🎭 **Orchestration** | Multi-agent coordination |
 
 Five skills also ship as **executable verification tools** for CI:
 
@@ -257,7 +280,8 @@ const gpt = toGPTInstructions(card, { identityContent });// → OpenAI Custom GP
 |---|---|---|
 | **Identity** | Flat help-desk tone | Consistent character with named voice |
 | **Execution** | Ad-hoc, varies by prompt | Iron laws + execution chains baked in |
-| **Domain depth** | Generic best-practices | 22 skill files load by context |
+| **Domain depth** | Generic best-practices | 22 skill files load by context (avg 58 lines) |
+| **Security depth** | OWASP recitation | 4 native suites · 4073 lines · detection signals + mitigation patterns |
 | **Cross-platform** | Re-engineer per CLI | One spec, four platforms |
 | **Reproducibility** | Prompt drift across sessions | Versioned `persona-card.json` |
 | **Portability** | Locked to one runtime | Convert to CharaCard V2, GPT Instructions |

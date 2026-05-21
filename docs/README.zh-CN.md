@@ -2,11 +2,11 @@
 
 <p align="center">
   <a href="https://telagod.github.io/code-abyss/#zh">
-    <img src="https://raw.githubusercontent.com/telagod/code-abyss/main/assets/banner.svg" alt="Code Abyss — 给你的 AI 助手一个人格" width="100%">
+    <img src="https://raw.githubusercontent.com/telagod/code-abyss/main/assets/banner.svg" alt="Code Abyss — 人格、深度，与一根安全脊柱" width="100%">
   </a>
 </p>
 
-<h3 align="center">可组合的人格 · 风格 · 22 项工程技能<br/>支持 Claude Code · Codex CLI · Gemini CLI · OpenClaw</h3>
+<h3 align="center">可组合的人格 · 风格 · 22 项工程技能 · 4 个原生安全领域<br/>支持 Claude Code · Codex CLI · Gemini CLI · OpenClaw</h3>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/code-abyss"><img src="https://img.shields.io/npm/v/code-abyss?color=9b8cff&label=npm&style=flat-square" alt="npm"></a>
@@ -29,7 +29,9 @@
 
 大多数 AI 编程助手**没有"自我"的记忆**。无论是调试竞态、审查架构还是处理 P0 故障，它们都用同一种扁平的客服腔回应。跨会话忘记你的约定，反复横跳给出矛盾建议，听起来像在念话术。
 
-你要的不是客服。你要的是**一个有人格、执行一致、自动闭环的资深工程师**。
+而当你问起**安全**——渗透、代码审计、威胁建模、应急响应——大多数 Agent 只能背 OWASP，因为它们底下的 skill 库不是搞红蓝紫队的人写的。
+
+你要的不是客服。你要的是**一个有人格、执行一致、自动闭环的资深工程师——并且在硬仗来时有一根安全脊柱**。
 
 ## Code Abyss 做了什么
 
@@ -46,6 +48,13 @@
 ```
 
 任选人格，任配风格。行为层（铁律、执行链、主动协助协议、技能路由）始终不变。你的 Agent 跨会话**保持一致的角色 + 结构化的执行 + 领域专长**。
+
+### v4 新内容
+
+- **4 个原生安全领域** —— 4073 行原创防御工程内容（无 Apache-2.0 上游依赖）
+- **22 个 skill**，所有 `SKILL.md` ≤ 90 行（平均 58 行），重内容下沉 `references/`
+- 5 个 verify skill 重写为**判断型知识**（何时用、如何解读输出、豁免规则）
+- Office skill 全部砍至 100 行内；4 套设计系统合并为单一选型 skill
 
 ```bash
 npx code-abyss -t claude -y
@@ -157,21 +166,35 @@ npx code-abyss -t claude --persona elder-sister --style abyss-cultivator -y
 
 ---
 
+## 安全套件（v4 杀手锏）
+
+**4 个原生安全 skill，4073 行原创工程内容。** 无 Apache-2.0 上游依赖——每条范例、每个检测信号、每种防御模式都为本项目原创编写。
+
+| Skill | 覆盖 | 体量 |
+|---|---|---|
+| 🛡 **[defending-applications](../skills/defending-applications/SKILL.md)** | Web/API/GraphQL 防御、OAuth/OIDC/JWT/Session、**LLM AppSec**（Prompt 注入、RAG 投毒、Agent 越权） | 785 行 |
+| ☁️ **[securing-cloud-and-supply-chain](../skills/securing-cloud-and-supply-chain/SKILL.md)** | 容器逃逸、K8s RBAC/PSS、Service Mesh、**SLSA/Sigstore/SBOM**、云 IAM、IaC 安全 | 1246 行 |
+| 🔭 **[detecting-and-responding](../skills/detecting-and-responding/SKILL.md)** | **Sigma/YARA** 规则编写、EDR 原语、NIST 800-61 IR、取证（Win/Linux/Mac/Cloud）、假设驱动威胁狩猎 | 942 行 |
+| 🏛 **[architecting-security](../skills/architecting-security/SKILL.md)** | **STRIDE/PASTA/LINDDUN** 威胁建模、零信任身份（WebAuthn / Kerberos 加固 / PAM JIT）、SOC2/PCI/HIPAA/GDPR 证据链 | 1100 行 |
+
+加上 `securing-systems` 作为路由 skill，覆盖渗透、代码审计、红蓝紫队基础。每条攻击技术都附带对应检测信号 + 缓解模式——「以攻促防」是结构化的，不是嘴上说说。
+
+---
+
 ## 技能矩阵
 
-22 个领域技能，扁平目录结构，对齐 [agentskills.io](https://agentskills.io/specification) 规范。技能按上下文自动加载——Agent 在正确的时机读取正确的知识，无需你手动指定。
+22 个领域技能，扁平目录结构，对齐 [agentskills.io](https://agentskills.io/specification) 规范（含 Code Abyss 扩展）。技能按上下文自动加载——Agent 在正确的时机读取正确的知识，无需手动指定。`SKILL.md` 平均 58 行，全部 ≤ 90 行，重内容下沉 `references/`。
 
 | 领域 | 覆盖范围 |
 |---|---|
-| 🛡 **安全** | 应用防御 (Web/API/GraphQL/OAuth/LLM AppSec)、云原生+供应链 (K8s/SLSA/Sigstore)、检测响应 (Sigma/YARA/IR/威胁狩猎)、安全架构 (STRIDE/零信任/SOC2/PCI)、红蓝紫队 |
-| 🏛 **架构** | API 设计、云原生、消息队列、缓存、安全架构 |
+| 🛡 **安全** | 上述 4 个原生套件（应用 / 云 / 检测响应 / 架构）+ 渗透 / 代码审计 / 红蓝紫队 |
+| 🤖 **AI / Agent** | 单 Agent 开发 (ReAct/Plan-Execute)、多 Agent 编排、RAG、Prompt 工程、LLM 安全 |
+| 🏛 **架构** | API 设计、云原生模式、消息队列、缓存、数据安全 |
 | 💻 **开发** | Python, TypeScript, Go, Rust, Java, C++, Shell |
-| 🚀 **DevOps** | Git 工作流、测试、数据库、可观测性、性能优化 |
-| 🤖 **AI / ML** | Agent 开发、LLM 安全、RAG、Prompt 工程 |
-| 🎨 **前端** | 4 种设计体系——毛玻璃、液态玻璃、新粗野、粘土态 |
+| 🚀 **DevOps** | Git 工作流、测试、数据库、可观测性、性能、FinOps |
+| 🎨 **前端** | 统一设计系统选型——Glassmorphism / Liquid Glass / Neubrutalism / Claymorphism |
 | 📑 **文档** | Word, PDF, PPT, Excel —— OOXML 级别自动化 |
 | 📡 **基础设施 / 移动 / 数据** | K8s, GitOps, IaC · iOS, Android, RN, Flutter · 管道、流处理、质量 |
-| 🎭 **编排** | 多 Agent 协调 |
 
 其中 5 个技能附带**可执行的验证工具**，供 CI 使用：
 
@@ -257,7 +280,8 @@ const gpt = toGPTInstructions(card, { identityContent });// → OpenAI 自定义
 |---|---|---|
 | **身份** | 扁平客服腔 | 有名字、有声音、稳定一致 |
 | **执行** | 临场发挥，因 prompt 而异 | 铁律 + 执行链固化 |
-| **领域深度** | 通用最佳实践 | 22 个技能按上下文加载 |
+| **领域深度** | 通用最佳实践 | 22 个技能按上下文加载（平均 58 行） |
+| **安全深度** | OWASP 复读机 | 4 个原生套件 · 4073 行 · 检测信号 + 缓解模式 |
 | **跨平台** | 每个 CLI 重写一遍 prompt | 一份规范，四个平台 |
 | **可复现** | 跨会话 prompt 漂移 | `persona-card.json` 版本化 |
 | **可移植** | 锁死在单一运行时 | 转 CharaCard V2、GPT Instructions |

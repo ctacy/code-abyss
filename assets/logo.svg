@@ -11,9 +11,13 @@
       <stop offset="100%" stop-color="#0a0a12" stop-opacity="0"/>
     </radialGradient>
   </defs>
+  <!-- outer ring: identity boundary -->
   <path d="M48 6 A42 42 0 1 1 14 79.5" stroke="url(#iris)" stroke-width="6" stroke-linecap="round"/>
-  <path d="M32 41 A16 16 0 0 1 64 41" stroke="url(#iris)" stroke-width="4.5" stroke-linecap="round" opacity="0.85"/>
-  <path d="M37 51 A11 11 0 0 1 59 51" stroke="url(#iris)" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
-  <path d="M42 61 A6 6 0 0 1 54 61" stroke="url(#iris)" stroke-width="3.4" stroke-linecap="round" opacity="0.35"/>
+  <!-- 4 arcs: identity · style · skills · security -->
+  <path d="M30 38 A18 18 0 0 1 66 38" stroke="url(#iris)" stroke-width="4.5" stroke-linecap="round" opacity="0.9"/>
+  <path d="M34 48 A14 14 0 0 1 62 48" stroke="url(#iris)" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+  <path d="M38 58 A10 10 0 0 1 58 58" stroke="url(#iris)" stroke-width="3.5" stroke-linecap="round" opacity="0.5"/>
+  <path d="M42 68 A6 6 0 0 1 54 68" stroke="url(#iris)" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
+  <!-- abyss core -->
   <circle cx="48" cy="48" r="42" fill="url(#core)"/>
 </svg>

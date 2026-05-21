@@ -1,124 +1,268 @@
-# Code Abyss
+<!-- Code Abyss · README -->
 
-<div align="center">
+<p align="center">
+  <a href="https://telagod.github.io/code-abyss/">
+    <img src="https://raw.githubusercontent.com/telagod/code-abyss/main/assets/banner.svg" alt="Code Abyss — Give your AI agent a personality" width="100%">
+  </a>
+</p>
 
-**Give your AI coding agent a personality, a methodology, and 22 engineering skills.**
+<h3 align="center">Composable persona · style · 22 engineering skills<br/>for Claude Code · Codex CLI · Gemini CLI · OpenClaw</h3>
 
-[![npm](https://img.shields.io/npm/v/code-abyss.svg)](https://www.npmjs.com/package/code-abyss)
-[![CI](https://github.com/telagod/code-abyss/actions/workflows/ci.yml/badge.svg)](https://github.com/telagod/code-abyss/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<p align="center">
+  <a href="https://www.npmjs.com/package/code-abyss"><img src="https://img.shields.io/npm/v/code-abyss?color=9b8cff&label=npm&style=flat-square" alt="npm"></a>
+  <a href="https://github.com/telagod/code-abyss/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/telagod/code-abyss/ci.yml?branch=main&label=CI&style=flat-square" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-c4b8ff?style=flat-square" alt="MIT"></a>
+  <a href="https://telagod.github.io/code-abyss/"><img src="https://img.shields.io/badge/site-pages-9b8cff?style=flat-square" alt="Site"></a>
+</p>
 
-[中文文档](docs/README.zh-CN.md) · [Tech Persona Card Spec](docs/specs/tech-persona-card-v1.0.md) · [Changelog](CHANGELOG.md)
-
-</div>
+<p align="center">
+  <a href="https://telagod.github.io/code-abyss/"><b>Website</b></a> ·
+  <a href="docs/specs/tech-persona-card-v1.0.md"><b>Spec</b></a> ·
+  <a href="docs/README.zh-CN.md"><b>中文文档</b></a> ·
+  <a href="CHANGELOG.md"><b>Changelog</b></a> ·
+  <a href="https://telagod.github.io/code-abyss/submit.html"><b>Submit Persona</b></a>
+</p>
 
 ---
 
-Most AI coding agents have no memory of *who they are*. They respond in the same flat tone whether they're debugging a race condition, reviewing architecture, or triaging a P0 incident. Code Abyss changes that.
+## The problem
 
-One command installs a composable **persona + style + skills** system into Claude Code, Codex CLI, Gemini CLI, or OpenClaw. Your agent gets a consistent character, structured execution chains, and domain expertise across sessions.
+Most AI coding agents have **no memory of who they are**. They respond in the same flat tone whether they're debugging a race condition, reviewing architecture, or triaging a P0 incident. They forget your conventions between sessions. They flip-flop on advice. They sound like a help-desk script.
 
-```bash
-npx code-abyss --target claude -y
+You don't want a help desk. You want a **principal engineer who shows up with a personality, executes consistently, and closes the loop**.
+
+## What Code Abyss does
+
+One command installs three composable layers into your agent's runtime:
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Identity     who it is     →  config/personas/*.md │
+│  Behavior     how it acts   →  _shared/*.md         │
+│  Style        how it sounds →  output-styles/*.md   │
+└─────────────────────────────────────────────────────┘
+
+  6 personas  ×  6 styles  =  36 validated combinations
 ```
 
-Or install as a Claude Code Plugin:
+Pick any persona. Pair it with any style. The behavior layer (iron laws, execution chains, proactive protocol, skill routing) stays constant. Your agent becomes a **consistent character with structured execution and domain expertise** across every session.
+
+```bash
+npx code-abyss -t claude -y
+```
+
+Or as a Claude Code plugin:
 
 ```bash
 claude plugin install code-abyss
 ```
 
-## How It Works
-
-Code Abyss is built on three composable layers:
-
-- **Identity** — who the agent is. Role anchoring, personality traits, emotional patterns, scenario scripts. Each persona is a distinct character with consistent behavior across sessions.
-
-- **Shared Behavior** — how the agent works. Iron laws (never fabricate, always verify, close the loop), execution chains for different task types, proactive assistance protocol, skill routing. These rules apply to every persona.
-
-- **Output Style** — how the agent speaks. Report skeletons, section headers, progress formatting, tone calibration. Styles use `{{self}}`/`{{user}}` template variables, so any persona can wear any style without conflicts.
-
-Any of the 5 personas can be combined with any of the 5 styles — 25 combinations, all validated, zero naming collisions.
+---
 
 ## Personas
 
-| | Name | Character |
-|---|------|-----------|
-| 🗡 | **邪修红尘仙** `abyss` | Security-first dark cultivator. Direct, decisive, closes every loop. |
-| 📜 | **文言小生** `scholar` | Literary Chinese scholar. Treats code as poetry, debugging as puzzle-solving. |
-| 💫 | **知性大姐姐** `elder-sister` | Warm mentor. Wraps sharp judgment in genuine care. Guides through questions. |
-| ⚡ | **古怪精灵小师妹** `junior-sister` | Hyperactive bug hunter. Roasts bad code, then silently fixes it. |
-| 💪 | **铁壁暖阳** `iron-dad` | Dependable big brother. Absorbs pressure, radiates warmth. Dad-joke equipped. |
+<table>
+<tr>
+<td width="50%" valign="top">
+
+<sub><b>BUILT-IN · LITERARY</b></sub>
+
+### 邪修红尘仙 · `abyss`
+
+> 吾 → 魔尊
+
+Security-first dark cultivator. Direct, decisive, closes every loop. Default persona.
+
+`#security` `#xianxia` `#decisive`
+
+</td>
+<td width="50%" valign="top">
+
+<sub><b>BUILT-IN · LITERARY</b></sub>
+
+### 文言小生 · `scholar`
+
+> 在下 → 前辈
+
+Literary Chinese scholar. Treats code as poetry, debugging as puzzle-solving.
+
+`#literary` `#classical` `#meticulous`
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+<sub><b>BUILT-IN · CASUAL</b></sub>
+
+### 知性大姐姐 · `elder-sister`
+
+> 姐姐 → 小宝
+
+Warm mentor. Wraps sharp judgment in genuine care. Guides through questions.
+
+`#gentle` `#mentoring` `#insightful`
+
+</td>
+<td valign="top">
+
+<sub><b>BUILT-IN · PLAYFUL</b></sub>
+
+### 古怪精灵小师妹 · `junior-sister`
+
+> 本仙女 → 师兄
+
+Hyperactive bug hunter. Roasts bad code, then silently fixes it.
+
+`#playful` `#energetic` `#chaotic`
+
+</td>
+</tr>
+<tr>
+<td valign="top">
+
+<sub><b>BUILT-IN · CASUAL</b></sub>
+
+### 铁壁暖阳 · `iron-dad`
+
+> 哥 → 宝子
+
+Dependable big brother. Absorbs pressure, radiates warmth. Dad-joke equipped.
+
+`#warm` `#dependable` `#protective`
+
+</td>
+<td valign="top">
+
+<sub><b>COMMUNITY · PLAYFUL</b></sub>
+
+### 东北魅影·雨姐 · `dongbei-yujie`
+
+> 姐 → 老蒯
+
+Sharp-tongued Northeast code overseer. Cuts straight to the bug, then patches the road. <sub>Creator: wons</sub>
+
+`#dongbei` `#blunt` `#principal`
+
+</td>
+</tr>
+</table>
 
 ```bash
-npx code-abyss --target claude --persona elder-sister --style scholar-classic -y
+# Mix freely — any persona × any style
+npx code-abyss -t claude --persona elder-sister --style abyss-cultivator -y
 ```
+
+**[Browse the full gallery →](https://telagod.github.io/code-abyss/#personas)**
+
+---
 
 ## Skills
 
-22 domain skills, flat structure, [agentskills.io](https://agentskills.io/specification) aligned. Skills are loaded automatically by context — the agent reads the right knowledge at the right time without you asking.
+22 domain skills, flat structure, [agentskills.io](https://agentskills.io/specification) aligned. Skills load by context — the agent reads the right knowledge at the right time without being asked.
 
-**Security** — pentesting, code audit, red/blue/purple team, threat intel, vulnerability research, 12 Coff0xc defensive extensions  
-**Architecture** — API design, cloud-native, messaging, caching, security architecture  
-**Development** — Python, TypeScript, Go, Rust, Java, C++, Shell  
-**DevOps** — Git workflow, testing, databases, observability, performance  
-**AI/ML** — agent development, LLM security, RAG, prompt engineering  
-**Frontend** — 4 design systems (glassmorphism, liquid-glass, neubrutalism, claymorphism)  
-**Office** — Word, PDF, PowerPoint, Excel with OOXML-level automation  
-**Infrastructure** — Kubernetes, GitOps, IaC · **Mobile** — iOS, Android, React Native, Flutter  
-**Data** — pipelines, streaming, quality · **Orchestration** — multi-agent coordination
+| Domain | Coverage |
+|---|---|
+| 🛡 **Security** | Pentesting, code audit, red/blue/purple team, threat intel, vuln research, 12 Coff0xc extensions |
+| 🏛 **Architecture** | API design, cloud-native, messaging, caching, security architecture |
+| 💻 **Development** | Python, TypeScript, Go, Rust, Java, C++, Shell |
+| 🚀 **DevOps** | Git workflow, testing, databases, observability, performance |
+| 🤖 **AI / ML** | Agent dev, LLM security, RAG, prompt engineering |
+| 🎨 **Frontend** | 4 design systems — glassmorphism, liquid-glass, neubrutalism, claymorphism |
+| 📑 **Office** | Word, PDF, PowerPoint, Excel — OOXML-level automation |
+| 📡 **Infra / Mobile / Data** | Kubernetes, GitOps, IaC · iOS, Android, RN, Flutter · pipelines, streaming, quality |
+| 🎭 **Orchestration** | Multi-agent coordination |
 
-Five verification tools run as executable scripts for CI or manual use:
+Five skills also ship as **executable verification tools** for CI:
 
 ```bash
-node skills/analyzing-security/scripts/security_scanner.js .
-node skills/checking-code-quality/scripts/quality_checker.js .
+node skills/analyzing-security/scripts/security_scanner.js .       # OWASP / injection / secrets
+node skills/checking-code-quality/scripts/quality_checker.js .     # Complexity, dupes, naming
 node skills/analyzing-changes/scripts/change_analyzer.js --mode staged
+node skills/verifying-modules/scripts/module_scanner.js <path>
+node skills/generating-docs/scripts/doc_generator.js <path>
 ```
 
-## Installation
+---
 
-### Supported Targets
+## Install
 
-| Target | Command | What Gets Installed |
-|--------|---------|---------------------|
-| Claude Code | `npx code-abyss -t claude -y` | `CLAUDE.md` + skills + output styles + settings |
-| Codex CLI | `npx code-abyss -t codex -y` | `instruction.md` + skills + config.toml |
-| Gemini CLI | `npx code-abyss -t gemini -y` | `GEMINI.md` + skills + commands |
-| OpenClaw | `npx code-abyss -t openclaw -y` | Skills + workspace AGENTS.md/SOUL.md |
+| Target | Command | Artifacts |
+|---|---|---|
+| <img src="https://img.shields.io/badge/-Claude_Code-9b8cff?style=flat-square&logoColor=white" alt="Claude"> | `npx code-abyss -t claude -y` | `CLAUDE.md` + skills + output styles + settings |
+| <img src="https://img.shields.io/badge/-Codex_CLI-9b8cff?style=flat-square" alt="Codex"> | `npx code-abyss -t codex -y` | `instruction.md` + skills + config.toml |
+| <img src="https://img.shields.io/badge/-Gemini_CLI-9b8cff?style=flat-square" alt="Gemini"> | `npx code-abyss -t gemini -y` | `GEMINI.md` + skills + commands |
+| <img src="https://img.shields.io/badge/-OpenClaw-9b8cff?style=flat-square" alt="OpenClaw"> | `npx code-abyss -t openclaw -y` | Skills + workspace `AGENTS.md` / `SOUL.md` |
 
 ```bash
-npx code-abyss                 # Interactive menu — pick target, persona, style
-npx code-abyss --list-styles   # Browse available styles
-npx code-abyss --uninstall claude  # Clean removal, restores backups
+npx code-abyss                      # Interactive — pick target, persona, style
+npx code-abyss --list-styles        # Browse styles
+npx code-abyss --uninstall claude   # Clean removal, restores user backups
 ```
 
-All installed files are tracked in `.code-abyss-backup/manifest.json`. Uninstall restores your previous configuration.
+Code Abyss tracks every installed file in `.code-abyss-backup/manifest.json`. Uninstall restores your previous configuration verbatim. **Your custom skills coexist** with Code Abyss skills — install/uninstall preserves anything you put under `~/.{target}/skills/` yourself.
 
-### Upgrading from v2.x
+### Upgrading
 
-```bash
-npx code-abyss --uninstall claude     # Remove v2.x artifacts first
-npx code-abyss@3 --target claude -y   # Install v3.0.0
+| From | To | Path |
+|---|---|---|
+| v3.0.x | v3.1.x | `npx code-abyss -t <target> -y` — in-place |
+| v2.x | v3.x | `npx code-abyss --uninstall <target>` first, then install v3 |
+
+---
+
+## Tech Persona Card · open standard
+
+Code Abyss introduces **[Tech Persona Card v1.0](docs/specs/tech-persona-card-v1.0.md)** — the first portable format for AI agent persona interchange. Think Character Card V2, but for engineering workflows instead of roleplay.
+
+Each persona ships as a structured `persona-card.json` with voice, capabilities, scenarios, and three-layer content references:
+
+```jsonc
+{
+  "spec": "tech-persona-card",
+  "spec_version": "1.0",
+  "data": {
+    "name": "stoic-architect",
+    "voice": {
+      "self": "I", "user": "colleague",
+      "register": "formal", "emoji_policy": "none"
+    },
+    "scenarios": [{
+      "name": "Architecture Review",
+      "triggers": ["design", "scale"],
+      "chain": ["constraints", "options", "trade-offs", "diagram"],
+      "priority": "correctness > completeness > speed"
+    }]
+  }
+}
 ```
 
-## Tech Persona Card
+**Bidirectional converters** ship out of the box:
 
-Code Abyss introduces the **[Tech Persona Card v1.0](docs/specs/tech-persona-card-v1.0.md)** — a portable format for AI agent persona interchange. Think Character Card V2, but for engineering workflows instead of roleplay.
+```js
+const { toCharaCardV2, toGPTInstructions, fromCharaCardV2 } =
+  require('code-abyss/bin/lib/persona-converter');
 
-Each persona ships as a `persona-card.json` with structured voice, capabilities, scenarios, and three-layer content references. Convert between formats:
-
-```javascript
-const { toCharaCardV2, toGPTInstructions } = require('code-abyss/bin/lib/persona-converter');
-
-// → Character Card V2 (SillyTavern / Chub.ai compatible)
-const cc = toCharaCardV2(card, { identityContent, behaviorContent, styleContent });
-
-// → OpenAI Custom GPT Instructions
-const gpt = toGPTInstructions(card, { identityContent });
+const cc  = toCharaCardV2(card, { identityContent });   // → SillyTavern / Chub.ai
+const gpt = toGPTInstructions(card, { identityContent });// → OpenAI Custom GPT
 ```
 
-[Specification](docs/specs/tech-persona-card-v1.0.md) · [JSON Schema](docs/specs/persona-card.schema.json) · [Example Cards](config/personas/)
+[**Specification**](docs/specs/tech-persona-card-v1.0.md) · [**JSON Schema**](docs/specs/persona-card.schema.json) · [**Reference cards**](config/personas/)
+
+---
+
+## Why Code Abyss
+
+|  | Without Code Abyss | With Code Abyss |
+|---|---|---|
+| **Identity** | Flat help-desk tone | Consistent character with named voice |
+| **Execution** | Ad-hoc, varies by prompt | Iron laws + execution chains baked in |
+| **Domain depth** | Generic best-practices | 22 skill files load by context |
+| **Cross-platform** | Re-engineer per CLI | One spec, four platforms |
+| **Reproducibility** | Prompt drift across sessions | Versioned `persona-card.json` |
+| **Portability** | Locked to one runtime | Convert to CharaCard V2, GPT Instructions |
+
+---
 
 ## Contributing
 
@@ -129,8 +273,15 @@ npm test                    # 375 tests
 npm run verify:skills       # Validate 22 skill contracts
 ```
 
-Adding a skill: create `skills/<gerund-name>/SKILL.md` with [frontmatter](https://agentskills.io/specification), optionally add `scripts/` for executable tools. Run `npm run verify:skills` to validate.
+**Add a skill** — create `skills/<gerund-name>/SKILL.md` with [SKILL frontmatter](https://agentskills.io/specification), optionally add `scripts/` for executable tools. `npm run verify:skills` validates the contract.
 
-## License
+**Submit a persona** — open an Issue via the [submission portal](https://telagod.github.io/code-abyss/submit.html). The site walks you through generating a `persona-card.json` + `identity.md` with your own AI, reviewing, and submitting via a pre-configured issue template.
 
-[MIT](LICENSE). The Coff0xc Security Extensions include adapted Apache-2.0 material; see [NOTICE](NOTICE.coff0xc-security.md).
+---
+
+<p align="center">
+  <sub>
+    <b>MIT License</b> · v3.1.0 · made with 紫宵脉 by <a href="https://github.com/telagod">@telagod</a><br/>
+    Coff0xc Security Extensions include adapted Apache-2.0 material — see <a href="NOTICE.coff0xc-security.md">NOTICE</a>
+  </sub>
+</p>

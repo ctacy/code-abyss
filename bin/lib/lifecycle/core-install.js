@@ -32,7 +32,7 @@ function createInstallCore(deps) {
     pushManifestEntry, pushPackReport, resolveEffectivePackSource,
     generateCommandContent, generateGeminiCommandContent,
     CLAUDE_COMMAND_TARGET, GEMINI_COMMAND_TARGET,
-    rmSafe, copyRecursive,
+    rmSafe, copyRecursive, shouldSkip,
     step, ok, warn, info, fail, c,
   } = deps;
 
@@ -201,6 +201,45 @@ function createInstallCore(deps) {
         warn(`跳过: ${src}`); return;
       }
 
+      let srcStat;
+      try { srcStat = fs.statSync(srcPath); } catch (e) {
+        warn(`无法读取源: ${srcPath}`); return;
+      }
+
+      // 目录类条目（skills/、output-styles/、bin/lib/）展开为 children 逐个安装：
+      // 防止用户原有的自定义 skills 在安装期间被整目录冻结到 .code-abyss-backup/。
+      // 每个 child 独立备份、独立 manifest 追踪（{path: "skills/domains"} 而非 {path: "skills"}）。
+      if (srcStat.isDirectory()) {
+        let children;
+        try { children = fs.readdirSync(srcPath); } catch (e) {
+          warn(`无法读取目录: ${srcPath}`); return;
+        }
+        const visible = children.filter(child => !shouldSkip(child));
+        if (visible.length === 0) {
+          warn(`目录为空: ${src}`); return;
+        }
+        visible.forEach(child => {
+          const childSrc = path.join(srcPath, child);
+          const childDest = path.join(destPath, child);
+          const childRel = path.posix.join(dest, child);
+          const childLabel = rootName === tgt ? childRel : `${rootName}/${childRel}`;
+
+          if (fs.existsSync(childDest)) {
+            const backupPath = path.join(backupDir, rootName, childRel);
+            rmSafe(backupPath);
+            copyRecursive(childDest, backupPath);
+            pushManifestEntry(manifest.backups, rootName, childRel);
+            info(`备份: ${c.d(childLabel)}`);
+          }
+          ok(childLabel);
+          rmSafe(childDest);
+          copyRecursive(childSrc, childDest);
+          pushManifestEntry(manifest.installed, rootName, childRel);
+        });
+        return;
+      }
+
+      // 文件类条目保持原行为：整体备份 + 替换
       if (fs.existsSync(destPath)) {
         const backupPath = path.join(backupDir, rootName, dest);
         rmSafe(backupPath);
@@ -387,12 +426,12 @@ function createInstallCore(deps) {
         fs.writeFileSync(geminiMdPath, guidance);
         ok(`人格（心）→ ${c.mag(selectedPersona.label)} (${selectedPersona.slug})`);
       } else if (tgt === 'codex') {
-        const agentsMdPath = path.join(targetDir, 'AGENTS.md');
+        const instructionMdPath = path.join(targetDir, 'instruction.md');
         const guidance = renderCodexAgents(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
-        fs.writeFileSync(agentsMdPath, guidance);
-        pushManifestEntry(manifest.installed, 'codex', 'AGENTS.md');
+        fs.writeFileSync(instructionMdPath, guidance);
+        pushManifestEntry(manifest.installed, 'codex', 'instruction.md');
         ok(`人格（心）→ ${c.mag(selectedPersona.label)} (${selectedPersona.slug})`);
-        ok(`风格（口）→ ${c.mag(selectedStyle.label)} → ~/.codex/AGENTS.md`);
+        ok(`风格（口）→ ${c.mag(selectedStyle.label)} → ~/.codex/instruction.md`);
       }
     }
 

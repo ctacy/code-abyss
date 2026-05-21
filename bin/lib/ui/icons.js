@@ -5,7 +5,7 @@ const TARGET_ICONS = { claude: '◆', codex: '◇', gemini: '✦', openclaw: '�
 
 const TARGET_HINTS = {
   claude: 'CLAUDE.md · output-styles · commands · skills',
-  codex: 'AGENTS.md · instruction.md · config.toml · skills',
+  codex: 'instruction.md · config.toml · skills',
   gemini: 'GEMINI.md · commands · skills',
   openclaw: '~/.openclaw skills · workspace AGENTS/SOUL',
 };

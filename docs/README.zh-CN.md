@@ -81,7 +81,7 @@ node skills/analyzing-changes/scripts/change_analyzer.js --mode staged
 | 目标 | 命令 | 安装内容 |
 |------|------|---------|
 | Claude Code | `npx code-abyss -t claude -y` | `CLAUDE.md` + 技能 + 输出风格 + 设置 |
-| Codex CLI | `npx code-abyss -t codex -y` | `AGENTS.md` + 技能 + config.toml |
+| Codex CLI | `npx code-abyss -t codex -y` | `instruction.md` + 技能 + config.toml |
 | Gemini CLI | `npx code-abyss -t gemini -y` | `GEMINI.md` + 技能 + 命令 |
 | OpenClaw | `npx code-abyss -t openclaw -y` | 技能 + 工作区 AGENTS.md/SOUL.md |
 

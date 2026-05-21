@@ -66,6 +66,33 @@ describe('claude install smoke', () => {
     expect(result.status).toBe(0);
     expect(settings.outputStyle).toBe('scholar-classic');
   });
+
+  test('用户自定义 skills 在 install / uninstall 全周期中存活（child-level 安装）', () => {
+    const claudeDir = path.join(tmpHome, '.claude');
+    const userSkillDir = path.join(claudeDir, 'skills', 'my-custom');
+    fs.mkdirSync(userSkillDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(userSkillDir, 'SKILL.md'),
+      '---\nname: my-custom\ndescription: user owned\nuser-invocable: false\n---\n# user content\n'
+    );
+
+    const install = runInstall(['--target', 'claude', '-y']);
+    expect(install.status).toBe(0);
+    expect(fs.existsSync(path.join(userSkillDir, 'SKILL.md'))).toBe(true);
+
+    // manifest 应记录 children-level 条目而非整目录
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(claudeDir, '.code-abyss-backup', 'manifest.json'), 'utf8')
+    );
+    const installedPaths = manifest.installed.map((e) => (typeof e === 'string' ? e : e.path));
+    expect(installedPaths).toContain('skills/analyzing-changes');
+    expect(installedPaths).not.toContain('skills');
+
+    const uninstall = runInstall(['--uninstall', 'claude']);
+    expect(uninstall.status).toBe(0);
+    expect(fs.existsSync(path.join(userSkillDir, 'SKILL.md'))).toBe(true);
+    expect(fs.existsSync(path.join(claudeDir, 'skills', 'analyzing-changes'))).toBe(false);
+  });
 });
 
 describe('codex install smoke', () => {
@@ -91,20 +118,20 @@ describe('codex install smoke', () => {
     });
   }
 
-  test('安装 Codex 时生成 AGENTS.md + skills 且不写 settings.json', () => {
+  test('安装 Codex 时生成 instruction.md + skills 且不写 settings.json', () => {
     const result = runInstall(['--target', 'codex', '-y']);
     const codexDir = path.join(tmpHome, '.codex');
-    const codexConfig = fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8');
 
     expect(result.status).toBe(0);
-    expect(fs.existsSync(path.join(codexDir, 'AGENTS.md'))).toBe(true);
+    expect(fs.existsSync(path.join(codexDir, 'instruction.md'))).toBe(true);
+    expect(fs.existsSync(path.join(codexDir, 'AGENTS.md'))).toBe(false);
     expect(fs.existsSync(path.join(codexDir, 'skills'))).toBe(true);
     expect(fs.existsSync(path.join(codexDir, 'bin', 'lib'))).toBe(true);
     expect(fs.existsSync(path.join(codexDir, 'config.toml'))).toBe(true);
     expect(fs.existsSync(path.join(codexDir, 'settings.json'))).toBe(false);
     expect(fs.existsSync(path.join(codexDir, 'prompts'))).toBe(false);
-    const agentsMd = fs.readFileSync(path.join(codexDir, 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('宿命深渊');
+    const instructionMd = fs.readFileSync(path.join(codexDir, 'instruction.md'), 'utf8');
+    expect(instructionMd).toContain('宿命深渊');
   });
 
   test('安装 Codex 时会清理旧 prompts 残留', () => {
@@ -124,9 +151,9 @@ describe('codex install smoke', () => {
     const codexDir = path.join(tmpHome, '.codex');
 
     expect(result.status).toBe(0);
-    expect(fs.existsSync(path.join(codexDir, 'AGENTS.md'))).toBe(true);
-    const agentsMd = fs.readFileSync(path.join(codexDir, 'AGENTS.md'), 'utf8');
-    expect(agentsMd).toContain('墨渊书阁');
+    expect(fs.existsSync(path.join(codexDir, 'instruction.md'))).toBe(true);
+    const instructionMd = fs.readFileSync(path.join(codexDir, 'instruction.md'), 'utf8');
+    expect(instructionMd).toContain('墨渊书阁');
   });
 
   test('安装 Codex 时会迁移旧 settings.json，卸载后恢复', () => {

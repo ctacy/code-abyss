@@ -134,7 +134,7 @@ aliases: vq                    # optional comma-separated aliases
 | Target | Config file | Skill artifacts | Style mechanism |
 |--------|-------------|-----------------|-----------------|
 | Claude | `~/.claude/CLAUDE.md` | `~/.claude/commands/*.md` (optional) + `~/.claude/skills/` | `settings.json.outputStyle` = slug |
-| Codex | `~/.codex/config.toml` | `~/.codex/skills/` | `~/.codex/AGENTS.md` (persona + style) |
+| Codex | `~/.codex/config.toml` | `~/.codex/skills/` | `~/.codex/instruction.md` (persona + style, via `model_instructions_file`) |
 | Gemini | `~/.gemini/settings.json` | `~/.gemini/GEMINI.md` + `~/.gemini/commands/*.toml` (optional) + `~/.gemini/skills/` | Global context + TOML command runtime |
 | OpenClaw | `~/.openclaw/openclaw.json` | `~/.openclaw/skills/` + `<workspace>/AGENTS.md` + `<workspace>/SOUL.md` | `SOUL.md` persona/style + workspace AGENTS rules |
 

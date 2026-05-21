@@ -88,7 +88,7 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code、Codex C
 - 问题：输出风格曾固定为 `abyss-cultivator`，Claude `outputStyle`、运行时 guidance、README 与测试都写死在同一 slug 上，无法扩展成多风格安装。
 - 决策：新增 `output-styles/index.json` 作为 style registry，统一维护 `slug`、`label`、`description`、`file`、`targets`、`default`。
 - 决策：Claude 继续安装整个 `output-styles/` 目录，并把 `settings.json.outputStyle` 写为所选 style slug。
-- 决策：Claude 通过 `settings.json.outputStyle` 选风格；所有 target 通过 `renderRuntimeGuidance()` 动态组装 persona identity + shared behavior + style，生成对应运行时文件（`GEMINI.md`、`AGENTS.md`、`SOUL.md` 等）；Codex 当前维持 `skills-only`，显式忽略 `--style`。
+- 决策：Claude 通过 `settings.json.outputStyle` 选风格；所有 target 通过 `renderRuntimeGuidance()` 动态组装 persona identity + shared behavior + style，生成对应运行时文件（`GEMINI.md`、Codex `instruction.md`、OpenClaw `AGENTS.md` / `SOUL.md` 等）；Codex 通过 `model_instructions_file = "./instruction.md"` 加载，文件名与 `config.toml` 配置必须保持一致。
 - 决策：Codex skills 对齐当前项目运行时，安装到 `~/.codex/skills/`；`agents/openai.yaml` 只负责可选 metadata，而不是旧 `prompts/` 入口。
 - 取舍：运行时策略按宿主分化，但 style registry 仍保持单一索引，避免 README / 测试 / 安装链再次漂移。
 

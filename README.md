@@ -83,7 +83,7 @@ node skills/analyzing-changes/scripts/change_analyzer.js --mode staged
 | Target | Command | What Gets Installed |
 |--------|---------|---------------------|
 | Claude Code | `npx code-abyss -t claude -y` | `CLAUDE.md` + skills + output styles + settings |
-| Codex CLI | `npx code-abyss -t codex -y` | `AGENTS.md` + skills + config.toml |
+| Codex CLI | `npx code-abyss -t codex -y` | `instruction.md` + skills + config.toml |
 | Gemini CLI | `npx code-abyss -t gemini -y` | `GEMINI.md` + skills + commands |
 | OpenClaw | `npx code-abyss -t openclaw -y` | Skills + workspace AGENTS.md/SOUL.md |
 

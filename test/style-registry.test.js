@@ -85,11 +85,11 @@ describe('style registry', () => {
     expect(result).toBe('Hello me, greet you');
   });
 
-  test('5×5 全量跨配 smoke：所有 persona×style 组合无 crash 且无残留模板变量', () => {
+  test('全量跨配 smoke：所有 persona×style 组合无 crash 且无残留模板变量', () => {
     const personas = listPersonas(projectRoot);
     const styles = listStyles(projectRoot);
-    expect(personas.length).toBe(5);
-    expect(styles.length).toBe(5);
+    expect(personas.length).toBeGreaterThanOrEqual(5);
+    expect(styles.length).toBeGreaterThanOrEqual(5);
 
     for (const persona of personas) {
       for (const style of styles) {

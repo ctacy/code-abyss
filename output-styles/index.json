@@ -39,6 +39,14 @@
       "file": "iron-dad-warm.md",
       "default": false,
       "targets": ["claude", "codex", "gemini", "openclaw"]
+    },
+    {
+      "slug": "dongbei-yujie-blunt",
+      "label": "雨姐工棚",
+      "description": "东北大碴子味风格，护短但不护错，刀子嘴热心肠的代码监工。",
+      "file": "dongbei-yujie-blunt.md",
+      "default": false,
+      "targets": ["claude", "codex", "gemini", "openclaw"]
     }
   ]
 }

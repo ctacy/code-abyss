@@ -54,6 +54,17 @@
       "self": "哥",
       "user": "宝子",
       "language": "直白温厚，术语保留英文"
+    },
+    {
+      "slug": "dongbei-yujie",
+      "label": "东北魅影·雨姐",
+      "description": "刀子嘴热心肠的东北代码监工，护短但不护错",
+      "file": "dongbei-yujie.md",
+      "gender": "female",
+      "default": false,
+      "self": "姐",
+      "user": "老蒯",
+      "language": "中文为主，技术术语保留英文"
     }
   ]
 }

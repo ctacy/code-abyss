@@ -235,7 +235,7 @@ function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', per
     persona = getDefaultPersona(projectRoot);
   }
 
-  const identity = readPersonaContent(projectRoot, persona).replace(/\s+$/, '');
+  const identity = readPersonaContent(projectRoot, persona, true).replace(/\s+$/, '');
   const shared = loadSharedBehavior(projectRoot);
   const styleContent = applyPersonaVars(
     readStyleContent(projectRoot, style).replace(/^\s+/, ''),

@@ -38,16 +38,18 @@ describe('deployCcstatuslineConfig', () => {
     expect(Array.isArray(content.lines)).toBe(true);
   });
 
-  test('已有配置时创建备份', () => {
+  test('已有配置时保留用户设置，不覆盖不备份', () => {
     const configDir = path.join(tmpDir, '.config', 'ccstatusline');
     fs.mkdirSync(configDir, { recursive: true });
     fs.writeFileSync(path.join(configDir, 'settings.json'), '{"old":true}');
     const errors = [];
     deployCcstatuslineConfig(errors, { HOME: tmpDir, ok: () => {} });
     expect(errors).toHaveLength(0);
+    // 已有配置时不再创建备份，保留用户个性化设置
     const backup = path.join(tmpDir, '.claude', '.code-abyss-backup', 'ccstatusline-settings.json');
-    expect(fs.existsSync(backup)).toBe(true);
-    expect(JSON.parse(fs.readFileSync(backup, 'utf8'))).toEqual({ old: true });
+    expect(fs.existsSync(backup)).toBe(false);
+    // 用户原有配置被保留
+    expect(JSON.parse(fs.readFileSync(path.join(configDir, 'settings.json'), 'utf8'))).toEqual({ old: true });
   });
 
   test('bundled settings.json 必须通过 schema guard', () => {
@@ -76,7 +78,7 @@ describe('installCcstatusline', () => {
     fs.writeFileSync(settingsPath, JSON.stringify({ existing: true }));
     const ctx = { settings: { existing: true }, settingsPath };
     const config = {
-      statusLine: { type: 'command', command: 'npx -y ccstatusline@latest', padding: 0 }
+      statusLine: { type: 'command', command: 'ccline', padding: 0 }
     };
     await installCcstatusline(ctx, {
       HOME: tmpDir,

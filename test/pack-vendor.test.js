@@ -3,6 +3,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
 const {
   syncPackVendor,
@@ -91,7 +92,21 @@ module.exports = {
     const report = syncPackVendor(tmpDir, 'fixture-pack');
     const status = getPackVendorStatus(tmpDir, 'fixture-pack');
 
-expect(report.provider).toBe('local-dir');
+    expect(report.provider).toBe('fixture');
+    expect(fs.existsSync(path.join(tmpDir, '.code-abyss', 'vendor', 'fixture-pack', 'README.md'))).toBe(true);
+    expect(status).toMatchObject({ exists: true, dirty: false, drifted: false, provider: 'fixture' });
+  });
+
+  test('syncPackVendor 支持 local-dir provider', () => {
+    const sourceDir = path.join(tmpDir, 'local-source');
+    fs.mkdirSync(sourceDir, { recursive: true });
+    fs.writeFileSync(path.join(sourceDir, 'README.md'), 'local source\n');
+    writeManifest('local-pack', { provider: 'local-dir', path: 'local-source' });
+
+    const report = syncPackVendor(tmpDir, 'local-pack');
+    const status = getPackVendorStatus(tmpDir, 'local-pack');
+
+    expect(report.provider).toBe('local-dir');
     expect(fs.existsSync(path.join(tmpDir, '.code-abyss', 'vendor', 'local-pack', 'README.md'))).toBe(true);
     expect(status).toMatchObject({ exists: true, dirty: false, drifted: false, provider: 'local-dir' });
   });

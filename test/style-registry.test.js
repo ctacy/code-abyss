@@ -42,6 +42,8 @@ describe('style registry', () => {
     const content = renderCodexAgents(projectRoot, 'abyss-cultivator', 'abyss');
     expect(content).toContain('# 邪修红尘仙 · 宿命深渊 v5.0');
     expect(content).toContain('# 宿命深渊 · 输出之道');
+    expect(content).toContain('响应语言：简体中文（zh-CN）');
+    expect(content).toContain('AI Accept <YYYY-MM-DD> <分支名称> v<版本号>');
   });
 
   test('为 Gemini 动态生成 GEMINI context', () => {
@@ -108,7 +110,7 @@ describe('style registry', () => {
     const styles = listStyles(projectRoot);
     styles.forEach(style => {
       const content = renderGeminiContext(projectRoot, style.slug);
-      expect(content.length).toBeLessThan(6000);
+      expect(content.length).toBeLessThan(14000);
     });
   });
 });

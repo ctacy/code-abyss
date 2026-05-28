@@ -17,7 +17,7 @@ const { validateCcstatuslineSettings } = require('./schema-guard');
 
 const PLUGIN_DIR = __dirname;
 const BUNDLED_CONFIG = path.join(PLUGIN_DIR, 'settings.json');
-const CCSTATUSLINE_CMD = 'npx -y ccstatusline@latest';
+const CCSTATUSLINE_CMD = 'ccline';
 const CCSTATUSLINE_CONFIG = {
   statusLine: {
     type: 'command',
@@ -63,14 +63,13 @@ function deployCcstatuslineConfig(errors, { HOME, ok }) {
 
   fs.mkdirSync(configDir, { recursive: true });
 
+  // 只在首次安装时写入 bundled 默认；已有配置则保留用户个性化设置
   if (fs.existsSync(targetConfig)) {
-    const backupDir = path.join(HOME, '.claude', '.code-abyss-backup');
-    fs.mkdirSync(backupDir, { recursive: true });
-    fs.copyFileSync(targetConfig, path.join(backupDir, 'ccstatusline-settings.json'));
+    ok('ccstatusline/settings.json 已存在，保留用户个性化配置');
+  } else {
+    fs.copyFileSync(BUNDLED_CONFIG, targetConfig);
+    ok('ccstatusline/settings.json 已部署 (Code Abyss 多行美化预设)');
   }
-
-  fs.copyFileSync(BUNDLED_CONFIG, targetConfig);
-  ok('ccstatusline/settings.json 已部署 (Code Abyss 多行美化预设)');
 }
 
 async function installCcstatusline(ctx, deps) {

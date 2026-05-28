@@ -136,6 +136,8 @@ describe('codex install smoke', () => {
     expect(fs.existsSync(path.join(codexDir, 'prompts'))).toBe(false);
     const instructionMd = fs.readFileSync(path.join(codexDir, 'instruction.md'), 'utf8');
     expect(instructionMd).toContain('宿命深渊');
+    expect(instructionMd).toContain('响应语言：简体中文（zh-CN）');
+    expect(instructionMd).toContain('AI Accept <YYYY-MM-DD> <分支名称> v<版本号>');
   });
 
   test('安装 Codex 时会清理旧 prompts 残留', () => {

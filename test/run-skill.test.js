@@ -68,7 +68,7 @@ describe('run_skill', () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("runtimeType 不是 scripted");
-    expect(result.stderr).toContain('sample-knowledge-skill/SKILL.md');
+    expect(result.stderr).toContain(path.join('sample-knowledge-skill', 'SKILL.md'));
   });
 
   test('等待锁释放后继续执行，不 busy wait 失效', async () => {

@@ -24,10 +24,10 @@ jobs:
       - run: npm run verify:skills
       - run: npm run packs:check
       - run: npm run packs:vendor:sync -- --check
-      - run: node skills/tools/verify-change/scripts/change_analyzer.js --mode staged || node skills/tools/verify-change/scripts/change_analyzer.js --mode working
-      - run: node skills/tools/verify-module/scripts/module_scanner.js .
-      - run: node skills/tools/verify-quality/scripts/quality_checker.js .
-      - run: node skills/tools/verify-security/scripts/security_scanner.js . --exclude office
+      - run: node skills/analyzing-changes/scripts/change_analyzer.js --mode staged || node skills/analyzing-changes/scripts/change_analyzer.js --mode working
+      - run: node skills/verifying-modules/scripts/module_scanner.js .
+      - run: node skills/checking-code-quality/scripts/quality_checker.js .
+      - run: node skills/analyzing-security/scripts/security_scanner.js . --exclude creating-presentations processing-docx analyzing-spreadsheets processing-pdfs site
 
   smoke-claude:
     runs-on: ${{ matrix.os }}
@@ -62,17 +62,19 @@ jobs:
           test -f "$abyss_home/.claude/CLAUDE.md"
           test -d "$abyss_home/.claude/skills"
           test ! -e "$abyss_home/.claude/skills/gstack"
-          test ! -e "$abyss_home/.claude/commands"
+          test -d "$abyss_home/.claude/commands"
+          test -f "$abyss_home/.claude/commands/cultivating-skills.md"
+          test -f "$abyss_home/.claude/commands/cultivating-personas.md"
           test ! -e "$abyss_home/.claude/commands/gen-docs.md"
           test ! -e "$abyss_home/.claude/commands/review.md"
           test -f "$abyss_home/.claude/settings.json"
-          test -f "$abyss_home/.claude/.sage-uninstall.js"
+          test -f "$abyss_home/.claude/.code-abyss-uninstall.js"
 
           npx --yes --package "./$pkg_tgz" code-abyss --uninstall claude
 
           test ! -e "$abyss_home/.claude/CLAUDE.md"
           test ! -e "$abyss_home/.claude/skills"
-          test ! -e "$abyss_home/.claude/.sage-backup"
+          test ! -e "$abyss_home/.claude/.code-abyss-backup"
 
   smoke-codex:
     runs-on: ${{ matrix.os }}
@@ -104,19 +106,21 @@ jobs:
 
           npx --yes --package "./$pkg_tgz" code-abyss --target codex -y
 
-          test -f "$abyss_home/.codex/AGENTS.md"
+          test -f "$abyss_home/.codex/instruction.md"
+          test ! -e "$abyss_home/.codex/AGENTS.md"
           test -d "$abyss_home/.codex/skills"
           test -d "$abyss_home/.codex/bin/lib"
           test ! -e "$abyss_home/.agents/skills/gstack"
           test -f "$abyss_home/.codex/config.toml"
           test ! -e "$abyss_home/.codex/settings.json"
-          test -f "$abyss_home/.codex/.sage-uninstall.js"
+          test -f "$abyss_home/.codex/.code-abyss-uninstall.js"
 
           npx --yes --package "./$pkg_tgz" code-abyss --uninstall codex
 
+          test ! -e "$abyss_home/.codex/instruction.md"
           test ! -e "$abyss_home/.codex/AGENTS.md"
           test ! -e "$abyss_home/.agents/skills"
-          test ! -e "$abyss_home/.codex/.sage-backup"
+          test ! -e "$abyss_home/.codex/.code-abyss-backup"
 
   smoke-gemini:
     runs-on: ${{ matrix.os }}
@@ -150,15 +154,59 @@ jobs:
 
           test -f "$abyss_home/.gemini/GEMINI.md"
           test -d "$abyss_home/.gemini/skills"
-          test ! -e "$abyss_home/.gemini/commands"
+          test -d "$abyss_home/.gemini/commands"
+          test -f "$abyss_home/.gemini/commands/cultivating-skills.toml"
+          test -f "$abyss_home/.gemini/commands/cultivating-personas.toml"
           test ! -e "$abyss_home/.gemini/commands/gen-docs.toml"
           test ! -e "$abyss_home/.gemini/commands/review.toml"
           test ! -e "$abyss_home/.gemini/skills/gstack"
           test -f "$abyss_home/.gemini/settings.json"
-          test -f "$abyss_home/.gemini/.sage-uninstall.js"
+          test -f "$abyss_home/.gemini/.code-abyss-uninstall.js"
 
           npx --yes --package "./$pkg_tgz" code-abyss --uninstall gemini
 
           test ! -e "$abyss_home/.gemini/GEMINI.md"
           test ! -e "$abyss_home/.gemini/skills"
-          test ! -e "$abyss_home/.gemini/.sage-backup"
+          test ! -e "$abyss_home/.gemini/.code-abyss-backup"
+
+  smoke-openclaw:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: Pack npm tarball
+        shell: bash
+        run: npm pack
+      - name: Smoke install/uninstall OpenClaw target
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pkg_tgz="$(ls code-abyss-*.tgz | head -n 1)"
+          abyss_home="$RUNNER_TEMP/abyss-home"
+          rm -rf "$abyss_home"
+          mkdir -p "$abyss_home"
+
+          export HOME="$abyss_home"
+          export USERPROFILE="$abyss_home"
+
+          npx --yes --package "./$pkg_tgz" code-abyss --target openclaw -y
+
+          test -d "$abyss_home/.openclaw/skills"
+          test -f "$abyss_home/.openclaw/workspace/AGENTS.md"
+          test -f "$abyss_home/.openclaw/workspace/SOUL.md"
+          test -f "$abyss_home/.openclaw/.code-abyss-uninstall.js"
+          test ! -e "$abyss_home/.openclaw/commands"
+          test ! -e "$abyss_home/.openclaw/skills/gstack"
+
+          npx --yes --package "./$pkg_tgz" code-abyss --uninstall openclaw
+
+          test ! -e "$abyss_home/.openclaw/skills"
+          test ! -e "$abyss_home/.openclaw/.code-abyss-backup"

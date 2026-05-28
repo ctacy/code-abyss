@@ -39,8 +39,8 @@ describe('pack registry', () => {
     expect(pack).toMatchObject({
       name: 'abyss',
     });
-    expect(pack.hosts.claude.files).toHaveLength(4);
-    expect(pack.hosts.codex.files).toHaveLength(3);
+    expect(pack.hosts.claude.files).toHaveLength(3);
+    expect(pack.hosts.codex.files).toHaveLength(2);
   });
 
   test('读取 gstack manifest', () => {
@@ -54,14 +54,12 @@ describe('pack registry', () => {
 
   test('按 host 解析文件映射', () => {
     expect(getPackHostFiles(projectRoot, 'abyss', 'claude')).toEqual([
-      { src: 'config/CLAUDE.md', dest: 'CLAUDE.md', root: 'claude' },
       { src: 'output-styles', dest: 'output-styles', root: 'claude' },
       { src: 'skills', dest: 'skills', root: 'claude' },
       { src: 'bin/lib', dest: 'bin/lib', root: 'claude' },
     ]);
 
     expect(getPackHostFiles(projectRoot, 'abyss', 'codex')).toEqual([
-      { src: 'config/instruction.md', dest: 'instruction.md', root: 'codex' },
       { src: 'skills', dest: 'skills', root: 'codex' },
       { src: 'bin/lib', dest: 'bin/lib', root: 'codex' },
     ]);

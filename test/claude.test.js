@@ -38,7 +38,6 @@ describe('claude adapter', () => {
 
   test('getClaudeCoreFiles: 返回 Claude 核心映射', () => {
     expect(getClaudeCoreFiles()).toEqual([
-      { src: 'config/CLAUDE.md', dest: 'CLAUDE.md', root: 'claude' },
       { src: 'output-styles', dest: 'output-styles', root: 'claude' },
       { src: 'skills', dest: 'skills', root: 'claude' },
       { src: 'bin/lib', dest: 'bin/lib', root: 'claude' },

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" fill="none">
+  <defs>
+    <linearGradient id="iris" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c4b8ff"/>
+      <stop offset="50%" stop-color="#9b8cff"/>
+      <stop offset="100%" stop-color="#5544cc"/>
+    </linearGradient>
+    <radialGradient id="core" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#0a0a12" stop-opacity="0.96"/>
+      <stop offset="70%" stop-color="#0a0a12" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#0a0a12" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- outer ring: identity boundary -->
+  <path d="M48 6 A42 42 0 1 1 14 79.5" stroke="url(#iris)" stroke-width="6" stroke-linecap="round"/>
+  <!-- 4 arcs: identity · style · skills · security -->
+  <path d="M30 38 A18 18 0 0 1 66 38" stroke="url(#iris)" stroke-width="4.5" stroke-linecap="round" opacity="0.9"/>
+  <path d="M34 48 A14 14 0 0 1 62 48" stroke="url(#iris)" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+  <path d="M38 58 A10 10 0 0 1 58 58" stroke="url(#iris)" stroke-width="3.5" stroke-linecap="round" opacity="0.5"/>
+  <path d="M42 68 A6 6 0 0 1 54 68" stroke="url(#iris)" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
+  <!-- abyss core -->
+  <circle cx="48" cy="48" r="42" fill="url(#core)"/>
+</svg>

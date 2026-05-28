@@ -1,0 +1,18 @@
+{
+  "name": "code-abyss",
+  "description": "Security-first full-stack engineering skills for Claude Code",
+  "owner": {
+    "name": "telagod"
+  },
+  "plugins": [
+    {
+      "name": "code-abyss",
+      "description": "22 domain skills + 5 verification tools for security-first full-stack engineering. Covers security, architecture, DevOps, AI, mobile, office docs, frontend design, and multi-agent coordination.",
+      "version": "3.0.0",
+      "source": ".",
+      "author": {
+        "name": "telagod"
+      }
+    }
+  ]
+}

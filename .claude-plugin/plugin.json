@@ -1,0 +1,23 @@
+{
+  "name": "code-abyss",
+  "description": "26 domain skills + 5 verification tools for security-first full-stack engineering. Covers security, architecture, DevOps, AI, mobile, office docs, frontend design, and multi-agent coordination.",
+  "version": "3.0.0",
+  "author": {
+    "name": "telagod"
+  },
+  "homepage": "https://github.com/telagod/code-abyss",
+  "repository": "https://github.com/telagod/code-abyss",
+  "license": "MIT",
+  "keywords": [
+    "security",
+    "architecture",
+    "devops",
+    "ai",
+    "office",
+    "frontend-design",
+    "multi-agent",
+    "verification",
+    "code-quality",
+    "skills"
+  ]
+}

@@ -2,20 +2,27 @@
 
 ## 项目概述
 
-Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 Codex CLI），采用三层架构提供「邪修红尘仙·宿命深渊」风格体验。
+Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code、Codex CLI、Gemini CLI 与 OpenClaw），采用三层架构 + 模板变量系统提供可组合的人格体验。v3.0.0 引入 **Tech Persona Card** 标准，实现跨平台人格互换。
 
 ## 三层架构分工
 
 | 层 | 文件 | 职责 |
 |---|------|------|
-| **身份与规则** | `config/CLAUDE.md` | 定义"做什么"：身份、规则、场景路由、执行链、成功标准 |
-| **输出风格** | `output-styles/*.md` + `output-styles/index.json` | 定义"怎么说"：风格目录 + registry |
-| **技术知识** | `skills/**/*.md` | 定义"会什么"：技术知识 + 道语浸染首尾 |
-| **合并版** | `config/AGENTS.md` | 仓库内默认风格 snapshot；当前主要作为仓库参考快照 |
+| **身份（Identity）** | `config/personas/*.md` | 每个 persona 独有的角色锚定、性格层、情绪节奏 |
+| **共享行为（Shared Behavior）** | `config/personas/_shared/*.md` | 所有 persona 共享的铁律、执行链、验证链、技能路由、主动协助协议 |
+| **输出风格（Output Style）** | `output-styles/*.md` + `index.json` | 输出骨架、场景加权、情绪锚点；使用 `{{self}}`/`{{user}}`/`{{language}}` 模板变量 |
+| **技术知识（Skills）** | `skills/<slug>/SKILL.md` | 22 个 flat skill，gerund 命名，spec 合规 |
 
-### AGENTS.md snapshot 规则
+**组装公式**：`renderRuntimeGuidance(persona, style, target)` = identity + shared + style（模板变量替换后）
 
-仓库内 `config/AGENTS.md` 仅保留默认风格 snapshot，用于仓库参考与对比；当前 Codex 运行时不再写入 `~/.codex/AGENTS.md`，而是走 `skills-only` + `config.toml` + `instruction.md`。
+**跨配安全**：5 persona × 5 style = 25 种组合全量 smoke 验证，零冲突。
+
+## 分发方式
+
+| 通道 | 命令 | 覆盖 |
+|------|------|------|
+| npm | `npx code-abyss --target <tgt>` | Claude/Codex/Gemini/OpenClaw |
+| Claude Code Plugin | `claude plugin install code-abyss` | Claude |
 
 ## 设计决策
 
@@ -51,7 +58,7 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 ### 4. 备份策略
 
 安装时自动备份现有配置：
-- 备份到 `{目标目录}/.sage-backup/`（即 `~/.claude/.sage-backup/` 或 `~/.codex/.sage-backup/`）
+- 备份到 `{目标目录}/.code-abyss-backup/`（即 `~/.claude/.code-abyss-backup/` 或 `~/.codex/.code-abyss-backup/`）
 - 通过 manifest 记录备份清单
 - 避免用户数据丢失
 
@@ -81,7 +88,7 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 - 问题：输出风格曾固定为 `abyss-cultivator`，Claude `outputStyle`、运行时 guidance、README 与测试都写死在同一 slug 上，无法扩展成多风格安装。
 - 决策：新增 `output-styles/index.json` 作为 style registry，统一维护 `slug`、`label`、`description`、`file`、`targets`、`default`。
 - 决策：Claude 继续安装整个 `output-styles/` 目录，并把 `settings.json.outputStyle` 写为所选 style slug。
-- 决策：Claude 通过 `settings.json.outputStyle` 选风格；Gemini 由 `config/CLAUDE.md + output-styles/<slug>.md` 动态生成 `GEMINI.md`；Codex 当前维持 `skills-only`，显式忽略 `--style`。
+- 决策：Claude 通过 `settings.json.outputStyle` 选风格；所有 target 通过 `renderRuntimeGuidance()` 动态组装 persona identity + shared behavior + style，生成对应运行时文件（`GEMINI.md`、Codex `instruction.md`、OpenClaw `AGENTS.md` / `SOUL.md` 等）；Codex 通过 `model_instructions_file = "./instruction.md"` 加载，文件名与 `config.toml` 配置必须保持一致。
 - 决策：Codex skills 对齐当前项目运行时，安装到 `~/.codex/skills/`；`agents/openai.yaml` 只负责可选 metadata，而不是旧 `prompts/` 入口。
 - 取舍：运行时策略按宿主分化，但 style registry 仍保持单一索引，避免 README / 测试 / 安装链再次漂移。
 
@@ -172,7 +179,7 @@ Code Abyss 是 CLI 助手的个性化配置方案（支持 Claude Code CLI 与 C
 - 决策：npm 安装锁定主版本 `@1`；git 命令改用字符串拼接避免模板注入。
 - 取舍：锁定主版本而非精确版本，平衡安全与可维护性。
 
-#### 2. 共享库提取 (`skills/tools/lib/shared.js`)
+#### 2. 共享库提取 (`skills/_lib/shared.js`)
 
 - 问题：4 个 verify-* 脚本重复实现 CLI 解析和报告格式化（~30% 重复）。
 - 决策：提取 `parseCliArgs()`、`buildReport()`、`countBySeverity()`、`hasFatal()` 到共享库。

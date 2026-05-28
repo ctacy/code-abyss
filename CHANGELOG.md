@@ -4,6 +4,167 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-05-22
+
+> **Self-evolution release.** 新增两枚炼炉级 skill：让 Agent 能识别会话中的"该沉淀了"信号，并将工程方法 / 人格沉淀为可复用的 skill / persona，引导用户走三级发布漏斗（本地 → 项目 → 社区）。安全脊柱内化为默认拒绝原则。
+
+### Added
+
+- **cultivating-skills** — meta-skill：从重复操作沉淀为新 skill / 改进现有 skill。脚手架 (`skill_forge init`)、frontmatter+引用 lint (`lint`)、安全扫描 (`scan`)、改进模板 (`improve`)、漏斗升级 (`promote`) 一体。`scripts/skill_forge.js` 默认拒绝危险模式（`rm -rf /`、`curl | sh`、`eval` 用户输入、prompt injection 反模式），支持 `<!-- safety-scan: ignore RULE_ID -->` 行内豁免。
+- **cultivating-personas** — meta-skill：从会话沉淀 voice / 情绪锚点 / 场景脚本为 Tech Persona Card v1.0。`scripts/persona_forge.js` 跑 schema + voice 一致性 + identity 三段（角色锚定 / 性格特征 / 情绪模式）+ 法律红线（真实人名 / 商标 / 政治宗教 / 内容危害）。复用 [submit portal](https://telagod.github.io/code-abyss/submit.html)，不重造提交流程。
+- 主动协助协议新增**沉淀触发协议**：观察到方法论结晶 / 人格结晶 / 现有 skill 缺口时，Agent 不直接落盘，先向用户提议，魔尊点头方进入对应 flow。
+- 三级发布漏斗：L0 本地（`~/.claude/skills/local/`，不入路由、显式调用）→ L1 项目（`<repo>/.claude/skills/`，团队共享）→ L2 社区（upstream，全 block + 全 warn 阻断）。
+
+### Changed
+
+- `_shared/skill-routing.md` 新增两条路由：沉淀走 cultivating-skills，人格沉淀走 cultivating-personas。
+- `_shared/proactive.md` 追加沉淀触发协议章节。
+- skill 总数由 22 升至 24（cultivating-skills + cultivating-personas）。
+- 测试预期更新：Claude install smoke 现在期待 `commands/cultivating-{skills,personas}.md` 存在；旧的"core skills 无 invocable"断言改为"仅 cultivating 系列 invocable"。
+
+### Security
+
+- 新 skill 落盘默认走 safety_scan，命中即阻断：硬编码 secret（复用 analyzing-security 规则）、危险默认模板、prompt injection 反模式、scripts 多入口、引用悬空。
+- 特权工具（Bash / Write / Edit / WebFetch）须在 SKILL.md 内说明理由，否则 warn。
+- 人格内容三道闸：法律红线（真实人名 / 商标 / IP）、平台审查（政治 / 宗教 / 民族）、内容危害（自残 / 仇恨 / 性化未成年）—— 全 block。
+
+## [4.0.0] - 2026-05-22
+
+> **Major release — skill quality refactor + native security skills.** 全面深度审计 skill 体系，按 harness 规范重组：
+> - 5 个 office skill 砍至 < 100 行，重内容下沉 references/
+> - 5 个 verify skill 从 CLI 帮助文档升级为判断型知识
+> - 4 个 designing-* 合并为 applying-ui-design-system
+> - building-ai-systems + coordinating-agents 合并为 building-agent-systems
+> - **移除 Apache-2.0 coff0xc 上游依赖**，替换为 4 个自家深度安全 skill (4073 行原创)
+
+### Added
+- **defending-applications** (785 行) — 应用层防御。Web/API/GraphQL 漏洞防御 + OAuth/OIDC/JWT/Session/Cookie 加固 + LLM AppSec (Prompt 注入/越狱/RAG 投毒/Agent 越权)
+- **securing-cloud-and-supply-chain** (1246 行) — 云原生与供应链。容器逃逸/K8s RBAC/PSS + SLSA/Sigstore/SBOM/CI/CD + 云 IAM/Vault/IaC 安全
+- **detecting-and-responding** (942 行) — 蓝紫队工程。Sigma/YARA 规则编写 + NIST 800-61 IR 流程 + 假设驱动威胁狩猎 + ATT&CK 闭环
+- **architecting-security** (1100 行) — 安全架构。STRIDE/PASTA/LINDDUN 威胁建模 + 零信任身份架构 (WebAuthn/Kerberos 加固/PAM JIT) + SOC2/PCI/HIPAA/GDPR 合规证据链
+- **applying-ui-design-system** — 4 个独立 designing-* skill 合并而成的统一前端设计系统选型 + 共享 a11y 铁律
+- **building-agent-systems** — building-ai-systems + coordinating-agents 合并而成的 Agent / LLM 工程总入口
+- **`npm run migrate:v4`** — `bin/migrate-v3-to-v4.js`，自动检测 ~/.{target}/skills/ 下的 v3 残骸 + 提示清理或自动迁移
+
+### Changed (BREAKING)
+- **office skill SKILL.md 全部砍至 < 100 行**：processing-docx (199→61), processing-pdfs (296→51), analyzing-spreadsheets (290→44), creating-presentations (485→74)。所有 code recipe / palette / format rule / workflow 下沉 references/
+- **5 个 verify skill 重写为判断型知识**：analyzing-security / checking-code-quality / analyzing-changes / verifying-modules / generating-docs。新增「何时使用 / 何时不使用」决策表 + 输出解读 + skill 联动指引
+- **securing-systems 瘦身为路由 skill**：18 个平铺 .md 全部迁入 references/。SKILL.md 路由表新增 4 个专域 skill 的链接
+- **触发词冗余段全清**：mobile / data / infra / dev / devops 5 个 skill 末尾的 `## 触发词` 段（与 description 重复）
+
+### Removed (BREAKING)
+- 4 个独立 design skill：designing-glassmorphism / designing-liquid-glass / designing-neubrutalism / designing-claymorphism → 合并为 applying-ui-design-system
+- building-ai-systems 与 coordinating-agents → 合并为 building-agent-systems
+- securing-systems/references/coff0xc-*.md (12 个文件) → 替换为 4 个自家深度 skill
+- `NOTICE.coff0xc-security.md` 与 `THIRD_PARTY_LICENSES/Apache-2.0-coffee-skill.txt`（v4 不再依赖 Apache-2.0 上游）
+- `package.json` `files` 字段移除 `THIRD_PARTY_LICENSES/` 与 `NOTICE.coff0xc-security.md`
+- 5 个 orphan reference 文件（v3.0 重构遗留）：designing-glassmorphism/references/{component-patterns,engineering,state-management,ui-aesthetics,ux-principles}.md
+
+### Migration
+
+```bash
+# v3.x → v4.0 升级路径
+npx code-abyss --uninstall <target>     # 1. 卸载 v3
+npm install -g code-abyss@4              # 2. 装 v4
+npx code-abyss -t <target> -y            # 3. 安装 v4 skill 集
+npm run migrate:v4 -- -t <target>        # 4. 可选：清理仍在 ~/.{target}/skills/ 的残骸
+```
+
+22 skill 全数通过 contract 校验，375 测试全部通过。
+
+## [3.1.1] - 2026-05-22
+
+### Changed
+- **README 品牌化重写**：与 v3.1 site 设计语言对齐——头图 banner.svg、节奏化文档结构（困境→方案→三层架构图→人格画廊→技能矩阵→升级路径→对比表）、人格 2×3 卡片表格含 voice + register + tags + creator。中文 README 同步重写。
+- **GitHub Pages site 编辑感重设计**：单冷紫主色替代三色 gradient，Noto Serif SC 衬线标题 + Inter 正文，hero 改左右分栏（左文字 + 右浮动 persona 卡阵），Logo 换为切口同心环 + 三道弧 + 中心 dark core 的 SVG，新增 favicon.svg。
+- **设计资产**：`assets/banner.svg`（1200×360 头图）、`assets/logo.svg`（96×96 独立 logo）、`site/favicon.svg`，三件共享同一视觉语言。
+
+> 此版本仅文档与 site 改动，无运行时 / 安装器变更。从 v3.1.0 升级无需任何操作。
+
+## [3.1.0] - 2026-05-22
+
+### Added
+- **东北雨姐 persona (#25)**：community 提交的 `dongbei-yujie` 人格 + `dongbei-yujie-blunt` 输出风格落地（identity / persona-card.json / 输出骨架）。已注册到 `config/personas/index.json` 与 `output-styles/index.json`，全 5×6 跨配 smoke 通过。Creator: wons。
+
+### Changed
+- **目录类条目展开为 children 安装（#19）**：`installCore()` 不再把 `skills/`、`output-styles/`、`bin/lib/` 当整体单元备份/替换。改为枚举 immediate children 后逐个安装，每个 child 独立备份 + 独立 manifest 追踪（`{path: "skills/domains"}` 而非 `{path: "skills"}`）。用户原有的自定义 skills 在安装期间不再被冻结进 `.code-abyss-backup/`，可与 Code Abyss skills 共存。
+- **uninstall 同步移除空目录裁剪的 `root !== defaultRoot` 守卫**：child-level 安装后同 root 内的父目录在所有 child 被移除后形成空壳，需统一裁剪（`installRoot` 作 stopAt 上界）。`bin/uninstall.js` 与 `bin/lib/uninstall-core.js` 同步更新；旧版 manifest 中 `{path: "skills"}` 整目录条目仍以 `rmSafe` 删除，行为不变。
+
+### Fixed
+- **Codex 启动报错 `failed to read model instructions file ... instruction.md` (#26)**：v3.0 安装器把 persona+style 写到 `~/.codex/AGENTS.md`，但 `config.toml` 默认 `model_instructions_file = "./instruction.md"` 指向另一个文件名，Codex CLI 启动时直接 `os error 2`。安装器现统一写入 `~/.codex/instruction.md`，与 `config.toml` 默认值对齐；README / DESIGN / CLAUDE.md / 中文 README 同步更新。
+- **CI smoke-codex 跟随上游断言修正**：smoke job 改断言 `instruction.md` + 不存在 `AGENTS.md`，与新的安装产物对齐。
+
+## [3.0.0] - 2026-05-16
+
+### BREAKING CHANGES
+- **Skills flattened**: all 22 skill paths changed from nested `skills/domains/office/docx/` to flat `skills/processing-docx/`. Old installations require `--uninstall` before upgrading.
+- **Skill names gerund**: all slugs renamed to gerund form (`verify-quality` → `checking-code-quality`, `gen-docs` → `generating-docs`, etc.)
+- **Persona files restructured**: `config/CLAUDE.md`, `config/AGENTS.md`, `config/instruction.md` deleted. Persona system now uses three-layer composition (identity + shared behavior + style).
+- **`.sage-*` renamed to `.code-abyss-*`**: automatic migration on install, but manual `--uninstall` of v2.x recommended before upgrading.
+
+### Added
+- **Tech Persona Card v1.0 specification** (`docs/specs/tech-persona-card-v1.0.md`): first open standard for AI agent persona interchange. Includes JSON Schema, 5 reference persona cards, and three-way converter.
+- **Persona three-layer architecture**: identity (who I am) + shared behavior (iron laws, execution chains, skill routing) + style (output format with `{{self}}`/`{{user}}`/`{{language}}` template variables).
+- **5×5 persona×style cross-combination**: 25 combinations validated, zero conflicts via template variable substitution.
+- **Persona converter** (`bin/lib/persona-converter.js`): Tech Persona Card ↔ Character Card V2 ↔ OpenAI GPT Instructions. 39 tests.
+- **5 persona-card.json**: structured Tech Persona Card for all 5 personas, schema-validated.
+- **Claude Code Plugin support**: `.claude-plugin/plugin.json` + `marketplace.json` for `/plugin install` distribution alongside npm.
+- **Proactive Assistance Protocol**: rescued from dead `config/CLAUDE.md`, now shared across all personas via `_shared/proactive.md`.
+- **Unified assembly**: all 4 targets (Claude/Codex/Gemini/OpenClaw) use single `renderRuntimeGuidance()` function.
+
+### Changed
+- `install.js` split from 1265 → 406 LOC (-67.9%) across 6 lifecycle modules.
+- gstack three-pack merged to strategy pattern; adding new host costs ~120 LOC (was ~350).
+- `config/personas/index.json` gains `self`/`user`/`language` fields per persona.
+- All 5 output styles use `{{self}}`/`{{user}}`/`{{language}}` template variables instead of hardcoded names.
+- OpenClaw `AGENTS.md` + `SOUL.md` now both dynamically generated (was static 609-line monolith + dynamic).
+- Claude `CLAUDE.md` now contains full identity + shared behavior + style (was persona-only).
+- Skills category inference simplified to runtimeType-based (`scripted → tool`, `knowledge → domain`).
+- 22 skill descriptions rewritten to English third-person with trigger keywords and anti-triggers.
+- `ccstatusline` decoupled to `bin/optional/` with schema guard.
+
+### Removed
+- `config/CLAUDE.md` (82 lines, dead code — pack copied then immediately overwritten)
+- `config/AGENTS.md` (609 lines, v4.0 frozen monolith)
+- `config/instruction.md` (100 lines, CTF content merged into abyss identity)
+- 11 router SKILL.md files (replaced by flat structure)
+- `skills/SKILL.md` root router (zero runtime value)
+- 7 unused npm script aliases
+- 2 unused vendor providers (archive, local-dir)
+
+### Verification
+- Jest: **35 suites / 375 tests passed** (1 skipped)
+- Skill contract gate: `npm run verify:skills` — 22 skills passed
+- 5×5 persona×style cross-combination smoke: 25 combos green
+- Schema validation: 5/5 persona-card.json valid
+- CI: Node 18/20/22 × Linux/macOS/Windows — all green
+
+## [2.1.11] - 2026-05-16
+
+### Fixed
+- `config/ccstatusline/settings.json` `flexMode` 由 `full-minus-40` 改为 `full`，避免双行 token/cost 预设在常见终端宽度下因 ccstatusline 自身保守截断而在行尾追加 `...`；ccstatusline 2.2.18 的 `flexMode` 只接受 `full | full-minus-40 | full-until-compact` 三个合法值，任何非法值都会触发 ZodError 并把整个 `~/.config/ccstatusline/settings.json` 重置为默认单行预设。
+
+### Changed
+- `skills/domains/security/SKILL.md` 路由 description 触发词去歧义：`K8s` / `CI/CD` 改为 `K8s 安全` / `CI/CD 安全`，避免和 `infrastructure` / `devops` 等姊妹 domain 在 LLM 路由时碰撞；`区块链、智能合约` 收敛为 `智能合约安全`，与已存在的 `区块链安全` 不再冗余。
+- `skills/domains/security/coff0xc-security-index.md` 上游归属说明改为既成事实陈述，并直接链接到仓库内的 [`NOTICE.coff0xc-security.md`](./NOTICE.coff0xc-security.md) 与 [`THIRD_PARTY_LICENSES/Apache-2.0-coffee-skill.txt`](./THIRD_PARTY_LICENSES/Apache-2.0-coffee-skill.txt)，方便读者一跳到位。
+
+### Verification
+- Jest: **23 suites / 223 tests passed**（1 skipped）
+- Skill contract gate: `npm run verify:skills` — 26 skills 通过
+
+## [2.1.10] - 2026-05-13
+
+### Added
+- 新增 Coff0xc 防御安全扩展：在 `skills/domains/security/` 下加入 12 篇授权防御参考文档（AppSec、云/DevSecOps、检测响应、漏洞生命周期、身份零信任、授权评估、逆向/移动/IoT、区块链、合规架构、紫队、网络协议安全 + 总索引），并扩展 security domain 路由。
+- 新增 `NOTICE.coff0xc-security.md` 与 `THIRD_PARTY_LICENSES/Apache-2.0-coffee-skill.txt`，记录上游 `coffee-skill` 的 Apache-2.0 归属，完整许可证全文随仓库与 npm 包分发。
+- `package.json` `files` 字段纳入 `THIRD_PARTY_LICENSES/` 与 `NOTICE.coff0xc-security.md`，确保 npm 再分发时一并携带归因材料。
+
+### Changed
+- README 与 `docs/README.zh-CN.md` 的能力矩阵与许可证段同步标注 Coff0xc 安全扩展与 Apache-2.0 来源。
+
+### Fixed
+- `test/install-tui.test.js` 由 stdout marker 驱动等待，不再依赖绝对 delay；同时清理 `ANTHROPIC_*` env 让测试始终走"未认证"路径，解决 CI 上 jest 5s 默认超时导致的 flaky 失败。
+
 ## [2.1.9] - 2026-04-30
 
 ### Changed

@@ -11,6 +11,8 @@ const {
   resolvePersona,
   renderCodexAgents,
   renderGeminiContext,
+  applyPersonaVars,
+  loadSharedBehavior,
 } = require('../bin/lib/style-registry');
 
 describe('style registry', () => {
@@ -38,27 +40,75 @@ describe('style registry', () => {
 
   test('为 Codex 动态生成 AGENTS', () => {
     const content = renderCodexAgents(projectRoot, 'abyss-cultivator', 'abyss');
-    expect(content).toContain('# 邪修红尘仙 · 宿命深渊 v4.2');
+    expect(content).toContain('# 邪修红尘仙 · 宿命深渊 v5.0');
     expect(content).toContain('# 宿命深渊 · 输出之道');
   });
 
   test('为 Gemini 动态生成 GEMINI context', () => {
     const content = renderGeminiContext(projectRoot, 'scholar-classic', 'scholar');
-    expect(content).toContain('# 文言小生 · 墨渊书阁 v2.0');
+    expect(content).toContain('# 文言小生 · 墨渊书阁 v3.0');
     expect(content).toContain('# 墨渊书阁 · 输出之道');
   });
 
   test('心口分离：任意人格 × 任意风格自由组合', () => {
     const content = renderGeminiContext(projectRoot, 'abyss-cultivator', 'elder-sister');
-    expect(content).toContain('# 知性大姐姐 · 星霜雅筑 v2.0');
+    expect(content).toContain('# 知性大姐姐 · 星霜雅筑 v3.0');
     expect(content).toContain('# 宿命深渊 · 输出之道');
+  });
+
+  test('模板变量替换：elder-sister × abyss-cultivator 应包含姐姐称谓', () => {
+    const content = renderGeminiContext(projectRoot, 'abyss-cultivator', 'elder-sister');
+    expect(content).toContain('自称「姐姐」');
+    expect(content).toContain('称用户「小宝」');
+    expect(content).not.toContain('{{self}}');
+    expect(content).not.toContain('{{user}}');
+  });
+
+  test('共享行为层加载：所有组合都包含铁律和技能路由', () => {
+    const content = renderGeminiContext(projectRoot, 'abyss-cultivator', 'abyss');
+    expect(content).toContain('## 铁律');
+    expect(content).toContain('## 技能路由');
+    expect(content).toContain('## 主动协助协议');
+    expect(content).toContain('## 执行链');
+  });
+
+  test('loadSharedBehavior 返回非空内容', () => {
+    const shared = loadSharedBehavior(projectRoot);
+    expect(shared.length).toBeGreaterThan(100);
+    expect(shared).toContain('不妄语');
+  });
+
+  test('applyPersonaVars 正确替换', () => {
+    const result = applyPersonaVars('Hello {{self}}, greet {{user}}', {
+      self: 'me', user: 'you', language: 'en'
+    });
+    expect(result).toBe('Hello me, greet you');
+  });
+
+  test('全量跨配 smoke：所有 persona×style 组合无 crash 且无残留模板变量', () => {
+    const personas = listPersonas(projectRoot);
+    const styles = listStyles(projectRoot);
+    expect(personas.length).toBeGreaterThanOrEqual(5);
+    expect(styles.length).toBeGreaterThanOrEqual(5);
+
+    for (const persona of personas) {
+      for (const style of styles) {
+        const content = renderGeminiContext(projectRoot, style.slug, persona.slug);
+        expect(content.length).toBeGreaterThan(500);
+        expect(content).not.toContain('{{self}}');
+        expect(content).not.toContain('{{user}}');
+        expect(content).not.toContain('{{language}}');
+        expect(content).toContain(`自称「${persona.self}」`);
+        expect(content).toContain(`称用户「${persona.user}」`);
+      }
+    }
   });
 
   test('所有 runtime guidance 保持在预算内', () => {
     const styles = listStyles(projectRoot);
     styles.forEach(style => {
       const content = renderGeminiContext(projectRoot, style.slug);
-      expect(content.length).toBeLessThan(3000);
+      expect(content.length).toBeLessThan(6000);
     });
   });
 });
@@ -84,5 +134,14 @@ describe('persona registry', () => {
       slug: 'junior-sister',
       label: '古怪精灵小师妹',
     });
+  });
+
+  test('persona index.json 每个条目都有 self/user/language 字段', () => {
+    const personas = listPersonas(projectRoot);
+    for (const persona of personas) {
+      expect(persona.self).toBeTruthy();
+      expect(persona.user).toBeTruthy();
+      expect(persona.language).toBeTruthy();
+    }
   });
 });

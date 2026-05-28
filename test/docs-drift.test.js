@@ -26,7 +26,8 @@ describe('docs drift guard', () => {
     const design = fs.readFileSync(path.join(projectRoot, 'DESIGN.md'), 'utf8');
 
     expect(design).not.toContain('Codex 安装时会按所选 style 动态生成');
-    expect(design).toContain('skills-only');
+    expect(design).not.toContain('~/.codex/AGENTS.md');
+    expect(design).toContain('instruction.md');
   });
 
   test('当前项目不再默认声明 gstack pack', () => {

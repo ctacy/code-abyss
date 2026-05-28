@@ -3,11 +3,60 @@
 const fs = require('fs');
 const path = require('path');
 
-const {
-  applySnippetToFile,
-  hasSnippetBlock,
-} = require('./pack-docs');
 const { listTargetNames } = require('./target-registry');
+
+// Snippet markers + apply helpers
+// 历史上这部分独立在 pack-docs.js 里，仅本文件消费 — 已并入此处。
+
+const MARKERS = {
+  readme: {
+    start: '<!-- code-abyss:packs:readme:start -->',
+    end: '<!-- code-abyss:packs:readme:end -->',
+  },
+  contributing: {
+    start: '<!-- code-abyss:packs:contributing:start -->',
+    end: '<!-- code-abyss:packs:contributing:end -->',
+  },
+};
+
+function wrapSnippet(kind, content) {
+  const marker = MARKERS[kind];
+  return `${marker.start}\n${content.trim()}\n${marker.end}\n`;
+}
+
+function hasSnippetBlock(filePath, kind) {
+  if (!fs.existsSync(filePath)) return false;
+  const marker = MARKERS[kind];
+  const current = fs.readFileSync(filePath, 'utf8');
+  return current.includes(marker.start) && current.includes(marker.end);
+}
+
+function applySnippetToFile(filePath, kind, content) {
+  const wrapped = wrapSnippet(kind, content);
+  const marker = MARKERS[kind];
+  const exists = fs.existsSync(filePath);
+  const current = exists ? fs.readFileSync(filePath, 'utf8') : '';
+
+  const blockRe = new RegExp(`${marker.start}[\\s\\S]*?${marker.end}\\n?`, 'm');
+  let next;
+  let action;
+
+  if (blockRe.test(current)) {
+    next = current.replace(blockRe, wrapped);
+    action = 'updated';
+  } else if (current.trim().length === 0) {
+    next = wrapped;
+    action = 'created';
+  } else {
+    const suffix = current.endsWith('\n') ? '\n' : '\n\n';
+    next = `${current}${suffix}${wrapped}`;
+    action = 'appended';
+  }
+
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, next);
+  return { filePath, action };
+}
 
 function renderReadmeSnippet(lock) {
   const lines = [
@@ -84,6 +133,12 @@ function syncProjectBootstrapArtifacts(projectRoot, lock) {
 }
 
 module.exports = {
+  // snippet markers (historically pack-docs.js)
+  MARKERS,
+  wrapSnippet,
+  hasSnippetBlock,
+  applySnippetToFile,
+  // bootstrap orchestration
   renderReadmeSnippet,
   renderContributingSnippet,
   writeBootstrapSnippets,

@@ -1,6 +1,7 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs');
 
 const {
   listStyles,
@@ -9,6 +10,7 @@ const {
   listPersonas,
   getDefaultPersona,
   resolvePersona,
+  readPersonaLayer,
   renderCodexAgents,
   renderGeminiContext,
   applyPersonaVars,
@@ -108,8 +110,35 @@ describe('style registry', () => {
     const styles = listStyles(projectRoot);
     styles.forEach(style => {
       const content = renderGeminiContext(projectRoot, style.slug);
-      expect(content.length).toBeLessThan(6000);
+      // v2 五层架构新增 L2 范例 / L4 强指令层后，组装体上限对齐
+      // tech-persona-card spec §6.3「Total assembled prompt recommended max 8,000」。
+      expect(content.length).toBeLessThan(8000);
     });
+  });
+
+  test('L0 共享层必须 persona-中立：无模板变量、无任何 persona 人称', () => {
+    const sharedDir = path.join(projectRoot, 'config', 'personas', '_shared');
+    const tokens = [...new Set(listPersonas(projectRoot).flatMap(p => [p.self, p.user]))];
+    const violations = [];
+    for (const file of fs.readdirSync(sharedDir)) {
+      if (!file.endsWith('.md')) continue;
+      const content = fs.readFileSync(path.join(sharedDir, file), 'utf8');
+      if (content.includes('{{')) violations.push(`${file}: 含未替换模板变量 {{（L0 不过宏替换，会原样泄漏）`);
+      for (const t of tokens) {
+        if (content.includes(t)) violations.push(`${file}: 含 persona 人称「${t}」（L0 须保持中立）`);
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test('L2/L4 分层：存在则注入，缺失则回退（byte-compat）', () => {
+    // abyss 同时拥有 examples.md + posthistory.md
+    const withLayers = renderGeminiContext(projectRoot, 'abyss-cultivator', 'abyss');
+    expect(withLayers).toContain('范例对话');     // L2
+    expect(withLayers).toContain('末段强指令');   // L4
+    // 缺失分文件时 helper 返回空串，被 filter(Boolean) 丢弃
+    const persona = resolvePersona(projectRoot, 'abyss');
+    expect(readPersonaLayer(projectRoot, persona, '__does_not_exist__.md')).toBe('');
   });
 });
 

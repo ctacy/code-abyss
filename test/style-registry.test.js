@@ -165,12 +165,40 @@ describe('persona registry', () => {
     });
   });
 
-  test('persona index.json 每个条目都有 self/user/language 字段', () => {
+  test('persona 每个条目都有 self/user/language 字段（派生自 card）', () => {
     const personas = listPersonas(projectRoot);
     for (const persona of personas) {
       expect(persona.self).toBeTruthy();
       expect(persona.user).toBeTruthy();
       expect(persona.language).toBeTruthy();
+    }
+  });
+
+  test('单一事实源：index.json 不得重复 card 的 voice/label/description', () => {
+    const raw = JSON.parse(
+      fs.readFileSync(path.join(projectRoot, 'config', 'personas', 'index.json'), 'utf8')
+    );
+    for (const entry of raw.personas) {
+      ['self', 'user', 'language', 'label', 'description'].forEach((field) => {
+        expect(entry[field]).toBeUndefined();
+      });
+    }
+  });
+
+  test('派生值与对应 persona-card.json 严格一致', () => {
+    const personas = listPersonas(projectRoot);
+    for (const p of personas) {
+      const card = JSON.parse(
+        fs.readFileSync(
+          path.join(projectRoot, 'config', 'personas', p.slug, 'persona-card.json'),
+          'utf8'
+        )
+      ).data;
+      expect(p.self).toBe(card.voice.self);
+      expect(p.user).toBe(card.voice.user);
+      expect(p.language).toBe(card.voice.language);
+      expect(p.label).toBe(card.display_name);
+      expect(p.description).toBe(card.description);
     }
   });
 });

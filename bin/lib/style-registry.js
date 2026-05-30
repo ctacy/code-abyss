@@ -254,7 +254,8 @@ function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', per
   // byte-identical to v1's `${identity}\n\n${shared}\n\n${styleContent}\n`.
   return [identity, shared, examples, styleContent, posthistory]
     .filter(Boolean)
-    .join('\n\n') + '\n';
+    .join('\n\n')
+    .replace(/\n{3,}/g, '\n\n') + '\n';
 }
 
 function renderCodexAgents(projectRoot, styleSlug, personaSlug = null) {
@@ -273,6 +274,7 @@ module.exports = {
   getDefaultPersona,
   resolvePersona,
   readPersonaContent,
+  readPersonaLayer,
   renderCodexAgents,
   renderGeminiContext,
   renderRuntimeGuidance,

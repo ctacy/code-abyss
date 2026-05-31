@@ -19,6 +19,8 @@ function clearStyleCache() {
 const SHARED_FILES_ORDER = [
   'proactive.md',
   'iron-laws.md',
+  'injection-awareness.md',
+  'execution-drive.md',
   'big-picture.md',
   'execution-chains.md',
   'skill-routing.md',

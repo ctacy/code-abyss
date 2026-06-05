@@ -19,6 +19,8 @@ function clearStyleCache() {
 const SHARED_FILES_ORDER = [
   'proactive.md',
   'iron-laws.md',
+  'injection-awareness.md',
+  'execution-drive.md',
   'big-picture.md',
   'execution-chains.md',
   'skill-routing.md',
@@ -57,6 +59,32 @@ function applyPersonaVars(content, persona) {
 
 // ── Persona Registry ──
 
+// Single source of truth: voice/label/description live ONLY in each persona's
+// persona-card.json. index.json is just the enable-list + default selector.
+// This loads a card and derives the runtime registry fields from it.
+function loadPersonaCard(projectRoot, slug) {
+  const cardPath = path.join(projectRoot, 'config', 'personas', slug, 'persona-card.json');
+  if (!fs.existsSync(cardPath)) {
+    throw new Error(`persona ${slug} 缺少 persona-card.json: ${cardPath}`);
+  }
+  let card;
+  try {
+    card = JSON.parse(fs.readFileSync(cardPath, 'utf8'));
+  } catch (e) {
+    throw new Error(`persona ${slug} 的 persona-card.json 解析失败: ${e.message}`);
+  }
+  const d = card && card.data;
+  if (!d || typeof d !== 'object') throw new Error(`persona ${slug} 的 persona-card.json 缺少 data`);
+  const v = d.voice || {};
+  return {
+    label: requireNonEmptyString(d.display_name, `persona.${slug}.display_name (card)`),
+    description: requireNonEmptyString(d.description, `persona.${slug}.description (card)`),
+    self: requireNonEmptyString(v.self, `persona.${slug}.voice.self (card)`),
+    user: requireNonEmptyString(v.user, `persona.${slug}.voice.user (card)`),
+    language: requireNonEmptyString(v.language, `persona.${slug}.voice.language (card)`),
+  };
+}
+
 function loadPersonaRegistry(projectRoot) {
   if (_personaCache.has(projectRoot)) return _personaCache.get(projectRoot);
 
@@ -76,15 +104,17 @@ function loadPersonaRegistry(projectRoot) {
     if (seen.has(slug)) throw new Error(`persona slug 重复: ${slug}`);
     seen.add(slug);
     if (p.default) defaultCount += 1;
+    // Derive identity fields from the card — the single source of truth.
+    const derived = loadPersonaCard(projectRoot, slug);
     return {
       slug,
-      label: requireNonEmptyString(p.label, `persona.${slug}.label`),
-      description: requireNonEmptyString(p.description, `persona.${slug}.description`),
-      file: requireNonEmptyString(p.file || `${slug}.md`, `persona.${slug}.file`),
+      label: derived.label,
+      description: derived.description,
+      file: `${slug}.md`,
       default: p.default === true,
-      self: p.self || '',
-      user: p.user || '',
-      language: p.language || '',
+      self: derived.self,
+      user: derived.user,
+      language: derived.language,
     };
   });
 
@@ -110,16 +140,19 @@ function resolvePersona(projectRoot, slug) {
   return personas.find(p => p.slug === slug) || null;
 }
 
-function readPersonaContent(projectRoot, persona, includeLocal = false) {
+function readPersonaContent(projectRoot, persona) {
   const personaPath = path.join(projectRoot, 'config', 'personas', persona.file);
-  let content = fs.readFileSync(personaPath, 'utf8');
-  if (includeLocal) {
-    const localOverlayPath = path.join(projectRoot, 'config', 'CLAUDE.local.md');
-    if (fs.existsSync(localOverlayPath)) {
-      content += '\n' + fs.readFileSync(localOverlayPath, 'utf8');
-    }
-  }
-  return content;
+  return fs.readFileSync(personaPath, 'utf8');
+}
+
+// Optional per-persona layer files live alongside persona-card.json in
+// config/personas/<slug>/. Returns '' when the file is absent so the layer
+// is dropped by the assembler — keeping output byte-identical to v1 until
+// the new layers are authored.
+function readPersonaLayer(projectRoot, persona, filename) {
+  const layerPath = path.join(projectRoot, 'config', 'personas', persona.slug, filename);
+  if (!fs.existsSync(layerPath)) return '';
+  return fs.readFileSync(layerPath, 'utf8').replace(/\s+$/, '');
 }
 
 // ── Style Registry ──
@@ -235,14 +268,30 @@ function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', per
     persona = getDefaultPersona(projectRoot);
   }
 
-  const identity = readPersonaContent(projectRoot, persona, true).replace(/\s+$/, '');
-  const shared = loadSharedBehavior(projectRoot);
-  const styleContent = applyPersonaVars(
-    readStyleContent(projectRoot, style).replace(/^\s+/, ''),
-    persona
-  );
+  // Macros (self/user/language) now apply to ALL persona-authored layers,
+  // not just the style layer — this is what lets a persona's identity follow
+  // its own voice and makes cross-combination safe (see docs/persona-architecture-v2.md).
+  const apply = (content) => applyPersonaVars(content, persona);
 
-  return `${identity}\n\n${shared}\n\n${styleContent}\n`;
+  const identity = apply(readPersonaContent(projectRoot, persona).replace(/\s+$/, '')); // L1 人物
+  const shared = loadSharedBehavior(projectRoot);                                        // L0 引擎(共享)
+  const examples = apply(readPersonaLayer(projectRoot, persona, 'examples.md'));         // L2 范例(可选)
+  const styleContent = apply(readStyleContent(projectRoot, style).replace(/^\s+/, ''));  // L3 契约
+  const posthistory = apply(readPersonaLayer(projectRoot, persona, 'posthistory.md'));   // L4 末段强指令(可选)
+
+  // Local overlay: append CLAUDE.local.md if exists (preserves local customizations)
+  const localOverlayPath = path.join(projectRoot, 'config', 'CLAUDE.local.md');
+  const localOverlay = fs.existsSync(localOverlayPath)
+    ? apply(fs.readFileSync(localOverlayPath, 'utf8').replace(/\s+$/, ''))
+    : '';
+
+  // Order preserves the v1 prefix (identity → shared → style); the two new
+  // optional layers slot in around the style layer. With both absent this is
+  // byte-identical to v1's `${identity}\n\n${shared}\n\n${styleContent}\n`.
+  return [identity, shared, examples, styleContent, posthistory, localOverlay]
+    .filter(Boolean)
+    .join('\n\n')
+    .replace(/\n{3,}/g, '\n\n') + '\n';
 }
 
 function renderCodexAgents(projectRoot, styleSlug, personaSlug = null) {
@@ -261,6 +310,7 @@ module.exports = {
   getDefaultPersona,
   resolvePersona,
   readPersonaContent,
+  readPersonaLayer,
   renderCodexAgents,
   renderGeminiContext,
   renderRuntimeGuidance,

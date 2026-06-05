@@ -1,6 +1,7 @@
 'use strict';
 
 const path = require('path');
+const fs = require('fs');
 
 const {
   listStyles,
@@ -9,6 +10,7 @@ const {
   listPersonas,
   getDefaultPersona,
   resolvePersona,
+  readPersonaLayer,
   renderCodexAgents,
   renderGeminiContext,
   applyPersonaVars,
@@ -42,8 +44,6 @@ describe('style registry', () => {
     const content = renderCodexAgents(projectRoot, 'abyss-cultivator', 'abyss');
     expect(content).toContain('# 邪修红尘仙 · 宿命深渊 v5.0');
     expect(content).toContain('# 宿命深渊 · 输出之道');
-    expect(content).toContain('响应语言：简体中文（zh-CN）');
-    expect(content).toContain('AI Accept <YYYY-MM-DD> <分支名称> v<版本号>');
   });
 
   test('为 Gemini 动态生成 GEMINI context', () => {
@@ -110,8 +110,35 @@ describe('style registry', () => {
     const styles = listStyles(projectRoot);
     styles.forEach(style => {
       const content = renderGeminiContext(projectRoot, style.slug);
-      expect(content.length).toBeLessThan(14000);
+      // v2 五层架构新增 L2 范例 / L4 强指令层后，组装体上限对齐
+      // tech-persona-card spec §6.3「Total assembled prompt recommended max 8,000」。
+      expect(content.length).toBeLessThan(8000);
     });
+  });
+
+  test('L0 共享层必须 persona-中立：无模板变量、无任何 persona 人称', () => {
+    const sharedDir = path.join(projectRoot, 'config', 'personas', '_shared');
+    const tokens = [...new Set(listPersonas(projectRoot).flatMap(p => [p.self, p.user]))];
+    const violations = [];
+    for (const file of fs.readdirSync(sharedDir)) {
+      if (!file.endsWith('.md')) continue;
+      const content = fs.readFileSync(path.join(sharedDir, file), 'utf8');
+      if (content.includes('{{')) violations.push(`${file}: 含未替换模板变量 {{（L0 不过宏替换，会原样泄漏）`);
+      for (const t of tokens) {
+        if (content.includes(t)) violations.push(`${file}: 含 persona 人称「${t}」（L0 须保持中立）`);
+      }
+    }
+    expect(violations).toEqual([]);
+  });
+
+  test('L2/L4 分层：存在则注入，缺失则回退（byte-compat）', () => {
+    // abyss 同时拥有 examples.md + posthistory.md
+    const withLayers = renderGeminiContext(projectRoot, 'abyss-cultivator', 'abyss');
+    expect(withLayers).toContain('范例对话');     // L2
+    expect(withLayers).toContain('末段强指令');   // L4
+    // 缺失分文件时 helper 返回空串，被 filter(Boolean) 丢弃
+    const persona = resolvePersona(projectRoot, 'abyss');
+    expect(readPersonaLayer(projectRoot, persona, '__does_not_exist__.md')).toBe('');
   });
 });
 
@@ -134,16 +161,45 @@ describe('persona registry', () => {
     const persona = resolvePersona(projectRoot, 'junior-sister');
     expect(persona).toMatchObject({
       slug: 'junior-sister',
-      label: '古怪精灵小师妹',
+      // label 派生自 persona-card.json 的 display_name（P3 单一事实源）
+      label: '古怪精灵小师妹 · 灵犀洞天',
     });
   });
 
-  test('persona index.json 每个条目都有 self/user/language 字段', () => {
+  test('persona 每个条目都有 self/user/language 字段（派生自 card）', () => {
     const personas = listPersonas(projectRoot);
     for (const persona of personas) {
       expect(persona.self).toBeTruthy();
       expect(persona.user).toBeTruthy();
       expect(persona.language).toBeTruthy();
+    }
+  });
+
+  test('单一事实源：index.json 不得重复 card 的 voice/label/description', () => {
+    const raw = JSON.parse(
+      fs.readFileSync(path.join(projectRoot, 'config', 'personas', 'index.json'), 'utf8')
+    );
+    for (const entry of raw.personas) {
+      ['self', 'user', 'language', 'label', 'description'].forEach((field) => {
+        expect(entry[field]).toBeUndefined();
+      });
+    }
+  });
+
+  test('派生值与对应 persona-card.json 严格一致', () => {
+    const personas = listPersonas(projectRoot);
+    for (const p of personas) {
+      const card = JSON.parse(
+        fs.readFileSync(
+          path.join(projectRoot, 'config', 'personas', p.slug, 'persona-card.json'),
+          'utf8'
+        )
+      ).data;
+      expect(p.self).toBe(card.voice.self);
+      expect(p.user).toBe(card.voice.user);
+      expect(p.language).toBe(card.voice.language);
+      expect(p.label).toBe(card.display_name);
+      expect(p.description).toBe(card.description);
     }
   });
 });

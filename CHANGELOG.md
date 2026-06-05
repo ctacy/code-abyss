@@ -4,7 +4,41 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [4.1.0] - 2026-05-22
+## [4.3.0] - 2026-05-31
+
+> **Adversarial-review orchestration release.** 新增多 agent 对抗验证编排 skill，并把站点/包描述的技能数同步到 26。
+
+### Added
+
+- **orchestrating-adversarial-reviews** — 多 agent 对抗验证编排 skill（从 L0 本地经 cultivating-skills 漏斗升入仓库）。fan-out 发现 → 三棱镜对抗验证（可利用性 / 正确性 / 证伪猎杀，默认怀疑）→ load-bearing 证明测试 guard（揪出谎报"已修复/全覆盖"的 agent）→ build-first 退出码守卫上线。核心信条：结论可信度不来自"谁说的"，来自"扛过几次推翻"。与 `securing-systems`（找什么洞）+ `shipping-changes`（变更闭环）职责切分；编排引擎为 Workflow 工具。`user-invocable: false`，知识型自动路由。
+
+### Changed
+
+- skill 总数由 25 升至 26（orchestrating-adversarial-reviews）。
+- 站点 `site/index.html` + `site/i18n.js`（中英）与 `package.json` description 的技能数同步到 26。
+
+## [4.2.0] - 2026-05-30
+
+> **Persona architecture v2 + skill sediment release.** 人格系统按「注入位置/作用」重构为五层（对标 Character Card / SillyTavern），宏全局化让任意 persona×style 组合不再人格分裂；persona 身份字段收敛为单一事实源；新增两枚 skill（变更闭环编排 + release pipeline 实战秘典）。
+
+### Added
+
+- **shipping-changes** — 变更闭环编排 skill：把非平凡改动从「调研 → 提案文档 → 分阶段守卫式实现 → PR 自审 → 补护栏 → 合并」串成七关闭环。核心铁律「守卫链提交」（`assert && test && verify && commit`，`&&` 短路，红即阻断），与 automating-devops（git/CI 知识底座）职责切分。
+- **release-pipelines** — automating-devops 新增 reference：完整 `release.yml` 多 job 拓扑（cross-platform binary + SBOM + multi-arch image + cosign sign + GitHub Release）、metadata-action tag 决策矩阵、8 条实战踩坑字典（从 ctxward v0.2.0 提炼）。
+- **L2 范例层 / L4 强指令层**：6 个 persona 各补 `examples.md`（few-shot 锁语气）+ `posthistory.md`（反 AI 腔 / 格式锁 / 授权边界，注入末位取位置偏见）。
+- **护栏测试**：L0 共享层 persona-中立断言、L2/L4 分层注入/回退断言、单一事实源派生一致性断言。
+- `docs/persona-architecture-v2.md` — 五层架构重构提案 + 字段映射 + 迁移路径全记录。
+
+### Changed
+
+- **人格系统五层架构（v2）**：从「身份/共享/风格」三分重构为按注入位置分层（L0 引擎 / L1 人物 / L2 范例 / L3 契约 / L4 强指令）。`renderRuntimeGuidance` 的宏替换（`{{self}}`/`{{user}}`/`{{language}}`）扩展到全部 persona 层，不再仅 style 层——任意 persona×style 组合人称随 voice 走，零人格分裂。
+- **单一事实源**：`config/personas/index.json` 瘦身为启用清单 + default 指定；label/description/self/user/language 运行时从各 `persona-card.json` 派生（`loadPersonaCard`），消除 index/正文/card 三处重复。
+- **6 persona 正文人称全部宏化**（名号 `雨姐`/`大姐姐` 等保护），`_shared` 共享层回归 persona-中立。
+- **abyss 秘典路由去重**：路由表从硬编码 6 个 `references/*.md` 路径改为「化身 + 主司 + 触发词」，路由落点以 `securing-systems/SKILL.md` 为单一源，voice 全保。
+
+### Fixed
+
+- `automating-devops` 的 `release-pipelines.md` 此前仅存在于本地安装、未回流仓库（drift），本版补回。
 
 > **Self-evolution release.** 新增两枚炼炉级 skill：让 Agent 能识别会话中的"该沉淀了"信号，并将工程方法 / 人格沉淀为可复用的 skill / persona，引导用户走三级发布漏斗（本地 → 项目 → 社区）。安全脊柱内化为默认拒绝原则。
 

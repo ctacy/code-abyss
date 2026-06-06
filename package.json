@@ -1,5 +1,5 @@
 {
-  "name": "code-abyss",
+  "name": "code-abyss-sc",
   "version": "4.3.0",
   "description": "为 Claude Code / Codex CLI / Gemini CLI / OpenClaw 注入可切换人格、主动执行导向、5种输出风格与26个工程技能（含自我进化炼炉）",
   "keywords": [
@@ -11,15 +11,15 @@
     "assistant",
     "configuration"
   ],
-  "author": "telagod",
+  "author": "沈超 (ctacy)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/telagod/code-abyss.git"
+    "url": "git+https://github.com/ctacy/code-abyss.git"
   },
-  "homepage": "https://github.com/telagod/code-abyss#readme",
+  "homepage": "https://github.com/ctacy/code-abyss#readme",
   "bugs": {
-    "url": "https://github.com/telagod/code-abyss/issues"
+    "url": "https://github.com/ctacy/code-abyss/issues"
   },
   "bin": {
     "code-abyss": "bin/install.js"

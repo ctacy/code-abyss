@@ -1,5 +1,7 @@
 <!-- Code Abyss · README -->
 
+> **🔱 Fork Notice**: This is an independent fork maintained by [ctacy](https://github.com/ctacy), published to npm as [`code-abyss-sc`](https://www.npmjs.com/package/code-abyss-sc). Original project: [telagod/code-abyss](https://github.com/telagod/code-abyss).
+
 <p align="center">
   <a href="https://telagod.github.io/code-abyss/">
     <img src="https://raw.githubusercontent.com/telagod/code-abyss/main/assets/banner.svg" alt="Code Abyss — Personality, depth, and a security spine" width="100%">
@@ -9,8 +11,9 @@
 <h3 align="center">Composable persona · style · 26 engineering skills · 4 native security domains · self-evolution forge<br/>for Claude Code · Codex CLI · Gemini CLI · OpenClaw</h3>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/code-abyss"><img src="https://img.shields.io/npm/v/code-abyss?color=9b8cff&label=npm&style=flat-square" alt="npm"></a>
-  <a href="https://github.com/telagod/code-abyss/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/telagod/code-abyss/ci.yml?branch=main&label=CI&style=flat-square" alt="CI"></a>
+  <a href="https://www.npmjs.com/package/code-abyss-sc"><img src="https://img.shields.io/npm/v/code-abyss-sc?color=9b8cff&label=npm%20(fork)&style=flat-square" alt="npm"></a>
+  <a href="https://www.npmjs.com/package/code-abyss"><img src="https://img.shields.io/npm/v/code-abyss?color=cccccc&label=npm%20(upstream)&style=flat-square" alt="npm upstream"></a>
+  <a href="https://github.com/ctacy/code-abyss/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ctacy/code-abyss/ci.yml?branch=main&label=CI&style=flat-square" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-c4b8ff?style=flat-square" alt="MIT"></a>
   <a href="https://telagod.github.io/code-abyss/"><img src="https://img.shields.io/badge/site-pages-9b8cff?style=flat-square" alt="Site"></a>
 </p>
@@ -57,15 +60,17 @@ Pick any persona. Pair it with any style. The behavior layer (iron laws, executi
 - Office skills slim to under 100 lines each; 4 design systems consolidated into one selector skill
 - **v4.1 — self-evolution forge**: `cultivating-skills` / `cultivating-personas` let the agent distill repeated workflows into reusable skills, with a safety scan and a three-tier publish funnel (local → project → community)
 
+### Installation (Fork Version)
+
 ```bash
+# Install from this fork
+npx code-abyss-sc -t claude -y
+
+# Or install the original upstream version
 npx code-abyss -t claude -y
 ```
 
-Or as a Claude Code plugin:
-
-```bash
-claude plugin install code-abyss
-```
+Note: This fork is published as `code-abyss-sc` on npm. The original package `code-abyss` is maintained by [telagod](https://github.com/telagod).
 
 ---
 

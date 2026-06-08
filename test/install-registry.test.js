@@ -263,7 +263,13 @@ describe('scanInvocableSkills', () => {
 
     const results = scanInvocableSkills(realSkillsDir);
     const names = results.map((s) => s.meta.name).sort();
-    expect(names).toEqual(['cultivating-personas', 'cultivating-skills']);
+    expect(names).toEqual([
+      'cultivating-personas',
+      'cultivating-skills',
+      'designing-hardware-products',
+      'operating-kicad-eda',
+      'reducing-aigc-detection',
+    ]);
   });
 });
 

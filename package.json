@@ -26,7 +26,10 @@
   },
   "files": [
     "bin/",
-    "config/",
+    "config/personas/index.json",
+    "config/personas/_shared/",
+    "config/personas/abyss/",
+    "config/personas/abyss.md",
     "output-styles/",
     "packs/",
     "skills/",

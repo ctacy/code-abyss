@@ -185,9 +185,15 @@ describe('斜杠命令回归防护', () => {
       invocableSkills = scanInvocableSkills(realSkillsDir);
     });
 
-    test('当前核心仓库 invocable skill 仅限 cultivating 系列', () => {
+    test('当前核心仓库 invocable skill 包含预期名单', () => {
       const names = invocableSkills.map((s) => s.meta.name).sort();
-      expect(names).toEqual(['cultivating-personas', 'cultivating-skills']);
+      expect(names).toEqual([
+        'cultivating-personas',
+        'cultivating-skills',
+        'designing-hardware-products',
+        'operating-kicad-eda',
+        'reducing-aigc-detection',
+      ]);
     });
 
     test('所有 user-invocable skill 的 SKILL.md 路径必须真实存在', () => {

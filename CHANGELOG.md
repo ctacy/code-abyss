@@ -4,6 +4,55 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-06-09
+
+> **Dynamic persona loading release.** 仅核心人格（abyss）随 npm 包发布，其余从 GitHub raw 按需拉取+本地缓存，npm 包瘦身。
+
+### Added
+
+- **persona-fetch.js** — 远程人格拉取+缓存模块。HTTPS fetch persona-card.json / identity.md / examples.md / posthistory.md → 缓存至 `~/.code-abyss/personas/<slug>/`。
+- **index.json core/remote 模型** — 核心人格从 persona-card.json 派生 metadata，远程人格在 index.json 内嵌 snapshot metadata 供离线选择列表使用。
+- **select.js ensureRemotePersona()** — 选中非核心人格时自动触发 fetch + cache。
+
+### Changed
+
+- **package.json files 收窄** — 仅打包 `config/personas/abyss*` + `_shared/` + `index.json` + example 配置文件。非核心人格（scholar/elder-sister/junior-sister/iron-dad/dongbei-yujie）从 npm 包移除。
+- **style-registry.js 路径解析 cache-aware** — 先查本地 `config/personas/`（仓库开发模式），再查 `~/.code-abyss/personas/`（npm 包模式）。
+- persona registry 返回结构从数组改为 `{ personas, remoteBase }`，下游 API 不变。
+
+### CI
+
+- Skill contract gate: `npm run verify:skills` — 29 skills 通过
+- Test suite: 384 tests pass (含 3 persona-fetch 新测试), Node 18/20/22
+- Smoke install: Claude / Codex / Gemini / OpenClaw × ubuntu / macos / windows 全绿
+
+## [4.4.0] - 2026-06-08
+
+> **Hardware + academic writing + injection defense release.** 三个实战 skill 从 L0 本地升入项目（26→29），新增 prompt injection 防御与执行驱动力共享行为模块。
+
+### Added
+
+- **designing-hardware-products** — 全栈硬件产品管线：需求 → ESP-IDF 固件(FreeRTOS) → KiCad PCB → UniApp 跨平台 App → release zip。5 份 reference 覆盖高压电路设计、ESP-IDF 模式、UniApp 模式、管线阶段、KiCad 9 quirks。`user-invocable: true`。
+- **operating-kicad-eda** — KiCad 9 MCP 工具路由器，覆盖 17 个 MCP tool。四条铁律：不手布线(autoroute-only)、不猜名(library-first)、串行写 PCB、改后必验(DRC gate)。3 份 reference。`user-invocable: true`。
+- **reducing-aigc-detection** — 系统化降低论文 AIGC 检测率，支持维普/知网/Turnitin 三平台。三层改写策略（结构→词汇→内容注入），docx Run 级编辑保留脚注，AI 特征词黑名单(中/英)，平台特性档案。2 份 reference。`user-invocable: true`。
+- **injection-awareness.md** — 共享行为模块：Prompt Injection 三层防御（检测模式 → 运行时白名单 → 响应协议），per-target 白名单覆盖 Claude/Codex/Gemini/OpenClaw。
+- **execution-drive.md** — 共享行为模块：行动优先 + 完成承诺 + 反模式识别(反懒惰五条) + 终结门自检 + 安全阀。
+- **llm-security.md 追加** — Injection-Resilient Persona Design 参考：架构模板、设计原则、对抗评估、多 Agent 场景。
+
+### Changed
+
+- skill 总数由 26 升至 29（+3 domain skills）。
+- invocable skill 由 2 升至 5（cultivating 系列 + 3 新 skill）。
+- README / CLAUDE.md / package.json / site (i18n.js + index.html) 技能数同步到 29。
+- README skill 表格新增 Hardware/Embedded 与 Academic Writing 两个领域行。
+- `SHARED_FILES_ORDER` 新增 injection-awareness + execution-drive 渲染顺序。
+
+### CI
+
+- Skill contract gate: `npm run verify:skills` — 29 skills 通过
+- Test suite: 379 tests pass, Node 18/20/22
+- Smoke install: Claude / Codex / Gemini / OpenClaw × ubuntu / macos / windows 全绿
+
 ## [4.3.0] - 2026-05-31
 
 > **Adversarial-review orchestration release.** 新增多 agent 对抗验证编排 skill，并把站点/包描述的技能数同步到 26。

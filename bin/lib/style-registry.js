@@ -297,7 +297,7 @@ function readStyleContent(projectRoot, style) {
   return fs.readFileSync(stylePath, 'utf8');
 }
 
-function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', personaSlug = null) {
+function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', personaSlug = null, options = {}) {
   const style = resolveStyle(projectRoot, styleSlug, targetName === 'gemini' ? 'claude' : targetName);
   if (!style) {
     throw new Error(`未知输出风格: ${styleSlug}. Try: node bin/install.js --list-styles`);
@@ -322,9 +322,15 @@ function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', per
   const styleContent = apply(readStyleContent(projectRoot, style).replace(/^\s+/, ''));  // L3 契约
   const posthistory = apply(readPersonaLayer(projectRoot, persona, 'posthistory.md'));   // L4 末段强指令(可选)
 
-  // Local overlay: append CLAUDE.local.md if exists (preserves local customizations)
-  const localOverlayPath = path.join(projectRoot, 'config', 'CLAUDE.local.md');
-  const localOverlay = fs.existsSync(localOverlayPath)
+  // Local overlay: append CLAUDE.local.md if found anywhere in the search chain.
+  // Search order: projectRoot/config → targetDir → CWD/config (first hit wins).
+  const overlaySearch = [
+    path.join(projectRoot, 'config', 'CLAUDE.local.md'),
+    options.targetDir && path.join(options.targetDir, 'CLAUDE.local.md'),
+    path.join(process.cwd(), 'config', 'CLAUDE.local.md'),
+  ].filter(Boolean);
+  const localOverlayPath = overlaySearch.find((p) => fs.existsSync(p));
+  const localOverlay = localOverlayPath
     ? apply(fs.readFileSync(localOverlayPath, 'utf8').replace(/\s+$/, ''))
     : '';
 
@@ -337,12 +343,12 @@ function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', per
     .replace(/\n{3,}/g, '\n\n') + '\n';
 }
 
-function renderCodexAgents(projectRoot, styleSlug, personaSlug = null) {
-  return renderRuntimeGuidance(projectRoot, styleSlug, 'codex', personaSlug);
+function renderCodexAgents(projectRoot, styleSlug, personaSlug = null, options = {}) {
+  return renderRuntimeGuidance(projectRoot, styleSlug, 'codex', personaSlug, options);
 }
 
-function renderGeminiContext(projectRoot, styleSlug, personaSlug = null) {
-  return renderRuntimeGuidance(projectRoot, styleSlug, 'gemini', personaSlug);
+function renderGeminiContext(projectRoot, styleSlug, personaSlug = null, options = {}) {
+  return renderRuntimeGuidance(projectRoot, styleSlug, 'gemini', personaSlug, options);
 }
 
 module.exports = {

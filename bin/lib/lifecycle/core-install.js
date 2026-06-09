@@ -135,7 +135,7 @@ function createInstallCore(deps) {
     const relPath = 'GEMINI.md';
     backupManagedPathIfExists('gemini', 'gemini', backupDir, relPath, manifest);
     const destPath = path.join(targetDir, relPath);
-    const content = renderGeminiContext(PKG_ROOT, selectedStyle.slug);
+    const content = renderGeminiContext(PKG_ROOT, selectedStyle.slug, null, { targetDir });
     fs.writeFileSync(destPath, content);
     pushManifestEntry(manifest.installed, 'gemini', relPath);
     ok(`${relPath} ${c.d(`(动态生成: ${selectedStyle.slug})`)}`);
@@ -340,7 +340,7 @@ function createInstallCore(deps) {
 
       const agentsMdPath = path.join(workspaceDir, 'AGENTS.md');
       const soulMdPath = path.join(workspaceDir, 'SOUL.md');
-      const unifiedContent = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
+      const unifiedContent = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug, { targetDir: workspaceDir });
 
       fs.writeFileSync(agentsMdPath, unifiedContent);
       fs.writeFileSync(soulMdPath, unifiedContent);
@@ -415,19 +415,19 @@ function createInstallCore(deps) {
     if (selectedPersona) {
       if (tgt === 'claude') {
         const claudeMdPath = path.join(targetDir, 'CLAUDE.md');
-        const guidance = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
+        const guidance = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug, { targetDir });
         fs.writeFileSync(claudeMdPath, guidance);
         pushManifestEntry(manifest.installed, 'claude', 'CLAUDE.md');
         ok(`人格（心）→ ${c.mag(selectedPersona.label)} (${selectedPersona.slug})`);
         ok(`风格（口）→ ${c.mag(selectedStyle.label)} → ~/.claude/CLAUDE.md`);
       } else if (tgt === 'gemini') {
         const geminiMdPath = path.join(targetDir, 'GEMINI.md');
-        const guidance = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
+        const guidance = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug, { targetDir });
         fs.writeFileSync(geminiMdPath, guidance);
         ok(`人格（心）→ ${c.mag(selectedPersona.label)} (${selectedPersona.slug})`);
       } else if (tgt === 'codex') {
         const instructionMdPath = path.join(targetDir, 'instruction.md');
-        const guidance = renderCodexAgents(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
+        const guidance = renderCodexAgents(PKG_ROOT, selectedStyle.slug, selectedPersona.slug, { targetDir });
         fs.writeFileSync(instructionMdPath, guidance);
         pushManifestEntry(manifest.installed, 'codex', 'instruction.md');
         ok(`人格（心）→ ${c.mag(selectedPersona.label)} (${selectedPersona.slug})`);

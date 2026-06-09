@@ -58,6 +58,7 @@ Pick any persona. Pair it with any style. The behavior layer (iron laws, executi
 - **v4.1 — self-evolution forge**: `cultivating-skills` / `cultivating-personas` let the agent distill repeated workflows into reusable skills, with a safety scan and a three-tier publish funnel (local → project → community)
 - **v4.4 — hardware + academic writing**: 3 new domain skills (KiCad EDA, hardware product pipeline, AIGC detection reduction) + prompt injection defense + execution-drive shared behavior
 - **v4.5 — dynamic persona loading**: only `abyss` ships with npm — all other personas are fetched from GitHub on first use and cached locally, slimming the package
+- **v4.6 — code graph intelligence**: `abyss` CLI builds a code relationship graph (call graph + temporal analysis) in 5 seconds — caller tracing, impact analysis, hotspot detection, change coupling. Pre-edit hooks auto-check callers across all 4 platforms
 
 ```bash
 npx code-abyss -t claude -y
@@ -187,9 +188,38 @@ Plus `securing-systems` as the router skill covering pentest, code audit, red/bl
 
 ---
 
+## Code graph intelligence (v4.6 highlight)
+
+**Your agent can now see code relationships.** The `abyss` CLI builds a full call graph, temporal analysis, and hotspot map — in 5 seconds, with zero cloud dependencies.
+
+| Capability | What it answers | Command |
+|---|---|---|
+| **Caller tracing** | "Who calls this function?" | `abyss callers <symbol>` |
+| **Impact analysis** | "What breaks if I change this?" | `abyss impact <symbol>` |
+| **File context** | "What do I need to know before editing this file?" | `abyss context <file>` |
+| **Hotspot map** | "Where is the riskiest code?" | `abyss map` |
+| **Change coupling** | "Which files always change together?" | `abyss map` |
+| **Evolution trace** | "Why does this code look the way it does?" | `abyss history <file>` |
+
+The `indexing-code` skill automatically hooks into all 4 supported platforms — before every Edit/Write, the agent checks callers and warns about high-impact changes. No MCP server needed; `abyss` runs as a CLI via the agent's shell tool.
+
+```
+# Real output from a 1862-file Go project (5 seconds to index):
+
+$ abyss impact SetError
+impact: SetError  direct=17  transitive=521  tests=469  uncovered=319  risk=10.0/10
+  ⚠ high blast radius (17 direct callers)
+  ⚠ deep dependency chain (521 transitive)
+  ⚠ 319 call paths without test coverage
+```
+
+`abyss` is a separate Rust binary ([code-abyss-dev](https://github.com/telagod/code-abyss-dev)). Install: `bash install.sh` in the repo, or copy the release binary to `~/.local/bin/abyss`.
+
+---
+
 ## Skills
 
-27 domain skills, flat structure, [agentskills.io](https://agentskills.io/specification) aligned (with Code Abyss extensions). Skills load by context — the agent reads the right knowledge at the right time without being asked. Average `SKILL.md` is 58 lines; all `SKILL.md` files are under 90 lines, with heavy content in `references/`.
+30 domain skills, flat structure, [agentskills.io](https://agentskills.io/specification) aligned (with Code Abyss extensions). Skills load by context — the agent reads the right knowledge at the right time without being asked. Average `SKILL.md` is 59 lines; heavy content lives in `references/`.
 
 | Domain | Coverage |
 |---|---|
@@ -203,6 +233,7 @@ Plus `securing-systems` as the router skill covering pentest, code audit, red/bl
 | 📡 **Infra / Mobile / Data** | Kubernetes, GitOps, IaC · iOS, Android, RN, Flutter · pipelines, streaming, quality |
 | 🔩 **Hardware / Embedded** | Full-stack hardware product pipeline (ESP-IDF firmware + KiCad PCB + UniApp) · KiCad 9 MCP tool routing (17 tools, autoroute-only, DRC gate) |
 | 📝 **Academic Writing** | AIGC detection reduction for 维普/知网/Turnitin — multi-layer rewriting (structure → lexicon → content injection), docx run-level editing |
+| 🔬 **Code Intelligence** | Call graph, impact analysis, hotspot detection, change coupling, evolution tracing — via `abyss` CLI with cross-platform hooks |
 | 🜲 **Self-evolution** | `cultivating-skills` (distill repeated workflows) + `cultivating-personas` (distill voice into Tech Persona Card) — both with safety scan + 3-tier publish funnel |
 
 Five skills also ship as **executable verification tools** for CI:
@@ -289,11 +320,11 @@ const gpt = toGPTInstructions(card, { identityContent });// → OpenAI Custom GP
 |---|---|---|
 | **Identity** | Flat help-desk tone | Consistent character with named voice |
 | **Execution** | Ad-hoc, varies by prompt | Iron laws + execution chains baked in |
-| **Domain depth** | Generic best-practices | 24 skill files load by context (avg 58 lines) |
+| **Code awareness** | grep + read one file at a time | Call graph, impact analysis, hotspot map — agent knows what breaks before it edits |
+| **Domain depth** | Generic best-practices | 30 skill files load by context |
 | **Security depth** | OWASP recitation | 4 native suites · 4073 lines · detection signals + mitigation patterns |
-| **Cross-platform** | Re-engineer per CLI | One spec, four platforms |
+| **Cross-platform** | Re-engineer per CLI | One spec, four platforms, cross-platform hooks |
 | **Reproducibility** | Prompt drift across sessions | Versioned `persona-card.json` |
-| **Portability** | Locked to one runtime | Convert to CharaCard V2, GPT Instructions |
 
 ---
 
@@ -302,8 +333,8 @@ const gpt = toGPTInstructions(card, { identityContent });// → OpenAI Custom GP
 ```bash
 git clone https://github.com/telagod/code-abyss && cd code-abyss
 npm install
-npm test                    # 375 tests
-npm run verify:skills       # Validate 24 skill contracts
+npm test                    # 383 tests
+npm run verify:skills       # Validate 30 skill contracts
 ```
 
 **Add a skill** — create `skills/<gerund-name>/SKILL.md` with [SKILL frontmatter](https://agentskills.io/specification), optionally add `scripts/` for executable tools. `npm run verify:skills` validates the contract.
@@ -314,6 +345,6 @@ npm run verify:skills       # Validate 24 skill contracts
 
 <p align="center">
   <sub>
-    <b>MIT License</b> · v4.1.0 · made with 紫宵脉 by <a href="https://github.com/telagod">@telagod</a>
+    <b>MIT License</b> · v4.6.0 · made with 紫宵脉 by <a href="https://github.com/telagod">@telagod</a>
   </sub>
 </p>

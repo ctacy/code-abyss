@@ -249,8 +249,8 @@ let withAbyss = false;
 let withMcp = false;
 
 for (let i = 0; i < args.length; i++) {
-  if (args[i] === '--target' && args[i + 1]) { target = args[++i]; }
-  else if (args[i] === '--uninstall' && args[i + 1]) { uninstallTarget = args[++i]; }
+  if ((args[i] === '--target' || args[i] === '-t') && args[i + 1]) { target = args[++i]; }
+  else if ((args[i] === '--uninstall' || args[i] === '-u') && args[i + 1]) { uninstallTarget = args[++i]; }
   else if (args[i] === '--style' && args[i + 1]) { requestedStyleSlug = args[++i]; }
   else if (args[i] === '--persona' && args[i + 1]) { requestedPersonaSlug = args[++i]; }
   else if (args[i] === '--list-styles') { listStylesOnly = true; }
@@ -262,8 +262,8 @@ for (let i = 0; i < args.length; i++) {
     banner();
     console.log(`${c.b('Usage')}  npx code-abyss [options]
 `);
-    console.log(`  ${c.cyn('--target')} <${formatTargetList('|')}>      install one target`);
-    console.log(`  ${c.cyn('--uninstall')} <${formatTargetList('|')}>   remove one target`);
+    console.log(`  ${c.cyn('--target, -t')} <${formatTargetList('|')}>   install one target`);
+    console.log(`  ${c.cyn('--uninstall, -u')} <${formatTargetList('|')}>   remove one target`);
     console.log(`  ${c.cyn('--with-abyss')}   download abyss binary to ~/.code-abyss/bin (code graph hooks)`);
     console.log(`  ${c.cyn('--with-mcp')}     register abyss MCP server (claude/codex/gemini)`);
     console.log(`  ${c.cyn('--style')} <slug>  ${c.cyn('--persona')} <slug>  ${c.cyn('-y')}

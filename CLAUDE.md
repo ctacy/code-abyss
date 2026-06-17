@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Code Abyss is an npm package that installs persona configuration plus proactive execution guidance into Claude Code, Codex CLI, Gemini CLI, and OpenClaw. It delivers: persona rules, 6 switchable output styles, 29 skills, and 5 executable verification/generation tools.
+Code Abyss is an npm package that installs persona configuration plus proactive execution guidance into Claude Code, Codex CLI, Gemini CLI, and OpenClaw. It delivers: persona rules, 6 switchable output styles, 30 skills, and 5 executable verification/generation tools.
 
 ## Commands
 
@@ -93,6 +93,12 @@ Only the **core persona** (`abyss`) ships with the npm package. All other person
 `packs/*/manifest.json` defines installable packs. `abyss` is the core pack; `gstack` is an optional pinned upstream pack installed only when a project lock declares it. `bin/lib/pack-registry.js` is the source of truth for host file mappings and upstream metadata.
 
 Project-level automatic pack sync is driven by `.code-abyss/packs.lock.json`. The installer reads the nearest lock file from the current working directory upward and installs host-specific packs according to `required`, `optional`, `optional_policy`, and `sources`. `node bin/packs.js bootstrap` initializes the lock plus README/CONTRIBUTING snippets, `--apply-docs` writes them back into repo docs, `vendor-pull` / `vendor-sync` manage local sources, `vendor-sync --check` acts as a gate, `report summary` reads `.code-abyss/reports/`, and `uninstall <pack>` removes pack-specific runtime artifacts with a report.
+
+The lock also accepts an optional `tools` field (e.g. `"tools": { "abyss": ">=0.3.0" }`) declaring minimum tool versions; the installer warns at finish when the detected `abyss` binary is missing or older.
+
+### abyss Integration (code graph CLI)
+
+`bin/lib/abyss-integration.js` is the single source of truth for abyss CLI integration: hook injection (claude/gemini `settings.json`; codex TOML logic lives in `bin/adapters/codex.js`), binary detection (PATH → `~/.code-abyss/bin/abyss`), `MIN_ABYSS_VERSION` contract, MCP entries, and lock `tools` checks. Hook injection is idempotent via `HOOK_MARKER` (`indexing-code/hooks/common`): our entries are replaced (re-anchoring stale paths), user entries untouched; uninstall strips marked entries (`stripAbyssHooks` / `stripCodexAbyssIntegration`). Hook commands always point at the **installed** skill tree, never `PKG_ROOT` (ephemeral npx cache). Installer flags: `--with-abyss` downloads the prebuilt binary (`bin/lib/abyss-binary.js`, GitHub Releases, asset names aligned with abyss `release.yml`); `--with-mcp` registers `abyss mcp` (claude → `~/.claude.json`, codex → `[mcp_servers.abyss]`, gemini → `settings.json`). In interactive mode the installer offers the binary download; with `-y` it only detects and hints.
 
 ### Style Registry
 

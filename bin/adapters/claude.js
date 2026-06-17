@@ -90,6 +90,11 @@ function resolveSettingsTemplate(projectRoot) {
   const slug = getDefaultStyle(projectRoot || PROJECT_ROOT, 'claude').slug;
   const template = JSON.parse(JSON.stringify(SETTINGS_TEMPLATE));
   template.outputStyle = slug;
+
+  // abyss hooks 不在模板里注入——它们由 core-install 经
+  // bin/lib/abyss-integration.js 幂等写入，且锚定安装后的 skill 路径。
+  // 历史版本曾在此指向 PKG_ROOT（npx 缓存，易失），是个 bug。
+
   return template;
 }
 

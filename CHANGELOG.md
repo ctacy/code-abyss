@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.7.2] - 2026-06-13
+
+> **Patch: Codex install no longer corrupts `config.toml`.** Codex 0.125+ rejected the hooks schema we generated, breaking `codex` startup outright.
+
+### Fixed
+
+- **Codex hooks now use the array-of-tables schema** (`#49`). Codex 0.125+ deprecated the flat `[hooks.X]` table form; installs produced a `config.toml` that failed to load with `invalid type: map, expected a sequence in hooks`, breaking `codex` startup. `injectCodexHooks` now emits `[[hooks.X]]` + `[[hooks.X.hooks]]` (type/command/timeout/statusMessage), and `stripCodexAbyssIntegration` groups those units for clean uninstall. Idempotent re-runs, stale-path re-anchoring, and non-destructive skip of user-owned hooks are preserved. The `install-hooks.sh` codex branch was updated to match.
+- **Windows `command_windows` override for Codex hooks.** At install time on Windows the installer locates Git Bash (`where bash`, then common install dirs) and emits `command_windows`, so the bash hook scripts run even when Git Bash is not on `PATH`. Omitted on non-Windows.
+
+## [4.7.1] - 2026-06-12
+
+> **Patch: the documented install command now works.** `-t` was used everywhere in the docs but never implemented in the parser.
+
+### Fixed
+
+- **`-t` / `-u` short flags implemented.** The README quickstart, site install cards, and CLAUDE.md all used `npx code-abyss -t claude -y`, but the arg parser only matched `--target` — so `-t` was silently ignored, the target stayed unset, and the command fell into the interactive picker (breaking outright under `-y` on a non-TTY). `-t` is now an alias for `--target`, `-u` for `--uninstall`, both reflected in `--help`.
+
+### Changed
+
+- **Quickstart surfaces code-graph enablement.** README + zh-CN README lead with `--with-abyss` (one-shot binary download so the pre-edit hooks work out of the box), document `--with-mcp`, clarify what plain `-y` installs, and add a verify step (`abyss --version`, `abyss index`).
+- **Site install + code-graph sections.** A tip row surfaces `--with-abyss` / `--with-mcp`; the code-graph section shows the SCIP benchmark as a row of precision pills (Go/TS/Python/Rust) instead of a crammed sentence; footer version corrected to v4.7.0.
+
+## [4.7.0] - 2026-06-12
+
+> **Product-line release.** Code Abyss (the agent integration layer) ships aligned with `abyss` v0.3.3 (the code graph engine) as one product line.
+
+### Changed
+
+- **README / docs / site — measured resolution story.** The code-graph section now leads with `abyss` v0.3.3's SCIP-benchmarked precision across four languages and five corpora (Go / TypeScript / Python / Rust, all ≥98.5% gated precision) instead of a single Go sample. Install guidance points at the live distribution channels (`npm install -g @code-abyss/cli`, `cargo binstall code-abyss`, installer `--with-abyss`).
+- **Repository link drift fixed.** `abyss` CLI references now point at [telagod/abyss](https://github.com/telagod/abyss) (was the pre-publish `code-abyss-dev`) in README, zh-CN README, and the site CTA.
+- **i18n + static site** graph descriptions updated (en + zh) to drop the stale "5 seconds / v4.6" framing and surface the four-language ≥98.5% precision benchmark.
+
+### Notes
+
+- `abyss` integration contract is unchanged: `MIN_ABYSS_VERSION` stays at `0.3.0` (the hook/MCP command surface is stable since 0.3.0; the binary downloader fetches the latest release, i.e. v0.3.3, by default).
+- `abyss` v0.3.3 itself: nine eval-driven resolver rounds — named-import binding tiers (with barrel / `pub use` chasing), receiver-type lite inference for Go/TS/Python/Rust, workspace crate-root resolution, and type-grade evidence beyond exact scope matching. See [telagod/abyss](https://github.com/telagod/abyss) `eval/RESULTS.md`.
+
 ## [4.5.0] - 2026-06-09
 
 > **Dynamic persona loading release.** 仅核心人格（abyss）随 npm 包发布，其余从 GitHub raw 按需拉取+本地缓存，npm 包瘦身。

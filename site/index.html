@@ -45,6 +45,7 @@
       <div class="nav-links">
         <a href="#how" data-i18n="nav.how">How</a>
         <a href="#security" data-i18n="nav.security">Security</a>
+        <a href="#codegraph" data-i18n="nav.graph">Graph</a>
         <a href="#evolve" data-i18n="nav.evolve">Evolve</a>
         <a href="#personas" data-i18n="nav.personas">Personas</a>
         <a href="#spec" data-i18n="nav.spec">Spec</a>
@@ -72,7 +73,7 @@
             <span data-i18n="hero.title.1">Give your AI agent</span><br>
             <span class="accent" data-i18n="hero.title.2">a personality.</span>
           </h1>
-          <p class="lead" data-i18n="hero.sub" data-i18n-html>Composable identity, style, and <b>29 engineering skills</b><br>— including <b>4 native security domains</b> and a <b>self-evolution forge</b>.</p>
+          <p class="lead" data-i18n="hero.sub" data-i18n-html>Composable identity, style, and <b>30 engineering skills</b><br>— including <b>4 native security domains</b> and a <b>self-evolution forge</b>.</p>
           <div class="hero-install">
             <span class="prompt-sign">$</span>
             <code>npx code-abyss -t claude -y</code>
@@ -209,6 +210,69 @@
 
       <div class="security-actions">
         <a href="https://github.com/telagod/code-abyss/tree/main/skills" class="btn btn-ghost" data-i18n="security.cta">Browse on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="security-section" id="codegraph">
+    <div class="container">
+      <div class="eyebrow" data-i18n="graph.label">Code Intelligence</div>
+      <h2 data-i18n="graph.title">Your agent sees code relationships</h2>
+      <p class="section-desc" data-i18n="graph.desc" data-i18n-html>The <code>abyss</code> CLI — a Rust-powered code relationship graph that builds in <b>seconds</b>. Call graph, impact analysis, hotspot detection, change coupling. <b>Zero cloud dependencies.</b></p>
+
+      <div class="security-grid">
+        <div class="security-card">
+          <div class="sec-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+            </svg>
+          </div>
+          <h3 data-i18n="graph.impact.title">Impact Analysis</h3>
+          <p data-i18n="graph.impact.desc">See blast radius before you edit. Direct/transitive callers, affected tests, uncovered paths, risk score.</p>
+          <span class="sec-tag">abyss impact</span>
+        </div>
+        <div class="security-card">
+          <div class="sec-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <h3 data-i18n="graph.context.title">File Context</h3>
+          <p data-i18n="graph.context.desc">One command returns all callers, dependencies, hotspot score, and coupled files for any file. No function name needed.</p>
+          <span class="sec-tag">abyss context</span>
+        </div>
+        <div class="security-card">
+          <div class="sec-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+          </div>
+          <h3 data-i18n="graph.hotspot.title">Hotspot Map</h3>
+          <p data-i18n="graph.hotspot.desc">Churn × complexity = risk. Find the most dangerous files instantly. Git-powered change coupling detects hidden dependencies.</p>
+          <span class="sec-tag">abyss map</span>
+        </div>
+        <div class="security-card">
+          <div class="sec-icon" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <h3 data-i18n="graph.evolution.title">Evolution Trace</h3>
+          <p data-i18n="graph.evolution.desc">Why does this code look the way it does? Commit history, coupled files, churn rate — per function, not just per file.</p>
+          <span class="sec-tag">abyss history</span>
+        </div>
+      </div>
+
+      <div class="graph-bench" aria-label="Reference resolution precision, measured against SCIP">
+        <span class="bench-label" data-i18n="graph.bench">Resolution vs SCIP ground truth:</span>
+        <span class="bench-pill"><span class="lang">Go</span><span class="pct">99.3%</span></span>
+        <span class="bench-pill"><span class="lang">TypeScript</span><span class="pct">98.8%</span></span>
+        <span class="bench-pill"><span class="lang">Python</span><span class="pct">98.7%</span></span>
+        <span class="bench-pill"><span class="lang">Rust</span><span class="pct">98.5%</span></span>
+      </div>
+
+      <div class="security-actions">
+        <a href="https://github.com/telagod/abyss" class="btn btn-ghost" data-i18n="graph.cta">abyss CLI on GitHub</a>
       </div>
     </div>
   </section>
@@ -360,13 +424,16 @@
       <div class="install-tip">
         <span><span data-i18n="install.tip">Mix freely:</span> <code>--persona elder-sister --style abyss-cultivator</code></span>
       </div>
+      <div class="install-tip">
+        <span><span data-i18n="install.graph">Enable the code-graph engine:</span> <code>--with-abyss</code> <span data-i18n="install.alt">or</span> <code>--with-mcp</code></span>
+      </div>
     </div>
   </section>
 
   <footer>
     <div class="container">
       <div class="footer-inner">
-        <span>MIT License · v4.5.0</span>
+        <span>MIT License · v4.7.0</span>
         <div class="footer-links">
           <a href="https://github.com/telagod/code-abyss">GitHub</a>
           <a href="https://www.npmjs.com/package/code-abyss">npm</a>

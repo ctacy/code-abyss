@@ -8,7 +8,7 @@
   </a>
 </p>
 
-<h3 align="center">Composable persona · style · 29 engineering skills · 4 native security domains · self-evolution forge<br/>for Claude Code · Codex CLI · Gemini CLI · OpenClaw</h3>
+<h3 align="center">Composable persona · style · 30 engineering skills · 4 native security domains · self-evolution forge · code graph intelligence<br/>for Claude Code · Codex CLI · Gemini CLI · OpenClaw</h3>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/code-abyss-sc"><img src="https://img.shields.io/npm/v/code-abyss-sc?color=9b8cff&label=npm%20(fork)&style=flat-square" alt="npm"></a>
@@ -55,24 +55,35 @@ Pick any persona. Pair it with any style. The behavior layer (iron laws, executi
 ### What's new in v4
 
 - **4 native security domains** — 4073 lines of original defense engineering (no Apache-2.0 upstream)
-- **29 skills total**, all `SKILL.md` ≤ 90 lines (avg 58), heavy content lives in `references/`
+- **30 skills total**, all `SKILL.md` ≤ 110 lines (avg 59), heavy content lives in `references/`
 - 5 verify skills rewritten as **judgment-type knowledge** (when to use, how to interpret output, exemption rules)
 - Office skills slim to under 100 lines each; 4 design systems consolidated into one selector skill
 - **v4.1 — self-evolution forge**: `cultivating-skills` / `cultivating-personas` let the agent distill repeated workflows into reusable skills, with a safety scan and a three-tier publish funnel (local → project → community)
 - **v4.4 — hardware + academic writing**: 3 new domain skills (KiCad EDA, hardware product pipeline, AIGC detection reduction) + prompt injection defense + execution-drive shared behavior
 - **v4.5 — dynamic persona loading**: only `abyss` ships with npm — all other personas are fetched from GitHub on first use and cached locally, slimming the package
+- **v4.6 — code graph intelligence**: `abyss` CLI builds a code relationship graph (call graph + temporal analysis) in seconds — caller tracing, impact analysis, hotspot detection, change coupling. Pre-edit hooks auto-check callers across all 4 platforms
+- **v4.7 — measured resolution**: `abyss` v0.3.3 ships four-language reference resolution (Go / TypeScript / Python / Rust), benchmarked against SCIP ground truth across five corpora at ≥98.5% gated precision. Named-import binding tiers, receiver-type inference, and type-grade evidence — published numbers, not claims. `npm install -g @code-abyss/cli`
 
 ### Installation (Fork Version)
 
+```bash
 ```bash
 # Install from this fork
 npx code-abyss-sc -t claude -y
 
 # Or install the original upstream version
-npx code-abyss -t claude -y
+npx code-abyss -t claude -y --with-abyss
+```
+
+`--with-abyss` also downloads the `abyss` code-graph binary so the pre-edit hooks work out of the box; add `--with-mcp` to register `abyss` as an MCP server. Swap `-t claude` for `codex` / `gemini` / `openclaw`. Or as a Claude Code plugin:
+
+```bash
+claude plugin install code-abyss
 ```
 
 Note: This fork is published as `code-abyss-sc` on npm. The original package `code-abyss` is maintained by [telagod](https://github.com/telagod).
+
+> Plain `-y` (no `--with-abyss`) installs only the persona/skills/style layer and skips the network — code-graph hooks stay dormant until `abyss` is on `PATH`. Interactive runs (drop the `-y`) prompt before downloading. Verify code-graph is live with `abyss --version`, then `abyss index` in any project.
 
 ---
 
@@ -192,9 +203,53 @@ Plus `securing-systems` as the router skill covering pentest, code audit, red/bl
 
 ---
 
+## Code graph intelligence (powered by `abyss`)
+
+**Your agent can now see code relationships.** The `abyss` CLI builds a full call graph, temporal analysis, and hotspot map — in seconds, with zero cloud dependencies.
+
+| Capability | What it answers | Command |
+|---|---|---|
+| **Caller tracing** | "Who calls this function?" | `abyss callers <symbol>` |
+| **Impact analysis** | "What breaks if I change this?" | `abyss impact <symbol>` |
+| **File context** | "What do I need to know before editing this file?" | `abyss context <file>` |
+| **Hotspot map** | "Where is the riskiest code?" | `abyss map` |
+| **Change coupling** | "Which files always change together?" | `abyss map` |
+| **Evolution trace** | "Why does this code look the way it does?" | `abyss history <file>` |
+
+The `indexing-code` skill automatically hooks into all 4 supported platforms — before every Edit/Write, the agent checks callers and warns about high-impact changes. Available as a CLI via the agent's shell tool, or as an `abyss mcp` server (7 tools over stdio).
+
+**Resolution is measured, not asserted.** abyss resolves call references through tiered heuristics, each tagged with a confidence score, and benchmarks itself against SCIP (compiler-grade) ground truth across four languages and five corpora — published whatever the numbers say:
+
+| Corpus | Language | Gated precision | Gated recall |
+|--------|----------|----------------:|-------------:|
+| gin v1.10.0 | Go | **99.3%** | 82.6% |
+| hono v4.6.14 | TypeScript | **98.8%** | 63.8% |
+| click 8.1.8 | Python | **98.7%** | 94.6% |
+| ripgrep 14.1.1 | Rust | **98.5%** | 75.3% |
+| abyss (dogfood) | Rust | **100.0%** | 90.9% |
+
+```
+# Real output from a 1862-file Go project (seconds to index):
+
+$ abyss impact SetError
+impact: SetError  direct=17  transitive=521  tests=469  uncovered=319  risk=10.0/10
+  ⚠ high blast radius (17 direct callers)
+  ⚠ deep dependency chain (521 transitive)
+  ⚠ 319 call paths without test coverage
+```
+
+`abyss` is a separate Rust binary ([telagod/abyss](https://github.com/telagod/abyss)). The installer offers to fetch it (`--with-abyss`), or grab it directly:
+
+```sh
+npm install -g @code-abyss/cli   # prebuilt binary, all platforms
+cargo binstall code-abyss        # or: cargo install code-abyss
+```
+
+---
+
 ## Skills
 
-27 domain skills, flat structure, [agentskills.io](https://agentskills.io/specification) aligned (with Code Abyss extensions). Skills load by context — the agent reads the right knowledge at the right time without being asked. Average `SKILL.md` is 58 lines; all `SKILL.md` files are under 90 lines, with heavy content in `references/`.
+30 domain skills, flat structure, [agentskills.io](https://agentskills.io/specification) aligned (with Code Abyss extensions). Skills load by context — the agent reads the right knowledge at the right time without being asked. Average `SKILL.md` is 59 lines; heavy content lives in `references/`.
 
 | Domain | Coverage |
 |---|---|
@@ -208,6 +263,7 @@ Plus `securing-systems` as the router skill covering pentest, code audit, red/bl
 | 📡 **Infra / Mobile / Data** | Kubernetes, GitOps, IaC · iOS, Android, RN, Flutter · pipelines, streaming, quality |
 | 🔩 **Hardware / Embedded** | Full-stack hardware product pipeline (ESP-IDF firmware + KiCad PCB + UniApp) · KiCad 9 MCP tool routing (17 tools, autoroute-only, DRC gate) |
 | 📝 **Academic Writing** | AIGC detection reduction for 维普/知网/Turnitin — multi-layer rewriting (structure → lexicon → content injection), docx run-level editing |
+| 🔬 **Code Intelligence** | Call graph, impact analysis, hotspot detection, change coupling, evolution tracing — via `abyss` CLI with cross-platform hooks |
 | 🜲 **Self-evolution** | `cultivating-skills` (distill repeated workflows) + `cultivating-personas` (distill voice into Tech Persona Card) — both with safety scan + 3-tier publish funnel |
 
 Five skills also ship as **executable verification tools** for CI:
@@ -294,11 +350,11 @@ const gpt = toGPTInstructions(card, { identityContent });// → OpenAI Custom GP
 |---|---|---|
 | **Identity** | Flat help-desk tone | Consistent character with named voice |
 | **Execution** | Ad-hoc, varies by prompt | Iron laws + execution chains baked in |
-| **Domain depth** | Generic best-practices | 24 skill files load by context (avg 58 lines) |
+| **Code awareness** | grep + read one file at a time | Call graph, impact analysis, hotspot map — agent knows what breaks before it edits |
+| **Domain depth** | Generic best-practices | 30 skill files load by context |
 | **Security depth** | OWASP recitation | 4 native suites · 4073 lines · detection signals + mitigation patterns |
-| **Cross-platform** | Re-engineer per CLI | One spec, four platforms |
+| **Cross-platform** | Re-engineer per CLI | One spec, four platforms, cross-platform hooks |
 | **Reproducibility** | Prompt drift across sessions | Versioned `persona-card.json` |
-| **Portability** | Locked to one runtime | Convert to CharaCard V2, GPT Instructions |
 
 ---
 
@@ -307,8 +363,8 @@ const gpt = toGPTInstructions(card, { identityContent });// → OpenAI Custom GP
 ```bash
 git clone https://github.com/telagod/code-abyss && cd code-abyss
 npm install
-npm test                    # 375 tests
-npm run verify:skills       # Validate 24 skill contracts
+npm test                    # 383 tests
+npm run verify:skills       # Validate 30 skill contracts
 ```
 
 **Add a skill** — create `skills/<gerund-name>/SKILL.md` with [SKILL frontmatter](https://agentskills.io/specification), optionally add `scripts/` for executable tools. `npm run verify:skills` validates the contract.
@@ -319,6 +375,6 @@ npm run verify:skills       # Validate 24 skill contracts
 
 <p align="center">
   <sub>
-    <b>MIT License</b> · v4.1.0 · made with 紫宵脉 by <a href="https://github.com/telagod">@telagod</a>
+    <b>MIT License</b> · v4.6.0 · made with 紫宵脉 by <a href="https://github.com/telagod">@telagod</a>
   </sub>
 </p>

@@ -8,6 +8,7 @@ const {
   cleanupLegacyCodexConfig,
   cleanupLegacyCodexRuntime,
   detectCodexAuth,
+  ensureCodexProfileFiles,
   getCodexCoreFiles,
   mergeCodexConfigDefaults,
   patchCodexConfig,
@@ -109,12 +110,6 @@ describe('codex adapter', () => {
       'model_instructions_file',
       'sandbox_mode',
       'web_search',
-      'profiles.full_auto.approval_policy',
-      'profiles.full_auto.sandbox_mode',
-      'profiles.full_auto.web_search',
-      'profiles.full_access.approval_policy',
-      'profiles.full_access.sandbox_mode',
-      'profiles.full_access.web_search',
     ]);
     expect(merged).toContain('approval_policy = "on-request"');
     expect(merged).toContain('allow_login_shell = true');
@@ -141,23 +136,17 @@ describe('codex adapter', () => {
       'cli_auth_credentials_store',
       'model_instructions_file',
       'web_search',
-      'profiles.full_auto.approval_policy',
-      'profiles.full_auto.sandbox_mode',
-      'profiles.full_auto.web_search',
-      'profiles.full_access.approval_policy',
-      'profiles.full_access.sandbox_mode',
-      'profiles.full_access.web_search',
     ]);
     expect(merged).toContain('sandbox_mode = "workspace-write"');
     expect(merged).toContain('[profiles.abyss]');
     expect(merged).toContain('sandbox_mode = "danger-full-access"');
     expect(merged).toContain('approval_policy = "never"');
     expect(merged).not.toContain('sandbox_mode = "read-only"');
-    expect(merged).toContain('[profiles.full_auto]');
-    expect(merged).toContain('[profiles.full_access]');
+    expect(merged).not.toContain('[profiles.full_auto]');
+    expect(merged).not.toContain('[profiles.full_access]');
   });
 
-  test('mergeCodexConfigDefaults: 保留 profiles.* 中合法 root-like 键', () => {
+  test('mergeCodexConfigDefaults: 不生成 Codex 0.134+ 已废弃的内联 profiles', () => {
     const input = [
       '[profiles.safe]',
       'approval_policy = "on-request"',
@@ -174,12 +163,6 @@ describe('codex adapter', () => {
       'model_instructions_file',
       'sandbox_mode',
       'web_search',
-      'profiles.full_auto.approval_policy',
-      'profiles.full_auto.sandbox_mode',
-      'profiles.full_auto.web_search',
-      'profiles.full_access.approval_policy',
-      'profiles.full_access.sandbox_mode',
-      'profiles.full_access.web_search',
     ]);
     expect(merged).toContain('[profiles.safe]');
     expect(merged).toContain('approval_policy = "on-request"');
@@ -202,12 +185,6 @@ describe('codex adapter', () => {
       'model_instructions_file',
       'sandbox_mode',
       'web_search',
-      'profiles.full_auto.approval_policy',
-      'profiles.full_auto.sandbox_mode',
-      'profiles.full_auto.web_search',
-      'profiles.full_access.approval_policy',
-      'profiles.full_access.sandbox_mode',
-      'profiles.full_access.web_search',
     ]);
     expect(saved).toContain('approval_policy = "on-request"');
     expect(saved).toContain('allow_login_shell = true');
@@ -278,12 +255,6 @@ describe('codex adapter', () => {
       'cli_auth_credentials_store',
       'model_instructions_file',
       'sandbox_mode',
-      'profiles.full_auto.approval_policy',
-      'profiles.full_auto.sandbox_mode',
-      'profiles.full_auto.web_search',
-      'profiles.full_access.approval_policy',
-      'profiles.full_access.sandbox_mode',
-      'profiles.full_access.web_search',
     ]);
     expect(report.removed.sort()).toEqual(['remote_models', 'web_search_request']);
     expect(report.migrated).toEqual(['web_search=live']);
@@ -316,7 +287,33 @@ describe('codex adapter', () => {
     expect(merged.indexOf('sandbox_mode = "workspace-write"')).toBeLessThan(merged.indexOf('[features]'));
   });
 
-  test('patchCodexConfig: full access 下移除 projects trust_level 段', () => {
+  test('cleanupLegacyCodexConfig: 清理旧版 code-abyss 内联 profiles', () => {
+    const input = [
+      '[profiles.full_auto]',
+      'approval_policy = "on-request"',
+      'sandbox_mode = "workspace-write"',
+      'web_search = "cached"',
+      '',
+      '[profiles.full_access]',
+      'approval_policy = "on-request"',
+      'sandbox_mode = "danger-full-access"',
+      'web_search = "live"',
+      '',
+      '[profiles.user]',
+      'sandbox_mode = "read-only"',
+      '',
+    ].join('\n');
+
+    const { merged, removed } = cleanupLegacyCodexConfig(input);
+
+    expect(removed.sort()).toEqual(['profiles.full_access', 'profiles.full_auto']);
+    expect(merged).not.toContain('[profiles.full_auto]');
+    expect(merged).not.toContain('[profiles.full_access]');
+    expect(merged).toContain('[profiles.user]');
+    expect(merged).toContain('sandbox_mode = "read-only"');
+  });
+
+  test('patchCodexConfig: 保留 projects trust_level 段', () => {
     const cfgPath = path.join(tmpHome, '.codex', 'config.toml');
     fs.mkdirSync(path.dirname(cfgPath), { recursive: true });
     fs.writeFileSync(
@@ -336,9 +333,9 @@ describe('codex adapter', () => {
     const report = patchCodexConfig(cfgPath);
     const saved = fs.readFileSync(cfgPath, 'utf8');
 
-    expect(report.removed).toContain('projects.*.trust_level');
-    expect(saved).not.toContain('[projects."/tmp/demo"]');
-    expect(saved).not.toContain('trust_level = "trusted"');
+    expect(report.removed).not.toContain('projects.*.trust_level');
+    expect(saved).toContain('[projects."/tmp/demo"]');
+    expect(saved).toContain('trust_level = "trusted"');
   });
 
   test('patchCodexConfig: 清理错层 root 参数（table 内 sandbox_mode）', () => {
@@ -368,5 +365,42 @@ describe('codex adapter', () => {
     expect(saved).not.toContain(
       '[notice.model_migrations]\n"gpt-5.2" = "gpt-5.2-codex"\nsandbox_mode = "workspace-write"'
     );
+  });
+
+  test('ensureCodexProfileFiles: 生成当前 Codex 支持的 profile 文件并写入 manifest', () => {
+    const codexDir = path.join(tmpHome, '.codex');
+    const manifestPath = path.join(codexDir, '.code-abyss-backup', 'manifest.json');
+    const ctx = {
+      targetDir: codexDir,
+      manifestPath,
+      manifest: { installed: [], backups: [] },
+    };
+    fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+
+    const result = ensureCodexProfileFiles({ HOME: tmpHome, ctx });
+
+    expect(result.installed.sort()).toEqual(['full_access.config.toml', 'full_auto.config.toml']);
+    expect(fs.readFileSync(path.join(codexDir, 'full_auto.config.toml'), 'utf8'))
+      .toContain('# code-abyss managed Codex profile: full_auto');
+    expect(fs.readFileSync(path.join(codexDir, 'full_access.config.toml'), 'utf8'))
+      .toContain('sandbox_mode = "danger-full-access"');
+    expect(ctx.manifest.installed).toEqual([
+      { root: 'codex', path: 'full_auto.config.toml' },
+      { root: 'codex', path: 'full_access.config.toml' },
+    ]);
+    expect(JSON.parse(fs.readFileSync(manifestPath, 'utf8')).installed).toHaveLength(2);
+  });
+
+  test('ensureCodexProfileFiles: 不覆盖用户自有 profile 文件', () => {
+    const codexDir = path.join(tmpHome, '.codex');
+    fs.mkdirSync(codexDir, { recursive: true });
+    fs.writeFileSync(path.join(codexDir, 'full_access.config.toml'), 'sandbox_mode = "read-only"\n');
+
+    const result = ensureCodexProfileFiles({ HOME: tmpHome });
+
+    expect(result.skipped).toEqual(['full_access.config.toml']);
+    expect(fs.readFileSync(path.join(codexDir, 'full_access.config.toml'), 'utf8'))
+      .toBe('sandbox_mode = "read-only"\n');
+    expect(fs.existsSync(path.join(codexDir, 'full_auto.config.toml'))).toBe(true);
   });
 });

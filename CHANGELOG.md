@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.8.1] - 2026-06-19
+
+### Fixed
+
+- **Codex install now uses current profile files.** Codex 0.134+ no longer reads `[profiles.*]` tables from `config.toml`; the installer now creates managed `full_auto.config.toml` and `full_access.config.toml` files instead, and removes only the old code-abyss-generated inline profile blocks.
+- **Codex project trust is preserved.** Existing `[projects."/path"] trust_level = "trusted"` entries are no longer removed when `sandbox_mode = "danger-full-access"` is present.
+- **Codex user hooks can coexist with abyss hooks.** Valid array-table user hooks for the same event no longer suppress abyss hook installation; only legacy flat `[hooks.X]` tables are skipped to avoid TOML schema conflicts.
+
 ## [4.8.0] - 2026-06-18
 
 > **Minor: dynamic capability discovery via `abyss skill-manifest`.** code-abyss 4.8 reads abyss's manifest at install time and surfaces the discovered CLI / MCP / daemon surface to the user, instead of carrying a hand-maintained mirror.
@@ -30,7 +38,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **Codex hooks now use the array-of-tables schema** (`#49`). Codex 0.125+ deprecated the flat `[hooks.X]` table form; installs produced a `config.toml` that failed to load with `invalid type: map, expected a sequence in hooks`, breaking `codex` startup. `injectCodexHooks` now emits `[[hooks.X]]` + `[[hooks.X.hooks]]` (type/command/timeout/statusMessage), and `stripCodexAbyssIntegration` groups those units for clean uninstall. Idempotent re-runs, stale-path re-anchoring, and non-destructive skip of user-owned hooks are preserved. The `install-hooks.sh` codex branch was updated to match.
+- **Codex hooks now use the array-of-tables schema** (`#49`). Codex 0.125+ deprecated the flat `[hooks.X]` table form; installs produced a `config.toml` that failed to load with `invalid type: map, expected a sequence in hooks`, breaking `codex` startup. `injectCodexHooks` now emits `[[hooks.X]]` + `[[hooks.X.hooks]]` (type/command/timeout/statusMessage), and `stripCodexAbyssIntegration` groups those units for clean uninstall. Idempotent re-runs, stale-path re-anchoring, and non-destructive handling of user-owned hooks are preserved. The `install-hooks.sh` codex branch was updated to match.
 - **Windows `command_windows` override for Codex hooks.** At install time on Windows the installer locates Git Bash (`where bash`, then common install dirs) and emits `command_windows`, so the bash hook scripts run even when Git Bash is not on `PATH`. Omitted on non-Windows.
 
 ## [4.7.1] - 2026-06-12

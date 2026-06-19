@@ -115,6 +115,7 @@ describe('codex TOML hook 注入', () => {
     expect(merged).not.toMatch(/^\[hooks\./m);
     expect(merged).toContain('type = "command"');
     expect(merged).toContain(`${HOOK_DIR}/pre-edit-check.sh`);
+    expect(merged).toContain('matcher = "Bash|shell|apply_patch|Edit|Write"');
   });
 
   test('重复注入幂等（节与键不重复）', () => {
@@ -140,11 +141,30 @@ describe('codex TOML hook 注入', () => {
     expect(fixed).not.toContain('npx-cache');
   });
 
-  test('用户自有 hook（无标记）不抢占', () => {
+  test('旧式扁平用户 hook 防冲突跳过', () => {
     const userCfg = '[hooks.PreToolUse]\nmatcher = "Bash"\ncommand = "my-guard.sh"\n';
-    const { merged, skipped } = injectCodexHooks(userCfg, HOOK_DIR, '\n');
+    const { merged, installed, skipped } = injectCodexHooks(userCfg, HOOK_DIR, '\n');
+    expect(installed).toEqual(['hooks.SessionStart']);
     expect(skipped).toContain('hooks.PreToolUse');
     expect(merged).toContain('my-guard.sh');
+  });
+
+  test('当前数组表用户 hook 与 abyss hook 并存', () => {
+    const userCfg = [
+      '[[hooks.PreToolUse]]',
+      'matcher = "^Bash$"',
+      '',
+      '[[hooks.PreToolUse.hooks]]',
+      'type = "command"',
+      'command = "my-guard.sh"',
+      '',
+    ].join('\n');
+    const { merged, installed, skipped } = injectCodexHooks(userCfg, HOOK_DIR, '\n');
+    expect(installed).toEqual(['hooks.SessionStart', 'hooks.PreToolUse']);
+    expect(skipped).toEqual([]);
+    expect(merged).toContain('my-guard.sh');
+    expect(merged).toContain(`${HOOK_DIR}/pre-edit-check.sh`);
+    expect((merged.match(/\[\[hooks\.PreToolUse\]\]/g) || []).length).toBe(2);
   });
 
   test('MCP 节注入且幂等', () => {
@@ -153,6 +173,37 @@ describe('codex TOML hook 注入', () => {
     expect((merged.match(/\[mcp_servers\.abyss\]/g) || []).length).toBe(1);
     expect(merged).toContain('command = "/opt/bin/abyss"');
     expect(merged).toContain('args = ["mcp"]');
+  });
+});
+
+describe('hook shell wrapper', () => {
+  test('pre-edit-check normalizes Codex apply_patch payload to file_path input', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'abyss-hook-'));
+    try {
+      const fakeAbyss = path.join(tmp, 'abyss');
+      const captured = path.join(tmp, 'stdin.json');
+      fs.writeFileSync(fakeAbyss, `#!/usr/bin/env bash\ncat > "${captured}"\n`, { mode: 0o755 });
+      const hook = path.join(__dirname, '..', 'skills', 'indexing-code', 'hooks', 'common', 'pre-edit-check.sh');
+      const payload = JSON.stringify({
+        tool_name: 'apply_patch',
+        tool_input: {
+          patch: '*** Begin Patch\n*** Update File: bin/adapters/codex.js\n@@\n*** End Patch\n',
+        },
+      });
+      const { spawnSync } = require('child_process');
+      const result = spawnSync('bash', [hook], {
+        input: payload,
+        encoding: 'utf8',
+        env: { ...process.env, PATH: `${tmp}:${process.env.PATH || ''}` },
+      });
+      expect(result.status).toBe(0);
+      expect(JSON.parse(fs.readFileSync(captured, 'utf8'))).toEqual({
+        tool_name: 'Edit',
+        tool_input: { file_path: 'bin/adapters/codex.js' },
+      });
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });
 
@@ -310,25 +361,8 @@ describe('hook 目录解析', () => {
 });
 
 describe('skill-manifest 能力发现', () => {
-  // 锁一个空 HOME 目录，避免误命中宿主机上真的 ~/.code-abyss/bin/abyss
-  function emptyHome() {
-    return fs.mkdtempSync(path.join(os.tmpdir(), 'abyss-manifest-test-'));
-  }
-
   test('abyss 不在 PATH 且 ~/.code-abyss/bin 也没有时返回 null', () => {
-    const HOME = emptyHome();
-    try {
-      const pathBefore = process.env.PATH;
-      process.env.PATH = HOME; // 一个绝对没 abyss 的目录
-      try {
-        // 走 detectAbyss → null 路径
-        expect(tryReadAbyssManifest({ HOME })).toBeNull();
-      } finally {
-        process.env.PATH = pathBefore;
-      }
-    } finally {
-      fs.rmSync(HOME, { recursive: true, force: true });
-    }
+    expect(tryReadAbyssManifest({ binPath: '/no/such/abyss-bin-for-manifest-test' })).toBeNull();
   });
 
   test('显式 binPath 指向不存在的文件返回 null（不抛）', () => {

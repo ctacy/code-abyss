@@ -16,7 +16,9 @@ const CODEX_DEFAULTS = {
   webSearch: 'cached',
 };
 
-const CODEX_DEFAULT_PROFILES = {
+const CODEX_PROFILE_MARKER = '# code-abyss managed Codex profile';
+
+const CODEX_PROFILE_FILES = {
   full_auto: {
     approval_policy: '"on-request"',
     sandbox_mode: '"workspace-write"',
@@ -53,10 +55,6 @@ function isTableHeader(line) {
   return /^\s*\[[^\]]+\]\s*$/.test(line);
 }
 
-function isProjectTableHeader(line) {
-  return /^\s*\[projects\."[^"]+"\]\s*$/.test(line);
-}
-
 function isProfileTableHeader(line) {
   return /^\s*\[profiles\.[^\]]+\]\s*$/.test(line);
 }
@@ -80,23 +78,6 @@ function hasRootKey(content, key) {
     }
   }
   return false;
-}
-
-function readRootStringKey(content, key) {
-  const lines = content.split(/\r?\n/);
-  const re = new RegExp(`^\\s*${escapeRegExp(key)}\\s*=\\s*"([^"]*)"`);
-  let inRoot = true;
-
-  for (const line of lines) {
-    if (isTableHeader(line)) {
-      inRoot = false;
-      continue;
-    }
-    if (!inRoot) continue;
-    const m = line.match(re);
-    if (m) return m[1];
-  }
-  return null;
 }
 
 function hasSection(content, sectionName) {
@@ -171,24 +152,6 @@ function ensureKeyInSection(content, sectionName, key, valueLiteral, eol) {
   return { merged, added };
 }
 
-function ensureCodexDefaultProfiles(content, eol) {
-  let merged = content;
-  const added = [];
-
-  for (const [profile, values] of Object.entries(CODEX_DEFAULT_PROFILES)) {
-    for (const [key, value] of Object.entries(values)) {
-      const sectionName = `profiles.${profile}`;
-      const ensured = ensureKeyInSection(merged, sectionName, key, value, eol);
-      merged = ensured.merged;
-      if (ensured.added) {
-        added.push(`${sectionName}.${key}`);
-      }
-    }
-  }
-
-  return { merged, added };
-}
-
 function parseTomlBooleanAssignment(line) {
   const m = line.match(/=\s*(true|false)\b/i);
   if (!m) return null;
@@ -248,36 +211,6 @@ function removeKeyAssignmentsInSection(content, sectionName, key) {
   return { merged: kept.join(eol), removedValues };
 }
 
-function removeProjectTrustSectionsForFullAccess(content) {
-  const eol = content.includes('\r\n') ? '\r\n' : '\n';
-  const sandboxMode = readRootStringKey(content, 'sandbox_mode');
-  if (sandboxMode !== 'danger-full-access') {
-    return { merged: content, removed: false };
-  }
-
-  const lines = content.split(/\r?\n/);
-  const kept = [];
-  let inProjectSection = false;
-  let removed = false;
-
-  for (const line of lines) {
-    if (isTableHeader(line)) {
-      if (isProjectTableHeader(line)) {
-        inProjectSection = true;
-        removed = true;
-        continue;
-      }
-      inProjectSection = false;
-      kept.push(line);
-      continue;
-    }
-    if (inProjectSection) continue;
-    kept.push(line);
-  }
-
-  return { merged: kept.join(eol), removed };
-}
-
 function removeFeatureFlagsFromFeaturesSection(content, featureNames) {
   const eol = content.includes('\r\n') ? '\r\n' : '\n';
   const lines = content.split(/\r?\n/);
@@ -318,6 +251,47 @@ function uniq(values) {
   return [...new Set(values)];
 }
 
+function parseSimpleTomlAssignments(lines) {
+  const values = {};
+  for (const line of lines.slice(1)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const m = trimmed.match(/^([A-Za-z0-9_.-]+)\s*=\s*(.+)$/);
+    if (!m) return null;
+    values[m[1]] = m[2].trim();
+  }
+  return values;
+}
+
+function isLegacyManagedProfileBlock(block, profileName) {
+  const expected = CODEX_PROFILE_FILES[profileName];
+  if (!expected) return false;
+  const values = parseSimpleTomlAssignments(block.lines);
+  if (!values) return false;
+  const keys = Object.keys(values).sort();
+  const expectedKeys = Object.keys(expected).sort();
+  if (keys.length !== expectedKeys.length) return false;
+  return expectedKeys.every((key, index) => keys[index] === key && values[key] === expected[key]);
+}
+
+function removeLegacyManagedProfileSections(content) {
+  const eol = content.includes('\r\n') ? '\r\n' : '\n';
+  const blocks = splitTomlBlocks(content);
+  const kept = [];
+  const removed = [];
+
+  for (const block of blocks) {
+    const m = block.header && block.header.match(/^\[profiles\.([A-Za-z0-9_-]+)\]$/);
+    if (m && isLegacyManagedProfileBlock(block, m[1])) {
+      removed.push(`profiles.${m[1]}`);
+      continue;
+    }
+    kept.push(...block.lines);
+  }
+
+  return { merged: kept.join(eol), removed };
+}
+
 function cleanupLegacyCodexConfig(content) {
   const eol = content.includes('\r\n') ? '\r\n' : '\n';
   const toRemove = [...LEGACY_FEATURES.removed, ...LEGACY_FEATURES.deprecated];
@@ -349,6 +323,10 @@ function cleanupLegacyCodexConfig(content) {
       if (webSearch.added) migrated.push(`web_search=${webSearchMode}`);
     }
   }
+
+  const legacyProfiles = removeLegacyManagedProfileSections(merged);
+  merged = legacyProfiles.merged;
+  removed.push(...legacyProfiles.removed);
 
   return { merged, removed, migrated };
 }
@@ -418,10 +396,6 @@ function mergeCodexConfigDefaults(content) {
     added.push('web_search');
   }
 
-  const profiles = ensureCodexDefaultProfiles(merged, eol);
-  merged = profiles.merged;
-  added.push(...profiles.added);
-
   return { merged, added };
 }
 
@@ -429,11 +403,9 @@ function patchCodexConfig(cfgPath) {
   const raw = fs.readFileSync(cfgPath, 'utf8');
   const { merged: cleaned, removed, migrated } = cleanupLegacyCodexConfig(raw);
   const { merged: mergedDefaults, added } = mergeCodexConfigDefaults(cleaned);
-  const { merged, removed: removedProjectTrust } = removeProjectTrustSectionsForFullAccess(mergedDefaults);
-  const removedAll = removedProjectTrust ? [...removed, 'projects.*.trust_level'] : removed;
 
-  if (merged !== raw) fs.writeFileSync(cfgPath, merged);
-  return { added, removed: removedAll, migrated };
+  if (mergedDefaults !== raw) fs.writeFileSync(cfgPath, mergedDefaults);
+  return { added, removed, migrated };
 }
 
 function patchCodexConfigDefaults(cfgPath) {
@@ -531,12 +503,13 @@ function injectCodexHooks(content, hookDir, eol, opts = {}) {
   const winBash = opts.winBash || null;
   const events = [
     { name: 'SessionStart', matcher: 'startup|resume', script: 'session-init.sh', timeout: 10, statusMessage: 'abyss: checking index' },
-    { name: 'PreToolUse', matcher: 'Bash|shell', script: 'pre-edit-check.sh', timeout: 5, statusMessage: 'abyss: checking callers' },
+    { name: 'PreToolUse', matcher: 'Bash|shell|apply_patch|Edit|Write', script: 'pre-edit-check.sh', timeout: 5, statusMessage: 'abyss: checking callers' },
   ];
 
-  // 1. 先剥掉我方旧 hook 组（带标记），同时记录用户自有事件——保持非破坏 + 旧路径重锚
+  // 1. 先剥掉我方旧 hook 组（带标记），同时保留用户自有事件——保持非破坏 + 旧路径重锚。
+  //    Codex 支持同一事件多个数组表并存；只有旧式扁平 [hooks.X] 会和数组表冲突。
   const blocks = splitTomlBlocks(content);
-  const userOwned = new Set();
+  const flatUserOwned = new Set();
   const kept = [];
   let i = 0;
   while (i < blocks.length) {
@@ -548,7 +521,7 @@ function injectCodexHooks(content, hookDir, eol, opts = {}) {
       if (groupText.includes(ABYSS_HOOK_MARKER)) {
         // 我方旧条目：丢弃，稍后重建（顺带重锚旧路径）
       } else {
-        userOwned.add(m[1]);
+        if (b.header.startsWith('[hooks.')) flatUserOwned.add(m[1]);
         for (const g of group) kept.push(...g.lines);
       }
       i = next;
@@ -563,7 +536,7 @@ function injectCodexHooks(content, hookDir, eol, opts = {}) {
   const skipped = [];
   const fresh = [];
   for (const ev of events) {
-    if (userOwned.has(ev.name)) {
+    if (flatUserOwned.has(ev.name)) {
       skipped.push(`hooks.${ev.name}`);
       continue;
     }
@@ -577,6 +550,97 @@ function injectCodexHooks(content, hookDir, eol, opts = {}) {
     merged = (base ? base + eol + eol : '') + fresh.join(eol + eol) + eol;
   }
   return { merged, installed, skipped };
+}
+
+function renderCodexProfileFile(profileName, eol = '\n') {
+  const values = CODEX_PROFILE_FILES[profileName];
+  if (!values) throw new Error(`unknown Codex profile: ${profileName}`);
+  return [
+    `${CODEX_PROFILE_MARKER}: ${profileName}`,
+    ...Object.entries(values).map(([key, value]) => `${key} = ${value}`),
+    '',
+  ].join(eol);
+}
+
+function hasManifestEntry(manifest, root, relPath) {
+  return (manifest.installed || []).some((entry) =>
+    (typeof entry === 'string' && root === 'codex' && entry === relPath)
+    || (entry && typeof entry === 'object' && (entry.root || 'codex') === root && entry.path === relPath)
+  );
+}
+
+function markCodexInstalled(ctx, relPath) {
+  if (!ctx || !ctx.manifest) return;
+  if (!hasManifestEntry(ctx.manifest, 'codex', relPath)) {
+    ctx.manifest.installed.push({ root: 'codex', path: relPath });
+  }
+}
+
+function flushCodexManifest(ctx) {
+  if (ctx && ctx.manifest && ctx.manifestPath) {
+    fs.writeFileSync(ctx.manifestPath, JSON.stringify(ctx.manifest, null, 2) + '\n');
+  }
+}
+
+function trackCodexConfig(ctx, cfgPath) {
+  if (!ctx || !ctx.manifest) return;
+  if (ctx.backupManagedPath) {
+    ctx.backupManagedPath('codex', 'config.toml', cfgPath, 'config.toml');
+  }
+  markCodexInstalled(ctx, 'config.toml');
+}
+
+function ensureCodexProfileFiles({
+  HOME,
+  ctx = null,
+  ok = () => {},
+  info = () => {},
+  warn = () => {},
+}) {
+  const codexDir = ctx && ctx.targetDir ? ctx.targetDir : path.join(HOME, '.codex');
+  fs.mkdirSync(codexDir, { recursive: true });
+  const installed = [];
+  const managed = [];
+  const skipped = [];
+
+  for (const profileName of Object.keys(CODEX_PROFILE_FILES)) {
+    const relPath = `${profileName}.config.toml`;
+    const targetPath = path.join(codexDir, relPath);
+    const content = renderCodexProfileFile(profileName);
+    let shouldWrite = true;
+
+    if (fs.existsSync(targetPath)) {
+      const raw = fs.readFileSync(targetPath, 'utf8');
+      if (!raw.includes(CODEX_PROFILE_MARKER)) {
+        skipped.push(relPath);
+        shouldWrite = false;
+      } else if (raw === content) {
+        shouldWrite = false;
+        managed.push(relPath);
+      }
+    }
+
+    if (!shouldWrite) continue;
+
+    try {
+      fs.writeFileSync(targetPath, content);
+      installed.push(relPath);
+      managed.push(relPath);
+    } catch (e) {
+      warn(`Codex profile 写入失败: ${relPath}: ${e.message}`);
+    }
+  }
+
+  if (ctx && ctx.manifest) {
+    for (const relPath of managed) {
+      markCodexInstalled(ctx, relPath);
+    }
+    if (managed.length > 0) flushCodexManifest(ctx);
+  }
+
+  if (installed.length > 0) ok(`Codex profiles → ${installed.join(', ')}`);
+  if (skipped.length > 0) info(`保留已有 Codex profile: ${skipped.join(', ')}`);
+  return { installed, managed, skipped };
 }
 
 function injectCodexMcp(content, abyssBinPath, eol) {
@@ -710,7 +774,7 @@ function reportAbyssIntegration({ cfgPath, HOME, withMcp, abyssBinPath, ok, info
   try {
     const r = injectCodexAbyssIntegration({ cfgPath, HOME, withMcp, abyssBinPath });
     if (r.installed.length > 0) ok(`abyss hooks → ${r.installed.join(', ')}`);
-    if (r.skipped.length > 0) info(`保留用户自有 hook，跳过: ${r.skipped.join(', ')}`);
+    if (r.skipped.length > 0) info(`检测到旧式扁平 hook，跳过同事件注入: ${r.skipped.join(', ')}`);
     if (r.mcpInstalled) ok('MCP → [mcp_servers.abyss]');
   } catch (e) {
     warn(`abyss 联动写入失败: ${e.message}`);
@@ -718,6 +782,7 @@ function reportAbyssIntegration({ cfgPath, HOME, withMcp, abyssBinPath, ok, info
 }
 
 async function postCodex({
+  ctx = null,
   autoYes,
   HOME,
   PKG_ROOT,
@@ -732,6 +797,7 @@ async function postCodex({
   const { confirm } = await import('@inquirer/prompts');
   const cfgPath = path.join(HOME, '.codex', 'config.toml');
   const exists = fs.existsSync(cfgPath);
+  trackCodexConfig(ctx, cfgPath);
 
   step(2, 3, '认证检测');
   const auth = detectCodexAuth({ HOME, warn });
@@ -749,12 +815,14 @@ async function postCodex({
       if (fs.existsSync(src)) {
         fs.copyFileSync(src, cfgPath);
         ok('写入: ~/.codex/config.toml (模板)');
-        info('默认值已对齐当前 Codex 样例；如需显式全权限，可切到 `codex -p full_access`');
+        info('默认值已对齐当前 Codex 样例；如需开放沙箱，可切到 `codex --profile full_access`');
       }
     } else {
       patchAndReportCodexDefaults({ cfgPath, ok, warn });
     }
+    ensureCodexProfileFiles({ HOME, ctx, ok, info, warn });
     reportAbyssIntegration({ cfgPath, HOME, withMcp, abyssBinPath, ok, info, warn });
+    flushCodexManifest(ctx);
     return;
   }
 
@@ -766,13 +834,15 @@ async function postCodex({
       if (fs.existsSync(src)) {
         fs.copyFileSync(src, cfgPath);
         ok('写入: ~/.codex/config.toml');
-        info('默认值已对齐当前 Codex 样例；如需显式全权限，可切到 `codex -p full_access`');
+        info('默认值已对齐当前 Codex 样例；如需开放沙箱，可切到 `codex --profile full_access`');
       }
     }
   } else {
     patchAndReportCodexDefaults({ cfgPath, ok, warn });
   }
+  ensureCodexProfileFiles({ HOME, ctx, ok, info, warn });
   reportAbyssIntegration({ cfgPath, HOME, withMcp, abyssBinPath, ok, info, warn });
+  flushCodexManifest(ctx);
 }
 
 module.exports = {
@@ -784,6 +854,7 @@ module.exports = {
   injectCodexHooks,
   injectCodexMcp,
   injectCodexAbyssIntegration,
+  ensureCodexProfileFiles,
   stripCodexAbyssIntegration,
   detectCodexAuth,
   getCodexCoreFiles,

@@ -205,11 +205,12 @@ async function installTargetFlow(targetName, installOptions = {}) {
   summarizeSelection({ targetName, persona, style, packPlan });
   const ctx = installCore(targetName, style, persona, packPlan);
   if (targetName === 'claude') await postClaude(ctx);
-  else if (targetName === 'codex') await postCodex();
+  else if (targetName === 'codex') await postCodex(ctx);
   else if (targetName === 'gemini') await postGemini(ctx);
   else await postOpenClaw(ctx);
   registerAbyssMcp(targetName, ctx);
   finish(ctx);
+  if (ctx.cleanupPreviousBackup) ctx.cleanupPreviousBackup();
 }
 
 // MCP 注册（--with-mcp 显式 opt-in；codex 在 postCodex 内随 config.toml 一并写）
@@ -372,8 +373,9 @@ async function postClaude(ctx) {
 
 // ── Codex 后续 ──
 
-async function postCodex() {
+async function postCodex(ctx) {
   await postCodexFlow({
+    ctx,
     autoYes,
     HOME,
     PKG_ROOT,

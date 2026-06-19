@@ -142,6 +142,43 @@ function createInstallCore(deps) {
     ok(`${relPath} ${c.d(`(动态生成: ${selectedStyle.slug})`)}`);
   }
 
+  function normalizeInstallEntry(entry, defaultRoot) {
+    if (typeof entry === 'string') return { root: defaultRoot, path: entry };
+    if (entry && typeof entry === 'object' && typeof entry.path === 'string') {
+      return { root: entry.root || defaultRoot, path: entry.path };
+    }
+    return null;
+  }
+
+  function manifestHasEntry(list, defaultRoot, rootName, relPath) {
+    return (list || []).some((entry) => {
+      const normalized = normalizeInstallEntry(entry, defaultRoot);
+      return normalized && normalized.root === rootName && normalized.path === relPath;
+    });
+  }
+
+  function readPreviousManifest(backupDir) {
+    const manifestFile = path.join(backupDir, 'manifest.json');
+    if (!fs.existsSync(manifestFile)) return null;
+    try {
+      return JSON.parse(fs.readFileSync(manifestFile, 'utf8'));
+    } catch {
+      return null;
+    }
+  }
+
+  function findPreviousBackup(previousInstall, rootName, relPath) {
+    if (!previousInstall) return null;
+    if (!manifestHasEntry(previousInstall.manifest.backups, previousInstall.defaultRoot, rootName, relPath)) {
+      return null;
+    }
+    const rooted = path.join(previousInstall.backupDir, rootName, relPath);
+    if (fs.existsSync(rooted)) return rooted;
+    const legacy = path.join(previousInstall.backupDir, relPath);
+    if (fs.existsSync(legacy)) return legacy;
+    return null;
+  }
+
   function installCore(tgt, selectedStyle, selectedPersona, packPlan) {
     const openClawRuntime = tgt === 'openclaw' ? resolveOpenClawRuntime({ HOME, warn }) : null;
     const runtimeRoots = openClawRuntime
@@ -158,6 +195,9 @@ function createInstallCore(deps) {
 
     const backupDir = path.join(targetDir, '.code-abyss-backup');
     const manifestPath = path.join(backupDir, 'manifest.json');
+    const previousBackupDir = fs.existsSync(backupDir)
+      ? `${backupDir}.previous-${process.pid}-${Date.now()}`
+      : null;
 
     const installSummary = tgt === 'codex'
       ? `${c.cyn(resolveManagedRootDir(tgt, 'codex', runtimeRoots))} + ${c.cyn(resolveManagedRootDir(tgt, 'agents', runtimeRoots))}`
@@ -165,7 +205,12 @@ function createInstallCore(deps) {
         ? `${c.cyn(targetDir)} + ${c.cyn(resolveManagedRootDir(tgt, 'openclaw-workspace', runtimeRoots))}`
         : c.cyn(targetDir);
     step(1, 3, `安装核心文件 → ${installSummary}`);
-    rmSafe(backupDir);
+    let previousManifest = null;
+    if (previousBackupDir) {
+      rmSafe(previousBackupDir);
+      fs.renameSync(backupDir, previousBackupDir);
+      previousManifest = readPreviousManifest(previousBackupDir);
+    }
     fs.mkdirSync(backupDir, { recursive: true });
 
     if (tgt === 'codex') {
@@ -188,6 +233,42 @@ function createInstallCore(deps) {
       optional_policy: packPlan.optionalPolicy || 'auto',
       pack_reports: [],
     };
+
+    const previousInstall = previousManifest
+      ? {
+        backupDir: previousBackupDir,
+        manifest: previousManifest,
+        defaultRoot: previousManifest.target || tgt,
+      }
+      : null;
+    const carriedBackups = new Set();
+    function backupBeforeReplace(rootName, relPath, targetPath, label) {
+      const key = `${rootName}\0${relPath}`;
+      if (carriedBackups.has(key)) return false;
+
+      const previousBackup = findPreviousBackup(previousInstall, rootName, relPath);
+      if (previousBackup) {
+        const backupPath = path.join(backupDir, rootName, relPath);
+        rmSafe(backupPath);
+        copyRecursive(previousBackup, backupPath);
+        pushManifestEntry(manifest.backups, rootName, relPath);
+        carriedBackups.add(key);
+        info(`保留原备份: ${c.d(label)}`);
+        return true;
+      }
+
+      const wasManaged = previousInstall
+        && manifestHasEntry(previousInstall.manifest.installed, previousInstall.defaultRoot, rootName, relPath);
+      if (wasManaged || !fs.existsSync(targetPath)) return false;
+
+      const backupPath = path.join(backupDir, rootName, relPath);
+      rmSafe(backupPath);
+      copyRecursive(targetPath, backupPath);
+      pushManifestEntry(manifest.backups, rootName, relPath);
+      carriedBackups.add(key);
+      info(`备份: ${c.d(label)}`);
+      return true;
+    }
 
     filesToInstall.forEach(({ src, dest, root }) => {
       const rootName = root || tgt;
@@ -225,13 +306,7 @@ function createInstallCore(deps) {
           const childRel = path.posix.join(dest, child);
           const childLabel = rootName === tgt ? childRel : `${rootName}/${childRel}`;
 
-          if (fs.existsSync(childDest)) {
-            const backupPath = path.join(backupDir, rootName, childRel);
-            rmSafe(backupPath);
-            copyRecursive(childDest, backupPath);
-            pushManifestEntry(manifest.backups, rootName, childRel);
-            info(`备份: ${c.d(childLabel)}`);
-          }
+          backupBeforeReplace(rootName, childRel, childDest, childLabel);
           ok(childLabel);
           rmSafe(childDest);
           copyRecursive(childSrc, childDest);
@@ -241,14 +316,9 @@ function createInstallCore(deps) {
       }
 
       // 文件类条目保持原行为：整体备份 + 替换
-      if (fs.existsSync(destPath)) {
-        const backupPath = path.join(backupDir, rootName, dest);
-        rmSafe(backupPath);
-        copyRecursive(destPath, backupPath);
-        pushManifestEntry(manifest.backups, rootName, dest);
-        info(`备份: ${c.d(rootName === tgt ? dest : `${rootName}/${dest}`)}`);
-      }
-      ok(rootName === tgt ? dest : `${rootName}/${dest}`);
+      const fileLabel = rootName === tgt ? dest : `${rootName}/${dest}`;
+      backupBeforeReplace(rootName, dest, destPath, fileLabel);
+      ok(fileLabel);
       rmSafe(destPath);
       copyRecursive(srcPath, destPath);
       pushManifestEntry(manifest.installed, rootName, dest);
@@ -423,6 +493,7 @@ function createInstallCore(deps) {
       if (tgt === 'claude') {
         const claudeMdPath = path.join(targetDir, 'CLAUDE.md');
         const guidance = renderGeminiContext(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
+        backupBeforeReplace('claude', 'CLAUDE.md', claudeMdPath, 'CLAUDE.md');
         fs.writeFileSync(claudeMdPath, guidance);
         pushManifestEntry(manifest.installed, 'claude', 'CLAUDE.md');
         ok(`人格（心）→ ${c.mag(selectedPersona.label)} (${selectedPersona.slug})`);
@@ -435,6 +506,7 @@ function createInstallCore(deps) {
       } else if (tgt === 'codex') {
         const instructionMdPath = path.join(targetDir, 'instruction.md');
         const guidance = renderCodexAgents(PKG_ROOT, selectedStyle.slug, selectedPersona.slug);
+        backupBeforeReplace('codex', 'instruction.md', instructionMdPath, 'instruction.md');
         fs.writeFileSync(instructionMdPath, guidance);
         pushManifestEntry(manifest.installed, 'codex', 'instruction.md');
         ok(`人格（心）→ ${c.mag(selectedPersona.label)} (${selectedPersona.slug})`);
@@ -447,8 +519,19 @@ function createInstallCore(deps) {
     const uSrc = path.join(PKG_ROOT, 'bin', 'uninstall.js');
     const uDest = path.join(targetDir, '.code-abyss-uninstall.js');
     if (fs.existsSync(uSrc)) { fs.copyFileSync(uSrc, uDest); fs.chmodSync(uDest, '755'); }
-
-    return { targetDir, settingsPath, settings, manifest, manifestPath, packPlan };
+    return {
+      targetDir,
+      settingsPath,
+      settings,
+      manifest,
+      manifestPath,
+      packPlan,
+      backupDir,
+      backupManagedPath: backupBeforeReplace,
+      cleanupPreviousBackup: () => {
+        if (previousBackupDir) rmSafe(previousBackupDir);
+      },
+    };
   }
 
   return {

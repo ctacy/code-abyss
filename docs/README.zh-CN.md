@@ -124,7 +124,7 @@ cargo binstall code-abyss        # 或：cargo install code-abyss
 | 平台 | Hook 事件 | 效果 |
 |---|---|---|
 | Claude Code | `PreToolUse`(Edit\|Write) | 编辑前自动检查调用方 |
-| Codex CLI | `PreToolUse`(Bash\|shell) | 编辑前自动检查调用方 |
+| Codex CLI | `PreToolUse`(Bash\|shell\|apply_patch\|Edit\|Write) | 编辑前自动检查调用方 |
 | Gemini CLI | `BeforeTool`(write_file\|replace) | 编辑前自动检查调用方 |
 | OpenClaw | `before_tool_call` plugin | 编辑前自动检查调用方 |
 

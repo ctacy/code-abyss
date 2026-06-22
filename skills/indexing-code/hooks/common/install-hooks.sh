@@ -81,7 +81,7 @@ timeout = 10
 statusMessage = "abyss: checking index"
 
 [[hooks.PreToolUse]]
-matcher = "Bash|shell"
+matcher = "Bash|shell|apply_patch|Edit|Write"
 
 [[hooks.PreToolUse.hooks]]
 type = "command"

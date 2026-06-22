@@ -1,4 +1,4 @@
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_provider = "openai"
 model_reasoning_effort = "medium"
 model_reasoning_summary = "auto"
@@ -10,16 +10,6 @@ cli_auth_credentials_store = "file"
 model_instructions_file = "./instruction.md"
 project_doc_max_bytes = 32768
 web_search = "cached"
-
-[profiles.full_auto]
-approval_policy = "on-request"
-sandbox_mode = "workspace-write"
-web_search = "cached"
-
-[profiles.full_access]
-approval_policy = "on-request"
-sandbox_mode = "danger-full-access"
-web_search = "live"
 
 [agents]
 max_threads = 6

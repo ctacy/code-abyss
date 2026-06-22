@@ -1,7 +1,5 @@
 <!-- Code Abyss · README -->
 
-> **🔱 Fork Notice**: This is an independent fork maintained by [ctacy](https://github.com/ctacy), published to npm as [`code-abyss-sc`](https://www.npmjs.com/package/code-abyss-sc). Original project: [telagod/code-abyss](https://github.com/telagod/code-abyss).
-
 <p align="center">
   <a href="https://telagod.github.io/code-abyss/">
     <img src="https://raw.githubusercontent.com/telagod/code-abyss/main/assets/banner.svg" alt="Code Abyss — Personality, depth, and a security spine" width="100%">
@@ -11,9 +9,8 @@
 <h3 align="center">Composable persona · style · 30 engineering skills · 4 native security domains · self-evolution forge · code graph intelligence<br/>for Claude Code · Codex CLI · Gemini CLI · OpenClaw</h3>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/code-abyss-sc"><img src="https://img.shields.io/npm/v/code-abyss-sc?color=9b8cff&label=npm%20(fork)&style=flat-square" alt="npm"></a>
-  <a href="https://www.npmjs.com/package/code-abyss"><img src="https://img.shields.io/npm/v/code-abyss?color=cccccc&label=npm%20(upstream)&style=flat-square" alt="npm upstream"></a>
-  <a href="https://github.com/ctacy/code-abyss/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/ctacy/code-abyss/ci.yml?branch=main&label=CI&style=flat-square" alt="CI"></a>
+  <a href="https://www.npmjs.com/package/code-abyss"><img src="https://img.shields.io/npm/v/code-abyss?color=9b8cff&label=npm&style=flat-square" alt="npm"></a>
+  <a href="https://github.com/telagod/code-abyss/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/telagod/code-abyss/ci.yml?branch=main&label=CI&style=flat-square" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-c4b8ff?style=flat-square" alt="MIT"></a>
   <a href="https://telagod.github.io/code-abyss/"><img src="https://img.shields.io/badge/site-pages-9b8cff?style=flat-square" alt="Site"></a>
 </p>
@@ -63,15 +60,9 @@ Pick any persona. Pair it with any style. The behavior layer (iron laws, executi
 - **v4.5 — dynamic persona loading**: only `abyss` ships with npm — all other personas are fetched from GitHub on first use and cached locally, slimming the package
 - **v4.6 — code graph intelligence**: `abyss` CLI builds a code relationship graph (call graph + temporal analysis) in seconds — caller tracing, impact analysis, hotspot detection, change coupling. Pre-edit hooks auto-check callers across all 4 platforms
 - **v4.7 — measured resolution**: `abyss` v0.3.3 ships four-language reference resolution (Go / TypeScript / Python / Rust), benchmarked against SCIP ground truth across five corpora at ≥98.5% gated precision. Named-import binding tiers, receiver-type inference, and type-grade evidence — published numbers, not claims. `npm install -g @code-abyss/cli`
-
-### Installation (Fork Version)
+- **v4.8 — dynamic capability discovery**: code-abyss reads `abyss skill-manifest` when the installed `abyss` is ≥ 0.5.22 — exposed CLI commands, MCP tools, and daemon socket verbs are now discovered at install time instead of hard-coded. `MIN_ABYSS_VERSION` bumped 0.3.0 → 0.5.20 (the 0.5.x line dogfooded across hono / helix / vite / FastAPI / Django / SQLAlchemy). Hand-coded fallbacks are preserved, so older `abyss` installs keep working unchanged.
 
 ```bash
-```bash
-# Install from this fork
-npx code-abyss-sc -t claude -y
-
-# Or install the original upstream version
 npx code-abyss -t claude -y --with-abyss
 ```
 
@@ -80,8 +71,6 @@ npx code-abyss -t claude -y --with-abyss
 ```bash
 claude plugin install code-abyss
 ```
-
-Note: This fork is published as `code-abyss-sc` on npm. The original package `code-abyss` is maintained by [telagod](https://github.com/telagod).
 
 > Plain `-y` (no `--with-abyss`) installs only the persona/skills/style layer and skips the network — code-graph hooks stay dormant until `abyss` is on `PATH`. Interactive runs (drop the `-y`) prompt before downloading. Verify code-graph is live with `abyss --version`, then `abyss index` in any project.
 

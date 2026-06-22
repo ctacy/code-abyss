@@ -124,7 +124,7 @@ bash skills/indexing-code/hooks/common/install-hooks.sh auto
 | 平台 | Hook 事件 | 配置位置 |
 |------|----------|---------|
 | Claude Code | `PreToolUse`(Edit\|Write) | `.claude/settings.json` |
-| Codex CLI | `PreToolUse`(Bash\|shell) | `~/.codex/config.toml` |
+| Codex CLI | `PreToolUse`(Bash\|shell\|apply_patch\|Edit\|Write) | `~/.codex/config.toml` |
 | Gemini CLI | `BeforeTool`(write_file\|replace) | `~/.gemini/settings.json` |
 | Pi Agent | `tool_call`(edit_file\|write_file) | `~/.pi/agent/settings.json` |
 | Hermes | `pre_tool_call` | `~/.hermes/config.yaml` 或 plugin |

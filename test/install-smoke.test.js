@@ -132,12 +132,13 @@ describe('codex install smoke', () => {
     expect(fs.existsSync(path.join(codexDir, 'skills'))).toBe(true);
     expect(fs.existsSync(path.join(codexDir, 'bin', 'lib'))).toBe(true);
     expect(fs.existsSync(path.join(codexDir, 'config.toml'))).toBe(true);
+    expect(fs.existsSync(path.join(codexDir, 'full_auto.config.toml'))).toBe(true);
+    expect(fs.existsSync(path.join(codexDir, 'full_access.config.toml'))).toBe(true);
     expect(fs.existsSync(path.join(codexDir, 'settings.json'))).toBe(false);
     expect(fs.existsSync(path.join(codexDir, 'prompts'))).toBe(false);
+    expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).not.toContain('[profiles.full_');
     const instructionMd = fs.readFileSync(path.join(codexDir, 'instruction.md'), 'utf8');
     expect(instructionMd).toContain('宿命深渊');
-    expect(instructionMd).toContain('响应语言：简体中文（zh-CN）');
-    expect(instructionMd).toContain('AI Accept <YYYY-MM-DD> <分支名称> v<版本号>');
   });
 
   test('安装 Codex 时会清理旧 prompts 残留', () => {
@@ -178,9 +179,45 @@ describe('codex install smoke', () => {
     expect(uninstall.status).toBe(0);
     expect(fs.readFileSync(path.join(codexDir, 'settings.json'), 'utf8')).toContain('legacy');
     expect(fs.existsSync(path.join(codexDir, 'skills'))).toBe(false);
+    expect(fs.existsSync(path.join(codexDir, 'config.toml'))).toBe(false);
+    expect(fs.existsSync(path.join(codexDir, 'full_auto.config.toml'))).toBe(false);
+    expect(fs.existsSync(path.join(codexDir, 'full_access.config.toml'))).toBe(false);
+  });
+
+  test('Codex 重装后卸载不恢复上一轮 code-abyss 管理文件', () => {
+    const first = runInstall(['--target', 'codex', '-y']);
+    expect(first.status).toBe(0);
+
+    const second = runInstall(['--target', 'codex', '-y']);
+    expect(second.status).toBe(0);
+
+    const codexDir = path.join(tmpHome, '.codex');
+    const uninstall = runInstall(['--uninstall', 'codex']);
+    expect(uninstall.status).toBe(0);
+
+    expect(fs.existsSync(path.join(codexDir, 'skills'))).toBe(false);
+    expect(fs.existsSync(path.join(codexDir, 'bin'))).toBe(false);
+    expect(fs.existsSync(path.join(codexDir, 'config.toml'))).toBe(false);
+    expect(fs.existsSync(path.join(codexDir, 'instruction.md'))).toBe(false);
+    expect(fs.existsSync(path.join(codexDir, 'full_auto.config.toml'))).toBe(false);
+    expect(fs.existsSync(path.join(codexDir, 'full_access.config.toml'))).toBe(false);
+  });
+
+  test('Codex 卸载会恢复用户原有 config.toml', () => {
+    const codexDir = path.join(tmpHome, '.codex');
+    fs.mkdirSync(codexDir, { recursive: true });
+    const original = ['model = "custom-model"', 'model_provider = "custom"', '', '[projects."/tmp/demo"]', 'trust_level = "trusted"', ''].join('\n');
+    fs.writeFileSync(path.join(codexDir, 'config.toml'), original);
+
+    const install = runInstall(['--target', 'codex', '-y']);
+    expect(install.status).toBe(0);
+    expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).toContain('[[hooks.PreToolUse]]');
+
+    const uninstall = runInstall(['--uninstall', 'codex']);
+    expect(uninstall.status).toBe(0);
+    expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).toBe(original);
   });
 });
-
 
 describe('gemini install smoke', () => {
   let tmpHome;

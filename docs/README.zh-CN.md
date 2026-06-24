@@ -119,16 +119,24 @@ npm install -g @code-abyss/cli   # 预编译二进制，全平台
 cargo binstall code-abyss        # 或：cargo install code-abyss
 ```
 
-### 跨平台 hooks
+### 跨平台 hooks（**opt-in**，默认关）
+
+默认走 `indexing-code` skill 被动调用——模型按需触发，最干净。需要每次编辑前 abyss 自动卡一道，再加 `--with-hooks`：
+
+```sh
+npx code-abyss --target claude -y --with-hooks
+```
+
+不带 `--with-hooks` 重装会**剥光**旧标记条目（按 marker 精准定位，用户自有 hook 不动）。
 
 | 平台 | Hook 事件 | 效果 |
 |---|---|---|
-| Claude Code | `PreToolUse`(Edit\|Write) | 编辑前自动检查调用方 |
-| Codex CLI | `PreToolUse`(Bash\|shell\|apply_patch\|Edit\|Write) | 编辑前自动检查调用方 |
-| Gemini CLI | `BeforeTool`(write_file\|replace) | 编辑前自动检查调用方 |
-| OpenClaw | `before_tool_call` plugin | 编辑前自动检查调用方 |
+| Claude Code | `SessionStart` + `PreToolUse`(Edit\|Write) | 进入会话索引、编辑前查调用方 |
+| Codex CLI | `SessionStart` + `PreToolUse`(Bash\|shell\|apply_patch\|Edit\|Write) | 同上 |
+| Gemini CLI | `SessionStart` + `BeforeTool`(write_file\|replace\|edit_file) | 同上 |
+| OpenClaw | `before_tool_call` plugin | 编辑前查调用方 |
 
-一键安装：`bash skills/indexing-code/hooks/common/install-hooks.sh auto`
+不走安装器、手动装：`bash skills/indexing-code/hooks/common/install-hooks.sh auto`
 
 ---
 

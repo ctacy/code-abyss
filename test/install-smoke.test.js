@@ -209,13 +209,25 @@ describe('codex install smoke', () => {
     const original = ['model = "custom-model"', 'model_provider = "custom"', '', '[projects."/tmp/demo"]', 'trust_level = "trusted"', ''].join('\n');
     fs.writeFileSync(path.join(codexDir, 'config.toml'), original);
 
-    const install = runInstall(['--target', 'codex', '-y']);
+    const install = runInstall(['--target', 'codex', '-y', '--with-hooks']);
     expect(install.status).toBe(0);
     expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).toContain('[[hooks.PreToolUse]]');
 
     const uninstall = runInstall(['--uninstall', 'codex']);
     expect(uninstall.status).toBe(0);
     expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).toBe(original);
+  });
+
+  test('默认 install 不再注入 hooks（要 --with-hooks 显式 opt-in）', () => {
+    const codexDir = path.join(tmpHome, '.codex');
+    fs.mkdirSync(codexDir, { recursive: true });
+    const original = ['model = "custom-model"', ''].join('\n');
+    fs.writeFileSync(path.join(codexDir, 'config.toml'), original);
+
+    const install = runInstall(['--target', 'codex', '-y']);
+    expect(install.status).toBe(0);
+    expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).not.toContain('[[hooks.PreToolUse]]');
+    expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).not.toContain('[[hooks.SessionStart]]');
   });
 });
 

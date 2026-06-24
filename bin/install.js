@@ -203,7 +203,7 @@ async function installTargetFlow(targetName, installOptions = {}) {
   const style = installOptions.style || await resolveInstallStyle(targetName);
   const packPlan = await resolveProjectPackPlan(targetName);
   summarizeSelection({ targetName, persona, style, packPlan });
-  const ctx = installCore(targetName, style, persona, packPlan);
+  const ctx = installCore(targetName, style, persona, packPlan, { withHooks });
   if (targetName === 'claude') await postClaude(ctx);
   else if (targetName === 'codex') await postCodex(ctx);
   else if (targetName === 'gemini') await postGemini(ctx);
@@ -268,6 +268,7 @@ let requestedStyleSlug = null;
 let requestedPersonaSlug = null;
 let withAbyss = false;
 let withMcp = false;
+let withHooks = false;
 
 for (let i = 0; i < args.length; i++) {
   if ((args[i] === '--target' || args[i] === '-t') && args[i + 1]) { target = args[++i]; }
@@ -278,6 +279,7 @@ for (let i = 0; i < args.length; i++) {
   else if (args[i] === '--list-personas') { listPersonasOnly = true; }
   else if (args[i] === '--with-abyss') { withAbyss = true; }
   else if (args[i] === '--with-mcp') { withMcp = true; }
+  else if (args[i] === '--with-hooks') { withHooks = true; }
   else if (args[i] === '--yes' || args[i] === '-y') { autoYes = true; }
   else if (args[i] === '--help' || args[i] === '-h') {
     banner();
@@ -285,8 +287,9 @@ for (let i = 0; i < args.length; i++) {
 `);
     console.log(`  ${c.cyn('--target, -t')} <${formatTargetList('|')}>   install one target`);
     console.log(`  ${c.cyn('--uninstall, -u')} <${formatTargetList('|')}>   remove one target`);
-    console.log(`  ${c.cyn('--with-abyss')}   download abyss binary to ~/.code-abyss/bin (code graph hooks)`);
+    console.log(`  ${c.cyn('--with-abyss')}   download abyss binary to ~/.code-abyss/bin (code graph index)`);
     console.log(`  ${c.cyn('--with-mcp')}     register abyss MCP server (claude/codex/gemini)`);
+    console.log(`  ${c.cyn('--with-hooks')}   inject SessionStart + Edit/Write hooks (opt-in; off by default)`);
     console.log(`  ${c.cyn('--style')} <slug>  ${c.cyn('--persona')} <slug>  ${c.cyn('-y')}
 `);
     console.log(`${c.b('Examples')}`);
@@ -385,6 +388,7 @@ async function postCodex(ctx) {
     info,
     c,
     withMcp,
+    withHooks,
     abyssBinPath: abyssState ? abyssState.binPath : null,
   });
 }

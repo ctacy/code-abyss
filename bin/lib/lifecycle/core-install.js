@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { installGstackPack } = require('../gstack/installer');
-const { injectClaudeHooks, injectGeminiHooks } = require('../abyss-integration');
+const { injectClaudeHooks, injectGeminiHooks, stripAbyssHooks } = require('../abyss-integration');
 
 function createInstallCore(deps) {
   const {
@@ -179,7 +179,8 @@ function createInstallCore(deps) {
     return null;
   }
 
-  function installCore(tgt, selectedStyle, selectedPersona, packPlan) {
+  function installCore(tgt, selectedStyle, selectedPersona, packPlan, opts = {}) {
+    const withHooks = opts.withHooks === true;
     const openClawRuntime = tgt === 'openclaw' ? resolveOpenClawRuntime({ HOME, warn }) : null;
     const runtimeRoots = openClawRuntime
       ? {
@@ -462,9 +463,14 @@ function createInstallCore(deps) {
       }
       settings.outputStyle = selectedStyle.slug;
       ok(`outputStyle = ${c.mag(selectedStyle.slug)}`);
-      // abyss 代码图谱 hook：指向安装后的 skill 路径，幂等注入（脚本自带存在性守卫）
-      injectClaudeHooks(settings, targetDir);
-      ok(`abyss hooks → ${c.d('SessionStart + PreToolUse(Edit|Write)')}`);
+      // abyss 代码图谱 hook：opt-in（--with-hooks）。不带旗子时剥光旧标记条目，
+      // 让重装等价于「按当前声明状态收敛」，不留 stale 路径冒 bash 127。
+      if (withHooks) {
+        injectClaudeHooks(settings, targetDir);
+        ok(`abyss hooks → ${c.d('SessionStart + PreToolUse(Edit|Write)')}`);
+      } else if (stripAbyssHooks(settings)) {
+        info('abyss hooks → 已剥除旧条目（未带 --with-hooks）');
+      }
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
       pushManifestEntry(manifest.installed, 'claude', 'settings.json');
     } else if (tgt === 'gemini') {
@@ -480,9 +486,13 @@ function createInstallCore(deps) {
         fs.copyFileSync(settingsPath, path.join(backupDir, 'gemini', 'settings.json'));
         pushManifestEntry(manifest.backups, 'gemini', 'settings.json');
       }
-      // abyss 代码图谱 hook：与 claude 同源逻辑，事件名按 Gemini 形状（BeforeTool）
-      injectGeminiHooks(settings, targetDir);
-      ok(`abyss hooks → ${c.d('SessionStart + BeforeTool(write_file|replace|edit_file)')}`);
+      // abyss 代码图谱 hook：opt-in（--with-hooks）。事件名按 Gemini 形状（BeforeTool）。
+      if (withHooks) {
+        injectGeminiHooks(settings, targetDir);
+        ok(`abyss hooks → ${c.d('SessionStart + BeforeTool(write_file|replace|edit_file)')}`);
+      } else if (stripAbyssHooks(settings)) {
+        info('abyss hooks → 已剥除旧条目（未带 --with-hooks）');
+      }
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
       pushManifestEntry(manifest.installed, 'gemini', 'settings.json');
     } else {

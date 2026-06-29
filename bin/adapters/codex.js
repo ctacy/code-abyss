@@ -432,6 +432,16 @@ function patchAndReportCodexDefaults({ cfgPath, ok, warn }) {
 //   [[hooks.PreToolUse]]   matcher  +  [[hooks.PreToolUse.hooks]]   type/command/timeout
 //   旧扁平 [hooks.X] 已被 Codex 拒载（invalid type: map, expected a sequence）
 // MCP: [mcp_servers.abyss] command/args —— 节名是我方命名空间，可自由 upsert。
+//
+// ── v4.9.0 hybrid-切割 deprecation 期（2026-06-25 起）──
+//
+// `abyss attach codex` (abyss CLI v0.5.20+) 是 codex hook 注入的 production 主入口
+// （shape 与本文件 1:1 一致，2026-06-18 abyss v0.5.23 已对齐 ground truth）。下方
+// `injectCodexHooks` / `splitTomlBlocks` / `gatherHookGroup` / `renderCodexHookBlock`
+// / `stripCodexAbyssIntegration` (~256 行) 与常量 `ABYSS_HOOK_MARKER` 在 v4.9 保留
+// 行为以维持 `--with-hooks` flag 兼容；install.js 触发时打印 deprecation warning
+// 引导用户改用 `abyss attach codex`。v5.0 物理删除上述函数与常量。MCP 注册
+// (mcp_servers.abyss) 仍是 code-abyss 责任，不在切割范围。
 
 const ABYSS_HOOK_MARKER = 'indexing-code/hooks/common';
 
@@ -501,6 +511,8 @@ function renderCodexHookBlock(ev, dir, winBash, eol) {
 function injectCodexHooks(content, hookDir, eol, opts = {}) {
   const dir = tomlPath(hookDir);
   const winBash = opts.winBash || null;
+  // stripOnly=true: 只剥旧条目，不渲染新块（用于 --with-hooks 不带的重装收敛）
+  const stripOnly = opts.stripOnly === true;
   const events = [
     { name: 'SessionStart', matcher: 'startup|resume', script: 'session-init.sh', timeout: 10, statusMessage: 'abyss: checking index' },
     { name: 'PreToolUse', matcher: 'Bash|shell|apply_patch|Edit|Write', script: 'pre-edit-check.sh', timeout: 5, statusMessage: 'abyss: checking callers' },
@@ -531,17 +543,19 @@ function injectCodexHooks(content, hookDir, eol, opts = {}) {
     i++;
   }
 
-  // 2. 为非用户占位的事件追加新块
+  // 2. 为非用户占位的事件追加新块（stripOnly 模式下跳过 fresh 渲染，仅完成剥离）
   const installed = [];
   const skipped = [];
   const fresh = [];
-  for (const ev of events) {
-    if (flatUserOwned.has(ev.name)) {
-      skipped.push(`hooks.${ev.name}`);
-      continue;
+  if (!stripOnly) {
+    for (const ev of events) {
+      if (flatUserOwned.has(ev.name)) {
+        skipped.push(`hooks.${ev.name}`);
+        continue;
+      }
+      fresh.push(renderCodexHookBlock(ev, dir, winBash, eol));
+      installed.push(`hooks.${ev.name}`);
     }
-    fresh.push(renderCodexHookBlock(ev, dir, winBash, eol));
-    installed.push(`hooks.${ev.name}`);
   }
 
   let merged = kept.join(eol);
@@ -704,12 +718,16 @@ function resolveWindowsBash(platform = process.platform, env = process.env) {
   return null;
 }
 
-function injectCodexAbyssIntegration({ cfgPath, HOME, withMcp = false, abyssBinPath = null }) {
+function injectCodexAbyssIntegration({ cfgPath, HOME, withMcp = false, withHooks = false, abyssBinPath = null }) {
   const raw = fs.existsSync(cfgPath) ? fs.readFileSync(cfgPath, 'utf8') : '';
   const eol = raw.includes('\r\n') ? '\r\n' : '\n';
   const hookDir = path.join(HOME, '.codex', 'skills', 'indexing-code', 'hooks', 'common');
 
-  const hooks = injectCodexHooks(raw, hookDir, eol, { winBash: resolveWindowsBash() });
+  // withHooks=false 时 stripOnly=true：剥旧条目但不种新的，让重装等价于收敛声明状态
+  const hooks = injectCodexHooks(raw, hookDir, eol, {
+    winBash: resolveWindowsBash(),
+    stripOnly: !withHooks,
+  });
   let merged = hooks.merged;
   let mcpInstalled = false;
   if (withMcp) {
@@ -770,9 +788,9 @@ function cleanupLegacyCodexRuntime({
   return removed;
 }
 
-function reportAbyssIntegration({ cfgPath, HOME, withMcp, abyssBinPath, ok, info, warn }) {
+function reportAbyssIntegration({ cfgPath, HOME, withMcp, withHooks = false, abyssBinPath, ok, info, warn }) {
   try {
-    const r = injectCodexAbyssIntegration({ cfgPath, HOME, withMcp, abyssBinPath });
+    const r = injectCodexAbyssIntegration({ cfgPath, HOME, withMcp, withHooks, abyssBinPath });
     if (r.installed.length > 0) ok(`abyss hooks → ${r.installed.join(', ')}`);
     if (r.skipped.length > 0) info(`检测到旧式扁平 hook，跳过同事件注入: ${r.skipped.join(', ')}`);
     if (r.mcpInstalled) ok('MCP → [mcp_servers.abyss]');
@@ -792,6 +810,7 @@ async function postCodex({
   info,
   c,
   withMcp = false,
+  withHooks = false,
   abyssBinPath = null
 }) {
   const { confirm } = await import('@inquirer/prompts');
@@ -821,7 +840,7 @@ async function postCodex({
       patchAndReportCodexDefaults({ cfgPath, ok, warn });
     }
     ensureCodexProfileFiles({ HOME, ctx, ok, info, warn });
-    reportAbyssIntegration({ cfgPath, HOME, withMcp, abyssBinPath, ok, info, warn });
+    reportAbyssIntegration({ cfgPath, HOME, withMcp, withHooks, abyssBinPath, ok, info, warn });
     flushCodexManifest(ctx);
     return;
   }
@@ -841,7 +860,7 @@ async function postCodex({
     patchAndReportCodexDefaults({ cfgPath, ok, warn });
   }
   ensureCodexProfileFiles({ HOME, ctx, ok, info, warn });
-  reportAbyssIntegration({ cfgPath, HOME, withMcp, abyssBinPath, ok, info, warn });
+  reportAbyssIntegration({ cfgPath, HOME, withMcp, withHooks, abyssBinPath, ok, info, warn });
   flushCodexManifest(ctx);
 }
 

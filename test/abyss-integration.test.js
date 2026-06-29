@@ -305,10 +305,11 @@ describe('abyss-binary 资产解析', () => {
   });
 
   test('URL：latest 与钉版两种形态', () => {
+    const ext = process.platform === 'win32' ? '.zip' : '.tar.gz';
     expect(releaseUrl('x86_64-unknown-linux-gnu', null))
-      .toBe('https://github.com/telagod/abyss/releases/latest/download/abyss-x86_64-unknown-linux-gnu.tar.gz');
+      .toBe(`https://github.com/telagod/abyss/releases/latest/download/abyss-x86_64-unknown-linux-gnu${ext}`);
     expect(releaseUrl('x86_64-unknown-linux-gnu', '0.3.1'))
-      .toBe('https://github.com/telagod/abyss/releases/download/v0.3.1/abyss-x86_64-unknown-linux-gnu.tar.gz');
+      .toBe(`https://github.com/telagod/abyss/releases/download/v0.3.1/abyss-x86_64-unknown-linux-gnu${ext}`);
   });
 });
 

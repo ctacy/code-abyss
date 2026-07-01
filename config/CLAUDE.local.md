@@ -7,6 +7,23 @@
 
 ---
 
+## 零、环境配置读取（每次请求前置）
+
+每次响应用户请求之前，必须先检查并读取以下配置文件（按优先级从低到高，后者覆盖前者）：
+
+1. `~/.claude/settings.json`（用户级全局配置）
+2. `.claude/settings.json`（项目级 Claude 配置）
+3. `.claude/settings.local.json`（项目本地覆盖，最高优先级，不提交到 Git）
+
+**读取规则**：
+
+- 三个路径均可选，不存在则跳过，不报错。
+- 存在多个时，以 `~/.claude/settings.json` < `.claude/settings.json` < `.claude/settings.local.json` 的顺序深度合并，`.claude/settings.local.json` 优先级最高。
+- 读取结果作为本次会话的环境变量上下文，影响后续工具调用、路径解析、模型参数等行为。
+- 若任一文件读取失败（权限、格式错误），标记 `[unverified]` 并继续，不中断请求。
+
+---
+
 ## 一、语言设置
 
 - 响应语言：简体中文（zh-CN）

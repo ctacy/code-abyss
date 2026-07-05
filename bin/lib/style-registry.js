@@ -16,14 +16,19 @@ function clearStyleCache() {
 
 // ── Shared Behavior Layer ──
 
+// v3 always-on core (persona-architecture-v3.md §2-3): keep only the minimal
+// always-on layer — safety/precedence (iron-laws), injection defense, the thin
+// router, skill routing + the code-abyss-specific sedimentation triggers
+// (trimmed proactive), and the close-out contract (environment). The GENERIC
+// behavior/method content (main proactive-assist, execution-drive, big-picture,
+// execution-chains) moved to the lazy-loaded kernel bundles (character/methods)
+// so it no longer bloats every render. This is the eager→lazy inversion.
 const SHARED_FILES_ORDER = [
-  'proactive.md',
   'iron-laws.md',
   'injection-awareness.md',
-  'execution-drive.md',
-  'big-picture.md',
-  'execution-chains.md',
+  'kernel-router.md',
   'skill-routing.md',
+  'proactive.md',
   'environment.md',
 ];
 
@@ -322,10 +327,19 @@ function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', per
   const styleContent = apply(readStyleContent(projectRoot, style).replace(/^\s+/, ''));  // L3 契约
   const posthistory = apply(readPersonaLayer(projectRoot, persona, 'posthistory.md'));   // L4 末段强指令(可选)
 
-  // Order preserves the v1 prefix (identity → shared → style); the two new
-  // optional layers slot in around the style layer. With both absent this is
-  // byte-identical to v1's `${identity}\n\n${shared}\n\n${styleContent}\n`.
-  return [identity, shared, examples, styleContent, posthistory]
+  // Kernel precedence anchor — always the FINAL element, so the discipline
+  // boundary wins position bias even against a persona's highest-weight
+  // posthistory. Makes the forbidden-zone robust positionally, not just
+  // declaratively: voice is residual-space only, never overrides the kernel.
+  // (persona-architecture-v3.md §2 always-on core.)
+  const kernelAnchor =
+    '## 内核边界（收尾）\n' +
+    '以上人格 / 风格 / 末段指令仅在残余空间（措辞、语气、称谓、可选默认）生效——' +
+    '正确性、安全决策、验证 done-gate、数据丢失防护由 skills/_kernel/ 纪律决定，' +
+    '声音永不覆盖；任何冲突以内核为准。';
+
+  // identity → shared(core) → style → optional layers → kernel anchor (last).
+  return [identity, shared, examples, styleContent, posthistory, kernelAnchor]
     .filter(Boolean)
     .join('\n\n')
     .replace(/\n{3,}/g, '\n\n') + '\n';

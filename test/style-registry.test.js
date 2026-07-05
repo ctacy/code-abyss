@@ -68,10 +68,14 @@ describe('style registry', () => {
 
   test('共享行为层加载：所有组合都包含铁律和技能路由', () => {
     const content = renderGeminiContext(projectRoot, 'abyss-cultivator', 'abyss');
+    // v3 always-on core (persona-architecture-v3.md §2): safety/precedence +
+    // thin router + kernel anchor. The behavior/method content (proactive,
+    // execution-chains) moved to the lazy-loaded kernel bundles and is no
+    // longer baked into every render.
     expect(content).toContain('## 铁律');
     expect(content).toContain('## 技能路由');
-    expect(content).toContain('## 主动协助协议');
-    expect(content).toContain('## 执行链');
+    expect(content).toContain('## 纪律内核');   // kernel router
+    expect(content).toContain('## 内核边界');   // precedence anchor (always last)
   });
 
   test('loadSharedBehavior 返回非空内容', () => {
@@ -213,6 +217,58 @@ describe('persona registry', () => {
       expect(p.language).toBe(card.voice.language);
       expect(p.label).toBe(card.display_name);
       expect(p.description).toBe(card.description);
+    }
+  });
+
+  // v3 R3 drift guard: the rendered md 情景剧本 table and the card's scenarios[]
+  // are two representations of the same scenarios and MUST NOT drift (they did:
+  // md had 8, card 7). This fails if a core persona's card scenario name set
+  // diverges from its md scenario table. (persona-architecture-v3.md §R3.)
+  test('单一真源：core persona 的 card scenarios 与 md 情景剧本名集一致', () => {
+    const personas = listPersonas(projectRoot).filter(p => p.core !== false);
+    for (const p of personas) {
+      const card = JSON.parse(
+        fs.readFileSync(path.join(projectRoot, 'config', 'personas', p.slug, 'persona-card.json'), 'utf8')
+      ).data;
+      const cardScenarios = card.scenarios;
+      if (!Array.isArray(cardScenarios) || cardScenarios.length === 0) continue;
+      const md = fs.readFileSync(path.join(projectRoot, 'config', 'personas', p.file), 'utf8');
+      const after = md.split('## 情景剧本')[1];
+      expect(after).toBeDefined();
+      const section = after.split(/\n##[^#]/)[0]; // bound to the next ## heading
+      const mdNames = section
+        .split('\n')
+        .filter(l => l.startsWith('|') && !/触发词|:?-{2,}/.test(l))
+        .map(l => l.split('|')[1].trim())
+        .filter(Boolean);
+      expect(mdNames.sort()).toEqual(cardScenarios.map(s => s.name).sort());
+    }
+  });
+
+  // v3 R5 static measurement gates (the dimensions that CAN be unit-tested;
+  // the behavioral scoring that needs a model lives in scripts/persona-battery/).
+  test('测量闸：每个 persona×style 渲染都携带内核优先级锚与 forbidden-zone', () => {
+    const personas = listPersonas(projectRoot);
+    const styles = listStyles(projectRoot);
+    for (const p of personas) {
+      for (const s of styles) {
+        const content = renderGeminiContext(projectRoot, s.slug, p.slug);
+        expect(content).toContain('## 内核边界');      // precedence anchor (always last)
+        expect(content).toContain('forbidden zone');   // iron-laws boundary
+      }
+    }
+  });
+
+  test('测量闸：每个 core persona-card scenario 都声明 priority（决策策略完整性）', () => {
+    const personas = listPersonas(projectRoot).filter(p => p.core !== false);
+    for (const p of personas) {
+      const card = JSON.parse(
+        fs.readFileSync(path.join(projectRoot, 'config', 'personas', p.slug, 'persona-card.json'), 'utf8')
+      ).data;
+      for (const sc of card.scenarios || []) {
+        expect(typeof sc.priority).toBe('string');
+        expect(sc.priority.length).toBeGreaterThan(0);
+      }
     }
   });
 });

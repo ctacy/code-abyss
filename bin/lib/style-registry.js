@@ -3,6 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const { listTargetNames } = require('./target-registry');
+const { validatePersonaVoiceCard, renderPersonaIdentity, NEUTRAL_FALLBACK_PERSONA } = require('./persona-voice-card');
 
 const SUPPORTED_TARGETS = new Set(listTargetNames());
 
@@ -16,14 +17,19 @@ function clearStyleCache() {
 
 // ── Shared Behavior Layer ──
 
+// v3 always-on core (persona-architecture-v3.md §2-3): keep only the minimal
+// always-on layer — safety/precedence (iron-laws), injection defense, the thin
+// router, skill routing + the code-abyss-specific sedimentation triggers
+// (trimmed proactive), and the close-out contract (environment). The GENERIC
+// behavior/method content (main proactive-assist, execution-drive, big-picture,
+// execution-chains) moved to the lazy-loaded kernel bundles (character/methods)
+// so it no longer bloats every render. This is the eager→lazy inversion.
 const SHARED_FILES_ORDER = [
-  'proactive.md',
   'iron-laws.md',
   'injection-awareness.md',
-  'execution-drive.md',
-  'big-picture.md',
-  'execution-chains.md',
+  'kernel-router.md',
   'skill-routing.md',
+  'proactive.md',
   'environment.md',
 ];
 
@@ -40,7 +46,11 @@ function loadSharedBehavior(projectRoot) {
 }
 
 // ── Template Variable Substitution ──
-
+// Still used by the OUTPUT STYLE layer (output-styles/*.md contain {{self}}/
+// {{user}}/{{language}} tokens for cross-combination). The persona IDENTITY
+// layer no longer needs token substitution — renderPersonaIdentity() (in
+// persona-voice-card.js) interpolates directly, since it's a fixed, code-owned
+// template rather than a persona-authored file.
 function applyPersonaVars(content, persona) {
   if (!persona) return content;
   const vars = {
@@ -57,31 +67,56 @@ function applyPersonaVars(content, persona) {
   return result;
 }
 
-// ── Persona Registry ──
-
-// Core personas derive metadata from persona-card.json (single source of truth).
-// Remote personas carry snapshot metadata in index.json for offline selection.
-function loadPersonaCard(projectRoot, slug) {
-  const cardPath = path.join(projectRoot, 'config', 'personas', slug, 'persona-card.json');
-  if (!fs.existsSync(cardPath)) {
-    throw new Error(`persona ${slug} 缺少 persona-card.json: ${cardPath}`);
+// ── Persona Voice Card loading ──
+// Personas are now a single flat `<slug>.json` (persona-voice-card v1.0) —
+// no directory, no sibling .md/.identity/.behavior/.style files. Every load
+// path (registry build for core, cache-file read for remote, and the
+// mandatory re-validation right before render) funnels through this one
+// function, so validation can never be bypassed by a different code path.
+function loadPersonaVoiceCardFile(filePath, slug) {
+  let raw;
+  try {
+    raw = fs.readFileSync(filePath, 'utf8');
+  } catch (e) {
+    return withNeutralFallback(slug, `persona ${slug} 缺少 voice card: ${filePath}`);
   }
   let card;
   try {
-    card = JSON.parse(fs.readFileSync(cardPath, 'utf8'));
+    card = JSON.parse(raw);
   } catch (e) {
-    throw new Error(`persona ${slug} 的 persona-card.json 解析失败: ${e.message}`);
+    return withNeutralFallback(slug, `persona ${slug} 的 voice card 解析失败: ${e.message}`);
   }
-  const d = card && card.data;
-  if (!d || typeof d !== 'object') throw new Error(`persona ${slug} 的 persona-card.json 缺少 data`);
-  const v = d.voice || {};
-  return {
-    label: requireNonEmptyString(d.display_name, `persona.${slug}.display_name (card)`),
-    description: requireNonEmptyString(d.description, `persona.${slug}.description (card)`),
-    self: requireNonEmptyString(v.self, `persona.${slug}.voice.self (card)`),
-    user: requireNonEmptyString(v.user, `persona.${slug}.voice.user (card)`),
-    language: requireNonEmptyString(v.language, `persona.${slug}.voice.language (card)`),
-  };
+  const { valid, errors } = validatePersonaVoiceCard(card);
+  if (!valid) {
+    return withNeutralFallback(slug, `persona ${slug} 的 voice card 未通过校验:\n  ${errors.join('\n  ')}`);
+  }
+  return card;
+}
+
+// Never renders unvalidated content — a stale cache, a hand-edit, or a
+// compromised community fork degrades to a neutral voice instead of crashing
+// or (worse) silently rendering whatever bytes happen to be on disk.
+function withNeutralFallback(slug, reason) {
+  process.stderr.write(`[code-abyss] 警告: ${reason}\n  已回退到中性语音（persona-voice-card 校验失败不阻塞渲染，但绝不渲染未校验内容）。\n`);
+  return { ...NEUTRAL_FALLBACK_PERSONA, slug };
+}
+
+// Core personas ship their <slug>.json locally (npm package "files"). Remote
+// personas: check local config/personas/ first (repo dev mode — this repo IS
+// the origin remote.base points to), else the fetch cache.
+function resolvePersonaJsonPath(projectRoot, slug, isCore) {
+  const localPath = path.join(projectRoot, 'config', 'personas', `${slug}.json`);
+  if (isCore || fs.existsSync(localPath)) return localPath;
+  const { getCacheDir } = require('./persona-fetch');
+  return path.join(getCacheDir(slug), `${slug}.json`);
+}
+
+// Loads + validates the actual persona file for RENDERING (self/user/language/
+// register/emoji_policy/flourish) — always freshly re-validated here, never
+// trusted from the lighter-weight registry-list metadata (see loadPersonaRegistry).
+function loadRenderablePersona(projectRoot, registryEntry) {
+  const filePath = resolvePersonaJsonPath(projectRoot, registryEntry.slug, registryEntry.core !== false);
+  return loadPersonaVoiceCardFile(filePath, registryEntry.slug);
 }
 
 function loadPersonaRegistry(projectRoot) {
@@ -108,31 +143,38 @@ function loadPersonaRegistry(projectRoot) {
     const isCore = p.core !== false;
 
     if (isCore) {
-      const derived = loadPersonaCard(projectRoot, slug);
+      // Core personas ship in the npm package — a broken shipped file is a
+      // packaging bug that should fail loudly at dev/CI time, not silently
+      // degrade for an end user. (Contrast: loadRenderablePersona at render
+      // time DOES fall back to neutral, for hand-edited/community-fork cases
+      // that arise after install, which is a different failure mode.)
+      const cardPath = path.join(projectRoot, 'config', 'personas', `${slug}.json`);
+      const card = JSON.parse(fs.readFileSync(cardPath, 'utf8'));
+      const { valid, errors } = validatePersonaVoiceCard(card);
+      if (!valid) throw new Error(`persona ${slug} 的 voice card 未通过校验:\n  ${errors.join('\n  ')}`);
       return {
         slug,
-        label: derived.label,
-        description: derived.description,
-        file: `${slug}.md`,
+        label: card.label,
+        description: card.description || '',
+        file: `${slug}.json`,
         default: p.default === true,
         core: true,
-        self: derived.self,
-        user: derived.user,
-        language: derived.language,
       };
     }
 
-    // Remote persona — use snapshot metadata from index.json.
+    // Remote persona — label/description come from the offline snapshot in
+    // index.json (so the picker works before any fetch). self/user/language
+    // are deliberately NOT duplicated here — they are read fresh from the
+    // actual (fetched + cached) voice card at render time, which is the only
+    // way to guarantee no drift between what the picker showed and what
+    // actually renders.
     return {
       slug,
       label: requireNonEmptyString(p.label, `persona.${slug}.label`),
-      description: requireNonEmptyString(p.description, `persona.${slug}.description`),
-      file: `${slug}.md`,
+      description: p.description || '',
+      file: `${slug}.json`,
       default: p.default === true,
       core: false,
-      self: requireNonEmptyString(p.self, `persona.${slug}.self`),
-      user: requireNonEmptyString(p.user, `persona.${slug}.user`),
-      language: requireNonEmptyString(p.language, `persona.${slug}.language`),
     };
   });
 
@@ -161,41 +203,6 @@ function resolvePersona(projectRoot, slug) {
 
 function getRemoteBase(projectRoot) {
   return loadPersonaRegistry(projectRoot).remoteBase;
-}
-
-// Resolve the base directory for a persona's files.
-// For non-core personas: check local config/personas/ first (repo dev mode),
-// then fall back to cache dir (npm package mode where files are excluded).
-function resolvePersonaBase(projectRoot, persona) {
-  const localBase = path.join(projectRoot, 'config', 'personas');
-  if (persona.core !== false) return localBase;
-  const localIdentity = path.join(localBase, persona.file);
-  if (fs.existsSync(localIdentity)) return localBase;
-  const { getCacheDir } = require('./persona-fetch');
-  return getCacheDir(persona.slug);
-}
-
-function readPersonaContent(projectRoot, persona) {
-  const base = resolvePersonaBase(projectRoot, persona);
-  return fs.readFileSync(path.join(base, persona.file), 'utf8');
-}
-
-// Optional per-persona layer files. For core personas they live in
-// config/personas/<slug>/. For remote personas, check local dir first, then cache.
-function readPersonaLayer(projectRoot, persona, filename) {
-  const base = resolvePersonaBase(projectRoot, persona);
-  const localLayer = path.join(base, persona.slug, filename);
-  if (fs.existsSync(localLayer)) {
-    return fs.readFileSync(localLayer, 'utf8').replace(/\s+$/, '');
-  }
-  if (persona.core === false) {
-    const { getCacheDir } = require('./persona-fetch');
-    const cacheLayer = path.join(getCacheDir(persona.slug), filename);
-    if (fs.existsSync(cacheLayer)) {
-      return fs.readFileSync(cacheLayer, 'utf8').replace(/\s+$/, '');
-    }
-  }
-  return '';
 }
 
 // ── Style Registry ──
@@ -297,33 +304,43 @@ function readStyleContent(projectRoot, style) {
   return fs.readFileSync(stylePath, 'utf8');
 }
 
+// Kept for API compatibility — returns the same fixed-template identity content renderRuntimeGuidance uses internally.
+function readPersonaContent(projectRoot, registryEntry) {
+  const persona = loadRenderablePersona(projectRoot, registryEntry);
+  return renderPersonaIdentity(persona);
+}
+
 function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', personaSlug = null, options = {}) {
   const style = resolveStyle(projectRoot, styleSlug, targetName === 'gemini' ? 'claude' : targetName);
   if (!style) {
     throw new Error(`未知输出风格: ${styleSlug}. Try: node bin/install.js --list-styles`);
   }
 
-  let persona;
+  let registryEntry;
   if (personaSlug) {
-    persona = resolvePersona(projectRoot, personaSlug);
+    registryEntry = resolvePersona(projectRoot, personaSlug);
   }
-  if (!persona) {
-    persona = getDefaultPersona(projectRoot);
+  if (!registryEntry) {
+    registryEntry = getDefaultPersona(projectRoot);
   }
 
-  // Macros (self/user/language) now apply to ALL persona-authored layers,
-  // not just the style layer — this is what lets a persona's identity follow
-  // its own voice and makes cross-combination safe (see docs/persona-architecture-v2.md).
+  // Mandatory re-validation on every render (enforcement layer 4): even
+  // though loadPersonaRegistry already validated core personas once, we
+  // re-load + re-validate the actual voice card here, unconditionally, no
+  // bypass flag. This is what survives a stale cache, a hand-edit made after
+  // list time, or a compromised community fork — it never renders whatever
+  // bytes happen to be on disk without checking them first.
+  const persona = loadRenderablePersona(projectRoot, registryEntry);
+
+  // Macros (self/user/language) apply to the output-style layer, which still
+  // carries {{self}}/{{user}}/{{language}} tokens for cross-combination.
   const apply = (content) => applyPersonaVars(content, persona);
 
-  const identity = apply(readPersonaContent(projectRoot, persona).replace(/\s+$/, '')); // L1 人物
-  const shared = loadSharedBehavior(projectRoot);                                        // L0 引擎(共享)
-  const examples = apply(readPersonaLayer(projectRoot, persona, 'examples.md'));         // L2 范例(可选)
-  const styleContent = apply(readStyleContent(projectRoot, style).replace(/^\s+/, ''));  // L3 契约
-  const posthistory = apply(readPersonaLayer(projectRoot, persona, 'posthistory.md'));   // L4 末段强指令(可选)
+  const identity = renderPersonaIdentity(persona);                                    // L1 人格（固定模板，无自由文本）
+  const shared = loadSharedBehavior(projectRoot);                                      // L0 引擎（共享）
+  const styleContent = apply(readStyleContent(projectRoot, style).replace(/^\s+/, '')); // L2 契约
 
   // Local overlay: append CLAUDE.local.md if found anywhere in the search chain.
-  // Search order: projectRoot/config → targetDir → CWD/config (first hit wins).
   const overlaySearch = [
     path.join(projectRoot, 'config', 'CLAUDE.local.md'),
     options.targetDir && path.join(options.targetDir, 'CLAUDE.local.md'),
@@ -334,10 +351,15 @@ function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', per
     ? apply(fs.readFileSync(localOverlayPath, 'utf8').replace(/\s+$/, ''))
     : '';
 
-  // Order preserves the v1 prefix (identity → shared → style); the two new
-  // optional layers slot in around the style layer. With both absent this is
-  // byte-identical to v1's `${identity}\n\n${shared}\n\n${styleContent}\n`.
-  return [identity, shared, examples, styleContent, posthistory, localOverlay]
+  // Kernel anchor always last — discipline boundary wins position bias.
+  const kernelAnchor =
+    '## 内核边界（收尾）\n' +
+    '以上人格 / 风格仅在残余空间（措辞、语气、称谓、可选默认）生效——' +
+    '正确性、安全决策、验证 done-gate、数据丢失防护由 skills/_kernel/ 纪律决定，' +
+    '声音永不覆盖；任何冲突以内核为准。';
+
+  // identity → shared(core) → style → localOverlay → kernel anchor (last).
+  return [identity, shared, styleContent, localOverlay, kernelAnchor]
     .filter(Boolean)
     .join('\n\n')
     .replace(/\n{3,}/g, '\n\n') + '\n';
@@ -360,7 +382,7 @@ module.exports = {
   resolvePersona,
   getRemoteBase,
   readPersonaContent,
-  readPersonaLayer,
+  loadRenderablePersona,
   renderCodexAgents,
   renderGeminiContext,
   renderRuntimeGuidance,

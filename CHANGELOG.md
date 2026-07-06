@@ -4,6 +4,81 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [4.10.0] - 2026-07-06
+
+> **Minor: mythos 纪律内核合并 + 人格系统重设计.** 两件事一起发：(1) 9 个工程判断
+> bundle（`doctrine`/`methods`/`character`/`loop-engineering` + `backend`/`frontend`/
+> `hardware`/`ml`/`security`）作为懒加载的 discipline kernel 合入（persona-architecture
+> v3，eager→lazy），随附一个"内核边界"优先级锚点，断言人格只在"残余空间"生效；(2) 审计
+> 发现这条断言当时是假的——`abyss` 的人格内容携带一套活的 T1/T2/T3 授权分级策略、一条
+> 验证跳过指令，以及逐场景优先级排序，没有任何机制把这些当作"仅限声音"来强制检查。人格
+> 系统随即重设计为 Persona Voice Card，让这类内容在类型层面就装不下。
+
+### Added
+
+- **`skills/_kernel/` discipline kernel（9 bundle）**：从姊妹项目 mythos vendor 进来
+  （`npm run kernel:sync`），由 `config/personas/_shared/kernel-router.md` 懒路由调用，
+  不再随每次渲染烘焙进 prompt。`doctrine`/`methods`/`character`/`loop-engineering`
+  为跨域 bundle；`backend`/`frontend`/`hardware`/`ml`/`security` 为领域 bundle。16 个
+  执行 skill 获得指向对应内核领域 bundle 的向上"判断先于执行"门（`scripts/wire-domain-gates.js`）。
+- **`--with-enforcement`**（claude/codex）：安装 `character` bundle 的 Stop-hook 兜底
+  （`check_banned_openers.py`）——回复以违禁的顺从开场白开头时强制返工一轮。
+- **`scripts/persona-battery/`**：10 个行为探针的诚实 eval（不是校准过的统计评测，是
+  小规模 spot-check），机械评分 4 个违禁开场白探针，其余靠 LLM judge（`--bare` 之外的
+  隔离沙箱 HOME，quote-required 防谄媚评分）；未评分探针明确标 `UNSCORED`，绝不伪造通过。
+- **`bin/lib/persona-voice-card.js`**：新的人格校验器 + 渲染器（详见下方"人格系统重设计"）。
+
+### Changed
+
+- **人格格式从 `<slug>/persona-card.json` + `<slug>.md`（含 `identity`/`behavior`/`style`
+  文件指针、`capabilities`/`scenarios`）改为单一扁平 `config/personas/<slug>.json`**——
+
+- **人格格式从 `<slug>/persona-card.json` + `<slug>.md`（含 `identity`/`behavior`/`style`
+  文件指针、`capabilities`/`scenarios`）改为单一扁平 `config/personas/<slug>.json`**——
+  只有 `self`/`user`/`language`/`register`/`emoji_policy`/`flourish`，`additionalProperties:false`，
+  各字段长度/字符受限到"装不下决策表"。新增 `bin/lib/persona-voice-card.js` 作为唯一
+  校验器+渲染器，`renderPersonaIdentity()` 是固定的代码自有模板，无 `{{body}}`/`{{content}}`
+  兜底通配符；每次渲染强制重新校验，失败回退到中性语音，绝不渲染未校验内容。
+- **6 个内置人格全部迁移**：`abyss`、`scholar`、`elder-sister`、`junior-sister`、
+  `iron-dad`、`dongbei-yujie`。`abyss` 原本携带的预授权分级 + CTF 战场契约迁到
+  `skills/securing-systems/references/authorization-tiers.md`（安全域判断，不是声音）；
+  情景剧本表直接删除，不迁移（与 `skill-routing.md`/内核领域路由重复）。
+- **`scripts/sync-persona-scenarios.js` 连同其 `--check` CI 步骤、`persona:sync-scenarios`
+  package.json 脚本、`test/style-registry.test.js` 里对应的 regeneration-diff 测试一并退役**——
+  情景剧本表本身已经不存在了。
+- **`bin/lib/persona-fetch.js`**：远程人格现在只抓取单个 `<slug>.json`（不再是
+  `persona-card.json` + `.md` + `examples.md` + `posthistory.md` 四件套），落盘前先校验。
+- **`bin/lib/persona-converter.js`**：SillyTavern / GPT 双向转换器围绕新 schema 重写，
+  不再需要拼装 `identity`/`behavior`/`style` 三层文件内容。
+- **`skills/cultivating-personas/*`**：校验从"identity.md 是否含角色锚定/性格特征/情绪
+  模式三段"这种主观阅读，变成纯 schema + 内容安全 + 差异度的机械判断。
+- **规范**：新增 `docs/specs/persona-voice-card-v1.0.md` + `persona-voice-card.schema.json`，
+  取代 `docs/specs/tech-persona-card-v1.0.md`（冻结 + 弃用横幅，保留供外部链接，不删除）。
+
+### Fixed
+
+- **`bin/lib/select.js` `ensureRemotePersona()` 从不检查本地仓库副本就直接发起远程抓取**——
+  与 `bin/lib/style-registry.js` 早就有的本地优先逻辑不一致，导致仓库开发模式下安装非
+  核心人格时无谓地要求联网、且要求远程内容已经和本地结构同步。现在先查本地
+  `config/personas/<slug>.json` 是否存在，存在则跳过网络请求。
+
+- **`site/submit.html` + `site/i18n.js`（英/中）+ `site/index.html`**：提交流程的 AI 提示词、
+  审阅清单、完整示例，从旧的"两文件"（`persona-card.json` + `identity.md`）流程改写为
+  单文件 Persona Voice Card 流程；首页"三层架构"卡片从 Identity/Behavior/Style 改为
+  Voice/Judgment/Style（与内核合并后的实际渲染管线一致）；"开放标准"卡片从 Tech Persona
+  Card 改为 Persona Voice Card（含新 schema 预览、非侵入性说明）；页脚版本号 v4.0.0/v4.7.0
+  两处过期标注修正为 v4.9.0；清理了一批指向已废弃两文件流程、且从未被任何 HTML 引用的
+  死 i18n key（`form.*`、`guide.tab.*`、`guide.s1-4.*`）。
+
+### Compatibility
+
+- `npm test`：441 个测试（439 通过，2 跳过）。`npm run verify:skills`：39 skills + 6
+  personas 校验通过。4 个目标（claude/codex/gemini/openclaw）真实安装验证通过。
+- 100% 向后兼容——现有 `npx code-abyss` 用法、CLI flag、安装产物结构不变。人格文件格式
+  是本版本唯一的 breaking 内部改动，但对终端用户不可见（安装器自动处理，用户从不直接
+  读写 `config/personas/*.json`）；仅第三方直接依赖旧 `persona-card.json` 结构（例如自定义
+  脚本读取 `identity.md`）的场景需要迁移，参照 `docs/specs/persona-voice-card-v1.0.md` §5。
+
 ## [4.9.0] - 2026-06-26
 
 > **Minor: hybrid 切割 deprecation 期开启.** v0.5.23 之前 abyss CLI 文档把自己定位为「cargo-only fallback」、把 `npx code-abyss --with-abyss` 定位为 production 主入口；abyss v0.5.24 正式定位反转——`abyss attach` 是 claude/codex/gemini 三平台 hook 注入的 production 主入口；openclaw/pi/hermes 由 code-abyss npm 包独占（abyss 设计上不接管，因 per-pack 布局 + 不稳定 hook shape）。v4.9.0 是配合这次反转的 deprecation 期；v5.0 物理切割。

@@ -6,6 +6,8 @@ user-invocable: false
 
 # 攻防秘典
 
+> **判断先于执行**：决定「是否做 / 选什么 / 如何取舍」（栈、方案、架构、权衡）前，先读领域判断内核 `skills/_kernel/security/SKILL.md`——它管 judgment，本秘典管 execution；冲突时以内核判断为准。
+
 > **安全工程总路由**：通用攻防视角与红队 / 蓝队 / 紫队基础知识。
 > 专域工作（应用安全防御、云原生加固、检测工程、安全架构）走专门 skill。
 > 信级：项目文件 > 标准库 > 训练记忆（标 `[unverified]`）
@@ -22,6 +24,7 @@ user-invocable: false
 | 蓝队防御 | [blue-team](references/blue-team.md) | 检测、SOC、IR、取证、密钥轮换 |
 | 威胁情报 | [threat-intel](references/threat-intel.md) | OSINT、威胁狩猎、ATT&CK 建模 |
 | 漏洞研究 | [vuln-research](references/vuln-research.md) | 逆向、Exploit、Fuzzing、PWN |
+| 授权分级 / CTF 沙箱契约 | [authorization-tiers](references/authorization-tiers.md) | T1/T2/T3、CTF 目标默认沙箱 |
 
 ### 专域路由（其他 skill）
 

@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Skill(verify-change)",
-      "Skill(verify-quality)"
+      "Skill(verify-quality)",
+      "Bash(cp config/CLAUDE.local.md ~/.claude/CLAUDE.local.md)",
+      "Read(//c/Users/沈超/.claude/**)"
     ]
   }
 }

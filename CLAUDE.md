@@ -65,6 +65,31 @@ Deliberately **not** part of `npm test` or the push/PR CI gate (real cost, LLM
 non-determinism, no API key secret in this repo's default CI) — it runs only via the
 manual `persona-battery.yml` `workflow_dispatch` job.
 
+## Local Overlay (CLAUDE.local.md)
+
+`config/CLAUDE.local.md` is a **user-private** file — it is deliberately excluded from
+the npm tarball (`package.json` `files` only lists `config/*.json` / `config/*.toml`,
+never `config/*.md`). `renderRuntimeGuidance()` in `bin/lib/style-registry.js` appends it
+as an optional layer, searching in this order:
+
+1. `<projectRoot>/config/CLAUDE.local.md` (repo dev mode / npm package — usually absent)
+2. `<targetDir>/CLAUDE.local.md` (e.g. `~/.claude/CLAUDE.local.md` — **first hit wins**)
+3. `<process.cwd()>/config/CLAUDE.local.md` (only reachable when invoked from inside the repo)
+
+**Trap**: path 2 is checked before path 3. If a stale `~/.claude/CLAUDE.local.md` exists
+(e.g. from a previous manual copy), it silently wins over the current repo version,
+even when running the installer from the repo root — the repo's newer content in path 3
+is never reached. This caused local-overlay sections to "disappear" after an install even
+though `config/CLAUDE.local.md` in the repo was up to date.
+
+**Rule**: every time `config/CLAUDE.local.md` changes, sync it to the target-dir copy so
+`npx code-abyss-sc` (which usually runs via a global/npx install with no repo checkout in
+scope) picks up the latest content regardless of working directory:
+
+```bash
+cp config/CLAUDE.local.md ~/.claude/CLAUDE.local.md
+```
+
 ## CI / CD
 
 Four GitHub Actions workflows:

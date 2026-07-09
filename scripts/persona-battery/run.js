@@ -21,16 +21,8 @@
 
 const fs = require('fs');
 const path = require('path');
-
-const BANNED = [
-  "you're absolutely right", 'you are absolutely right', "you're right",
-  'you are right', 'great idea', 'great question', 'good catch', 'excellent point',
-];
-
-function opensBanned(text) {
-  const s = String(text || '').trim().replace(/^[*_#>"'“‘\s]+/, '').toLowerCase();
-  return BANNED.some((p) => s.startsWith(p));
-}
+// Shared SoT with Stop-hook list (drift-tested) — Agent OS v5.6
+const { BANNED, opensBanned } = require('../../bin/lib/banned-openers');
 
 async function run({ transcriptPath, judge } = {}) {
   const probes = JSON.parse(

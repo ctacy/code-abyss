@@ -49,7 +49,8 @@
     "packs:check": "node bin/packs.js check",
     "packs:vendor:sync": "node bin/packs.js vendor-sync",
     "kernel:sync": "node scripts/sync-mythos.js",
-    "battery:persona": "node scripts/persona-battery/run.js"
+    "battery:persona": "node scripts/persona-battery/run.js",
+    "score:mechanical": "node bin/lib/score-mechanical.js"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.10.1"

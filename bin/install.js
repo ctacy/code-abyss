@@ -212,6 +212,13 @@ function detectOpenClawEnvironment() {
 // ── CLI 参数 ──
 
 const args = process.argv.slice(2);
+
+// Agent OS v5.5+ multi-command surface (doctor / compose / score)
+const runtimeCmd = args[0];
+if (runtimeCmd === 'doctor' || runtimeCmd === 'compose' || runtimeCmd === 'score') {
+  // handled in main() after helpers load — mark and shift
+}
+
 let target = null;
 let uninstallTarget = null;
 let autoYes = false;
@@ -246,6 +253,9 @@ for (let i = 0; i < args.length; i++) {
     banner();
     console.log(`${c.b('Usage')}  npx code-abyss [options]
 `);
+    console.log(`  ${c.cyn('doctor')}              runtime health (version, abyss, kernel, enforcement, budget)`);
+    console.log(`  ${c.cyn('compose')}             rewrite host guidance (no skill recopy)`);
+    console.log(`  ${c.cyn('score')}               key-free mechanical banned-opener score`);
     console.log(`  ${c.cyn('--target, -t')} <${formatTargetList('|')}>   install one target`);
     console.log(`  ${c.cyn('--uninstall, -u')} <${formatTargetList('|')}>   remove one target`);
     console.log(`  ${c.cyn('--with-hooks')}   openclaw/pi/hermes only: spawn install-hooks.sh`);
@@ -257,7 +267,9 @@ for (let i = 0; i < args.length; i++) {
     console.log(`${c.b('Examples')}`);
     console.log(`  npx code-abyss`);
     console.log(`  npx code-abyss --target codex -y`);
-    console.log(`  npx code-abyss --target openclaw --with-hooks -y`);
+    console.log(`  npx code-abyss doctor`);
+    console.log(`  npx code-abyss compose -t claude --persona abyss --style abyss-cultivator`);
+    console.log(`  npx code-abyss score`);
     console.log(`  npx code-abyss --list-styles
 `);
     process.exit(0);
@@ -443,6 +455,58 @@ async function main() {
   }
 
   if (uninstallTarget) { runUninstall(uninstallTarget); return; }
+
+  // ── Agent OS runtime control (v5.5+) ──
+  if (args[0] === 'doctor') {
+    const { buildDoctorReport, formatDoctorReport } = require(path.join(__dirname, 'lib', 'runtime-control.js'));
+    let docTarget = 'claude';
+    for (let i = 1; i < args.length; i++) {
+      if ((args[i] === '--target' || args[i] === '-t') && args[i + 1]) docTarget = args[++i];
+    }
+    const report = buildDoctorReport({ projectRoot: PKG_ROOT, HOME, version: VERSION, target: docTarget });
+    process.stdout.write(formatDoctorReport(report));
+    if (args.includes('--json')) process.stdout.write(JSON.stringify(report, null, 2) + '\n');
+    return;
+  }
+
+  if (args[0] === 'compose') {
+    const { composeHostGuidance } = require(path.join(__dirname, 'lib', 'runtime-control.js'));
+    let cTarget = 'claude';
+    let cPersona = requestedPersonaSlug;
+    let cStyle = requestedStyleSlug;
+    let doWrite = true;
+    for (let i = 1; i < args.length; i++) {
+      if ((args[i] === '--target' || args[i] === '-t') && args[i + 1]) cTarget = args[++i];
+      else if (args[i] === '--persona' && args[i + 1]) cPersona = args[++i];
+      else if (args[i] === '--style' && args[i + 1]) cStyle = args[++i];
+      else if (args[i] === '--stdout') doWrite = false;
+    }
+    try {
+      const r = composeHostGuidance({
+        projectRoot: PKG_ROOT,
+        target: cTarget,
+        personaSlug: cPersona,
+        styleSlug: cStyle,
+        HOME,
+        write: doWrite,
+      });
+      if (doWrite) {
+        ok(`compose → ${r.destPath} (persona=${r.persona} style=${r.style}, ${r.guidance.length} chars)`);
+      } else {
+        process.stdout.write(r.guidance);
+      }
+    } catch (e) {
+      fail(e.message);
+      process.exit(1);
+    }
+    return;
+  }
+
+  if (args[0] === 'score') {
+    const { main: scoreMain } = require(path.join(__dirname, 'lib', 'score-mechanical.js'));
+    scoreMain(args.slice(1));
+    return;
+  }
 
   banner();
 

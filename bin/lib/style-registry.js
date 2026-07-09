@@ -5,6 +5,7 @@ const path = require('path');
 const { listTargetNames } = require('./target-registry');
 const { validatePersonaVoiceCard, renderPersonaIdentity, NEUTRAL_FALLBACK_PERSONA } = require('./persona-voice-card');
 const { renderKernelRouterMd } = require('./inject-plane');
+const { loadStanceForRender, renderStanceResidual } = require('./stance');
 
 const SUPPORTED_TARGETS = new Set(listTargetNames());
 
@@ -104,7 +105,7 @@ function loadPersonaVoiceCardFile(filePath, slug) {
 // or (worse) silently rendering whatever bytes happen to be on disk.
 function withNeutralFallback(slug, reason) {
   process.stderr.write(`[code-abyss] 警告: ${reason}\n  已回退到中性语音（persona-voice-card 校验失败不阻塞渲染，但绝不渲染未校验内容）。\n`);
-  return { ...NEUTRAL_FALLBACK_PERSONA, slug };
+  return { ...NEUTRAL_FALLBACK_PERSONA, slug, _neutralFallback: true, _neutralReason: reason };
 }
 
 // Core personas ship their <slug>.json locally (npm package "files"). Remote
@@ -346,6 +347,9 @@ function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', per
   const apply = (content) => applyPersonaVars(content, persona);
 
   const identity = renderPersonaIdentity(persona);                                    // L1 人格（固定模板，无自由文本）
+  // V5.7: optional residual stance (soft-load; missing/invalid => no block)
+  const stance = loadStanceForRender(projectRoot, registryEntry.slug, { soft: true });
+  const stanceBlock = stance ? renderStanceResidual(stance) : '';
   const shared = loadSharedBehavior(projectRoot);                                      // L0 引擎（共享）
   const styleContent = apply(readStyleContent(projectRoot, style).replace(/^\s+/, '')); // L2 契约
 
@@ -361,8 +365,8 @@ function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', per
     '正确性、安全决策、验证 done-gate、数据丢失防护由 skills/_kernel/ 纪律决定，' +
     '声音永不覆盖；任何冲突以内核为准。';
 
-  // identity → shared(core) → style → kernel anchor (last).
-  return [identity, shared, styleContent, kernelAnchor]
+  // identity → stance(residual) → shared(core) → style → kernel anchor (last).
+  return [identity, stanceBlock, shared, styleContent, kernelAnchor]
     .filter(Boolean)
     .join('\n\n')
     .replace(/\n{3,}/g, '\n\n') + '\n';

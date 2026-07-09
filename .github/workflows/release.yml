@@ -44,6 +44,15 @@ jobs:
       - name: Verify skills contract
         run: npm run verify:skills
 
+      - name: Packs lock check (parity with PR CI)
+        run: npm run packs:check
+
+      - name: Packs vendor-sync check (parity with PR CI)
+        run: npm run packs:vendor:sync -- --check
+
+      - name: Mechanical score (banned openers, key-free)
+        run: npm run score:mechanical
+
       - name: Publish to npm
         run: npm publish --access public --provenance
         env:

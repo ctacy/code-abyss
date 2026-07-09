@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Agent OS v5.5–v5.8 — runtime control through hardening
+
+- **V5-5:** `code-abyss doctor` / `compose` / multi-command surface (`bin/lib/runtime-control.js`). Compose rewrites host guidance via the same `renderRuntimeGuidance` engine without skill recopy.
+- **V5-6:** `npm run score:mechanical` + `code-abyss score` — key-free banned-opener score (`bin/lib/banned-openers.js` shared with persona-battery). Release CI runs it.
+- **V5-7:** Optional residual stance (`bin/lib/stance.js`, `*.stance.json`) — residual attitude only; rejects auth/skip-verify fields; zero stance = baseline render.
+- **V5-8:** persona-fetch HTTPS + host allowlist + redirect reject; release.yml packs:check / vendor-sync --check; visible `[code-abyss: neutral-fallback]` marker in identity render.
+
 ### Agent OS v5.4 — inject plane
 
 - **`bin/lib/inject-plane.js`**: single SoT trigger table (`DOMAIN_SKILL_MAP` ×16 + cross-cutting + path/text rules) with pure `resolveTrigger()`.

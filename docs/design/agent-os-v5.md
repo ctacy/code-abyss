@@ -355,24 +355,24 @@ Each phase: **one PR-able unit**, green gates, independent value. No big-bang fr
 - Unit tests: trigger fixtures → expected bundle id.
 - **Done when:** tests prove mapping; at least one host path installs inject artifacts.
 
-### Phase V5-5 — Runtime CLI surface
+### Phase V5-5 — Runtime CLI surface ✅
 
 - `doctor` (versions, kernel sync age, abyss detect, enforcement on/off, compose budget).
 - `compose --persona --style` rewrite host context without full skill recopy.
 - **Done when:** documented commands; tests on compose output identity.
 
-### Phase V5-6 — Score plane
+### Phase V5-6 — Score plane ✅
 
 - Mechanical battery subset in `npm test` or `npm run score:mechanical` on PR.
 - LLM judge remains opt-in.
 - **Done when:** banned-opener class probes gate CI without API keys.
 
-### Phase V5-7 — Stance modules (optional brand power)
+### Phase V5-7 — Stance modules (optional brand power) ✅
 
 - Schema + validator + residual-only render slot; zero stance = today’s behavior.
 - **Done when:** invalid stance fails verify; cannot express auth tiers.
 
-### Phase V5-8 — Hardening
+### Phase V5-8 — Hardening ✅
 
 - K9 persona-fetch HTTPS/allowlist; release.yml packs checks; visible neutral-fallback marker.
 - **Done when:** fetch tests cover redirect rejection.

@@ -3,332 +3,181 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Code Abyss 5 — Agent OS for coding CLIs</title>
-  <meta name="description" content="Agent OS for Claude Code, Codex, Gemini CLI & OpenClaw: voice + lazy judgment kernel + doctor/compose/score control plane. Code graph via separate abyss CLI.">
+  <title>Code Abyss — Agent OS</title>
+  <meta name="description" content="Agent OS for Claude Code, Codex, Gemini CLI & OpenClaw. Install the control plane, attach code graph, verify with doctor.">
   <meta name="theme-color" content="#07070a">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <div class="bg-grid"></div>
+<body class="page-flow">
+  <div class="bg-grid" aria-hidden="true"></div>
 
   <nav class="topbar">
     <div class="nav-inner">
-      <a href="#" class="logo" aria-label="Code Abyss home">
-        <svg class="logo-mark" width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+      <a href="#" class="logo" aria-label="Code Abyss">
+        <svg class="logo-mark" width="26" height="26" viewBox="0 0 32 32" fill="none" aria-hidden="true">
           <defs>
-            <linearGradient id="abyss-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="#c4b8ff"/>
-              <stop offset="50%" stop-color="#9b8cff"/>
-              <stop offset="100%" stop-color="#5544cc"/>
+            <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#c4b8ff"/><stop offset="100%" stop-color="#5544cc"/>
             </linearGradient>
-            <radialGradient id="abyss-core" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0%" stop-color="#07070a" stop-opacity="0.95"/>
-              <stop offset="70%" stop-color="#07070a" stop-opacity="0.6"/>
-              <stop offset="100%" stop-color="#07070a" stop-opacity="0"/>
-            </radialGradient>
           </defs>
-          <path d="M16 2 A14 14 0 1 1 6 26.1" stroke="url(#abyss-grad)" stroke-width="2.4" stroke-linecap="round"/>
-          <path d="M11 14 A5 5 0 0 1 21 14" stroke="url(#abyss-grad)" stroke-width="1.8" stroke-linecap="round" opacity="0.85"/>
-          <path d="M12.5 17.5 A3.5 3.5 0 0 1 19.5 17.5" stroke="url(#abyss-grad)" stroke-width="1.6" stroke-linecap="round" opacity="0.6"/>
-          <path d="M14 21 A2 2 0 0 1 18 21" stroke="url(#abyss-grad)" stroke-width="1.4" stroke-linecap="round" opacity="0.35"/>
-          <circle cx="16" cy="16" r="14" fill="url(#abyss-core)"/>
+          <path d="M16 2 A14 14 0 1 1 6 26.1" stroke="url(#g)" stroke-width="2.4" stroke-linecap="round"/>
+          <path d="M11 14 A5 5 0 0 1 21 14" stroke="url(#g)" stroke-width="1.6" stroke-linecap="round" opacity="0.75"/>
         </svg>
         <span>Code Abyss</span>
+        <span class="logo-ver">5</span>
       </a>
       <div class="nav-links">
-        <a href="#os" data-i18n="nav.os">OS</a>
-        <a href="#plane" data-i18n="nav.plane">Control</a>
-        <a href="#security" data-i18n="nav.security">Security</a>
-        <a href="#graph" data-i18n="nav.graph">Graph</a>
-        <a href="#install" data-i18n="nav.install">Install</a>
-        <a href="#skins" data-i18n="nav.skins">Skins</a>
+        <a href="#flow" data-i18n="nav.flow">Flow</a>
+        <a href="#get" data-i18n="nav.get">What you get</a>
+        <a href="https://github.com/telagod/code-abyss/blob/main/docs/MIGRATION-v5.md" data-i18n="nav.docs">Docs</a>
         <div class="lang-switch">
-          <button data-lang="en" onclick="setLang('en')">EN</button>
-          <button data-lang="zh" onclick="setLang('zh')">ZH</button>
+          <button type="button" data-lang="en" onclick="setLang('en')">EN</button>
+          <button type="button" data-lang="zh" onclick="setLang('zh')">ZH</button>
         </div>
-        <a href="https://github.com/telagod/code-abyss" class="nav-gh" aria-label="GitHub">
+        <a class="nav-gh" href="https://github.com/telagod/code-abyss" aria-label="GitHub">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
         </a>
       </div>
     </div>
   </nav>
 
-  <header class="hero">
-    <div class="container wide">
-      <div class="hero-grid">
-        <div class="hero-text">
-          <div class="hero-badge">
-            <span class="dot">v</span>
-            <span data-i18n="hero.badge">5.0.0-rc.1 · Agent OS</span>
-          </div>
-          <h1>
-            <span data-i18n="hero.title.1">Not a config dump.</span><br>
-            <span class="accent" data-i18n="hero.title.2">An Agent OS.</span>
-          </h1>
-          <p class="lead" data-i18n="hero.sub" data-i18n-html>
-            Install <b>voice + skills + lazy judgment</b> into Claude / Codex / Gemini / OpenClaw —
-            then <b>doctor · compose · score</b> the session without re-tarring the world.
-          </p>
-          <div class="hero-install">
-            <span class="prompt-sign">$</span>
-            <code>npx code-abyss@5.0.0-rc.1 -t claude -y</code>
-            <button class="copy-btn" onclick="copyCmd(this)" data-cmd="npx code-abyss@5.0.0-rc.1 -t claude -y">Copy</button>
-          </div>
-          <div class="hero-actions">
-            <a href="#install" class="btn btn-primary" data-i18n="hero.install">Get started</a>
-            <a href="#plane" class="btn btn-ghost" data-i18n="hero.plane">Control plane</a>
-            <a href="https://www.npmjs.com/package/code-abyss" class="btn btn-link">npm</a>
-          </div>
-          <div class="hero-platforms">
-            <span class="pf-label" data-i18n="hero.runs">Hosts</span>
-            <span class="platform-chip">Claude Code</span>
-            <span class="platform-chip">Codex CLI</span>
-            <span class="platform-chip">Gemini CLI</span>
-            <span class="platform-chip">OpenClaw</span>
-          </div>
-        </div>
-        <div class="hero-terminal" aria-hidden="true">
-          <div class="term-chrome">
-            <span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span>
-            <span class="term-title">code-abyss doctor</span>
-          </div>
-          <pre class="term-body"><span class="t-muted">code-abyss doctor · 5.0.0-rc.1</span>
-<span class="t-ok">abyss:</span> 0.5.x (PATH)
-<span class="t-ok">kernel:</span> mythos · 9 bundles
-<span class="t-ok">enforcement:</span> ON
-<span class="t-ok">compose budget:</span> ~5k / 8k
-<span class="t-warn">inject plane:</span> present
-<span class="t-muted">migration:</span> abyss attach claude</pre>
+  <main>
+    <!-- HERO: one promise + one command -->
+    <header class="flow-hero">
+      <div class="container narrow">
+        <p class="eyebrow" data-i18n="hero.badge">Agent OS · v5.0.0-rc.1</p>
+        <h1 data-i18n="hero.title">Install the OS. Attach the graph. Verify.</h1>
+        <p class="lead" data-i18n="hero.sub">
+          Judgment kernel, skills, and a real control plane for Claude / Codex / Gemini / OpenClaw.
+          Voice skins are optional. Persona is not the product.
+        </p>
+        <div class="hosts" aria-label="hosts">
+          <span>Claude Code</span><span>Codex</span><span>Gemini</span><span>OpenClaw</span>
         </div>
       </div>
-    </div>
-  </header>
+    </header>
 
-  <section class="os-section" id="os">
-    <div class="container">
-      <div class="eyebrow" data-i18n="os.label">Architecture</div>
-      <h2 data-i18n="os.title">Three layers. Control plane on top.</h2>
-      <p class="section-desc" data-i18n="os.desc">
-        Voice never overrides judgment. Judgment is lazy. The control plane is what makes v5 an OS, not a tar of markdown.
-      </p>
-      <div class="os-grid">
-        <div class="os-card os-card-accent">
-          <div class="os-kicker">01 · Control plane</div>
-          <h3 data-i18n="os.plane.title">doctor · compose · score</h3>
-          <p data-i18n="os.plane.desc">Health, recompose without skill recopy, key-free banned-opener score. Default character Stop-hook on claude/codex.</p>
-          <code class="layer-path">code-abyss doctor | compose | score</code>
-        </div>
-        <div class="os-card">
-          <div class="os-kicker">02 · Lazy spine</div>
-          <h3 data-i18n="os.kernel.title">Discipline kernel</h3>
-          <p data-i18n="os.kernel.desc">9 mythos bundles + 30 exec skills. Router + inject plane force judgment before execution under pressure.</p>
-          <code class="layer-path">skills/_kernel · inject-plane</code>
-        </div>
-        <div class="os-card">
-          <div class="os-kicker">03 · Residual</div>
-          <h3 data-i18n="os.voice.title">Optional voice skins</h3>
-          <p data-i18n="os.voice.desc">Default is plain. Skins are optional residual attitude — never judgment, never the product core.</p>
-          <code class="layer-path">--persona · --style (optional)</code>
-        </div>
-      </div>
-      <div class="os-formula">
-        <span class="num">9</span><span class="word" data-i18n="os.f.k">kernel</span>
-        <span class="op">+</span>
-        <span class="num">30</span><span class="word" data-i18n="os.f.e">skills</span>
-        <span class="op">+</span>
-        <span class="num">4</span><span class="word" data-i18n="os.f.c">control</span>
-        <span class="op">·</span>
-        <span class="word" data-i18n="os.f.skin">skins optional</span>
-      </div>
-    </div>
-  </section>
+    <!-- KEY FLOW -->
+    <section class="flow-spine" id="flow">
+      <div class="container narrow">
+        <p class="eyebrow" data-i18n="flow.label">Critical path</p>
+        <h2 data-i18n="flow.title">Three commands. Done.</h2>
 
-  <section class="plane-section" id="plane">
-    <div class="container">
-      <div class="eyebrow" data-i18n="plane.label">Control plane</div>
-      <h2 data-i18n="plane.title">Operate the agent, don’t just paint it</h2>
-      <p class="section-desc" data-i18n="plane.desc">Four surfaces shipped in 5.0.0-rc.1. Same compose engine as install — no second template path.</p>
-      <div class="plane-grid">
-        <div class="plane-card">
-          <div class="plane-cmd">doctor</div>
-          <h3 data-i18n="plane.doctor.title">Health + migration hints</h3>
-          <p data-i18n="plane.doctor.desc">Version, abyss detect, kernel sync, enforcement on/off, compose budget, inject map, next-step tips for 4.x leftovers.</p>
-          <code>npx code-abyss doctor</code>
-        </div>
-        <div class="plane-card">
-          <div class="plane-cmd">compose</div>
-          <h3 data-i18n="plane.compose.title">Re-skin without reinstall</h3>
-          <p data-i18n="plane.compose.desc">Rewrite host guidance for a persona×style. Does not recopy the skill tree.</p>
-          <code>npx code-abyss compose -t claude --persona abyss --style abyss-cultivator</code>
-        </div>
-        <div class="plane-card">
-          <div class="plane-cmd">score</div>
-          <h3 data-i18n="plane.score.title">Mechanical honesty gate</h3>
-          <p data-i18n="plane.score.desc">Key-free banned-opener score — same list as the character Stop-hook. No API, no fake green.</p>
-          <code>npx code-abyss score</code>
-        </div>
-        <div class="plane-card">
-          <div class="plane-cmd">inject</div>
-          <h3 data-i18n="plane.inject.title">Forced judgment map</h3>
-          <p data-i18n="plane.inject.desc">Install writes <code>.code-abyss-inject.md</code> — 16 domain gates + done-gate/security paths. Kernel bodies stay lazy.</p>
-          <code>~/.claude/.code-abyss-inject.md</code>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="cut-section" id="cut">
-    <div class="container">
-      <div class="cut-banner">
-        <div>
-          <div class="eyebrow" data-i18n="cut.label">Kill foyer</div>
-          <h2 data-i18n="cut.title">What v5 refuses to own</h2>
-          <p data-i18n="cut.desc">code-abyss no longer downloads the abyss binary, writes MCP servers, or injects graph hooks for claude/codex/gemini. That dual-story deprecation hotel is closed.</p>
-        </div>
-        <div class="cut-table" role="table">
-          <div class="cut-row cut-head" role="row">
-            <span data-i18n="cut.old">4.x habit</span>
-            <span data-i18n="cut.new">5.0 path</span>
-          </div>
-          <div class="cut-row" role="row"><span><code>--with-abyss</code></span><span data-i18n="cut.r1">abyss install.sh / @code-abyss/cli</span></div>
-          <div class="cut-row" role="row"><span><code>--with-mcp</code></span><span data-i18n="cut.r2">client-managed MCP config</span></div>
-          <div class="cut-row" role="row"><span><code>--with-hooks</code> (3 hosts)</span><span><code>abyss attach &lt;host&gt;</code></span></div>
-          <div class="cut-row" role="row"><span data-i18n="cut.r3o">opt-in enforcement</span><span data-i18n="cut.r3n">default ON · --no-enforcement</span></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="security-section" id="security">
-    <div class="container">
-      <div class="eyebrow" data-i18n="security.label">Security spine</div>
-      <h2 data-i18n="security.title">Four native security domains</h2>
-      <p class="section-desc" data-i18n="security.desc" data-i18n-html>Original defense engineering for builders, blue/purple teams, and architects — judgment gated by the security kernel before exec skills run.</p>
-      <div class="security-grid">
-        <a class="security-card" href="https://github.com/telagod/code-abyss/tree/main/skills/defending-applications">
-          <h3>defending-applications</h3>
-          <p data-i18n="security.app.desc">Web/API/OAuth/LLM AppSec — injection, sessions, agent authz.</p>
-        </a>
-        <a class="security-card" href="https://github.com/telagod/code-abyss/tree/main/skills/securing-cloud-and-supply-chain">
-          <h3>securing-cloud-and-supply-chain</h3>
-          <p data-i18n="security.cloud.desc">Containers, K8s, SLSA/Sigstore, cloud IAM, IaC.</p>
-        </a>
-        <a class="security-card" href="https://github.com/telagod/code-abyss/tree/main/skills/detecting-and-responding">
-          <h3>detecting-and-responding</h3>
-          <p data-i18n="security.detect.desc">Sigma/YARA, IR, forensics, threat hunting.</p>
-        </a>
-        <a class="security-card" href="https://github.com/telagod/code-abyss/tree/main/skills/architecting-security">
-          <h3>architecting-security</h3>
-          <p data-i18n="security.arch.desc">STRIDE/PASTA, zero-trust identity, compliance floors.</p>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <section class="security-section" id="graph">
-    <div class="container">
-      <div class="eyebrow" data-i18n="graph.label">Companion · abyss CLI</div>
-      <h2 data-i18n="graph.title">Code graph is a separate product</h2>
-      <p class="section-desc" data-i18n="graph.desc" data-i18n-html>The Rust <code>abyss</code> CLI owns binary install and graph hooks. code-abyss only <b>detects</b> it and points you at <code>abyss attach</code>.</p>
-      <div class="graph-split">
-        <div class="graph-box">
-          <div class="gb-label" data-i18n="graph.owns">abyss owns</div>
-          <ul>
-            <li data-i18n="graph.o1">Binary + updates</li>
-            <li data-i18n="graph.o2">attach / hook shape for claude·codex·gemini</li>
-            <li data-i18n="graph.o3">index · impact · context · map</li>
-          </ul>
-        </div>
-        <div class="graph-box">
-          <div class="gb-label" data-i18n="graph.ca">code-abyss owns</div>
-          <ul>
-            <li data-i18n="graph.c1">persona / style / skills install</li>
-            <li data-i18n="graph.c2">doctor detect + migration hints</li>
-            <li data-i18n="graph.c3">openclaw --with-hooks (only)</li>
-          </ul>
-        </div>
-      </div>
-      <div class="security-actions">
-        <a href="https://github.com/telagod/abyss" class="btn btn-ghost" data-i18n="graph.cta">abyss on GitHub</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="personas-section skins-section" id="skins">
-    <div class="container">
-      <div class="eyebrow" data-i18n="gallery.label">Optional · residual</div>
-      <h2 data-i18n="gallery.title">Voice skins — never the core</h2>
-      <p class="section-desc" data-i18n="gallery.desc">Default install is <code>plain</code>: professional, no role-play. Skins below are optional attitude only. Judgment lives in the kernel — skins cannot override it.</p>
-      <div class="persona-grid" id="persona-grid"></div>
-      <div class="security-actions" style="margin-top:40px">
-        <a href="submit.html" class="btn btn-ghost" data-i18n="gallery.submit">Contribute a skin</a>
-        <a href="https://github.com/telagod/code-abyss/blob/main/docs/specs/persona-voice-card-v1.0.md" class="btn btn-ghost" data-i18n="gallery.spec">Voice Card spec</a>
-      </div>
-    </div>
-  </section>
-
-  <section class="install-section" id="install">
-    <div class="container">
-      <div class="eyebrow" data-i18n="install.label">Get started · RC</div>
-      <h2 data-i18n="install.title">Three steps to a live agent</h2>
-      <p class="section-desc" data-i18n="install.desc"><code>latest</code> on npm is still 4.10 until stable 5.0.0. RC is explicit.</p>
-      <ol class="install-steps">
-        <li>
-          <span class="step-n">1</span>
-          <div>
-            <strong data-i18n="install.s1">Agent OS layer</strong>
-            <div class="hero-install compact">
-              <span class="prompt-sign">$</span>
-              <code>npx code-abyss@5.0.0-rc.1 -t claude -y</code>
-              <button class="copy-btn" onclick="copyCmd(this)" data-cmd="npx code-abyss@5.0.0-rc.1 -t claude -y">Copy</button>
+        <ol class="spine">
+          <li class="spine-step">
+            <div class="spine-index">01</div>
+            <div class="spine-body">
+              <h3 data-i18n="flow.1.title">Install the Agent OS layer</h3>
+              <p data-i18n="flow.1.desc">Skills, lazy kernel, inject map, default character enforcement. Default voice is <code>plain</code> — no role-play.</p>
+              <div class="cmd-row">
+                <span class="prompt">$</span>
+                <code id="cmd-1">npx code-abyss@5.0.0-rc.1 -t claude -y</code>
+                <button type="button" class="copy-btn" data-cmd="npx code-abyss@5.0.0-rc.1 -t claude -y" onclick="copyCmd(this)" data-i18n="copy">Copy</button>
+              </div>
+              <p class="spine-note" data-i18n="flow.1.note">Swap <code>-t claude</code> for <code>codex</code> / <code>gemini</code> / <code>openclaw</code>.</p>
             </div>
-            <p class="step-note" data-i18n="install.s1n">persona · skills · default enforcement · inject map</p>
-          </div>
-        </li>
-        <li>
-          <span class="step-n">2</span>
-          <div>
-            <strong data-i18n="install.s2">abyss CLI + attach</strong>
-            <div class="hero-install compact">
-              <span class="prompt-sign">$</span>
-              <code>curl -fsSL https://raw.githubusercontent.com/telagod/abyss/main/install.sh | bash && abyss attach claude</code>
-            </div>
-          </div>
-        </li>
-        <li>
-          <span class="step-n">3</span>
-          <div>
-            <strong data-i18n="install.s3">Verify</strong>
-            <div class="hero-install compact">
-              <span class="prompt-sign">$</span>
-              <code>npx code-abyss@5.0.0-rc.1 doctor</code>
-              <button class="copy-btn" onclick="copyCmd(this)" data-cmd="npx code-abyss@5.0.0-rc.1 doctor">Copy</button>
-            </div>
-          </div>
-        </li>
-      </ol>
-      <div class="install-grid">
-        <div class="install-card"><div class="ic-name">Claude</div><code>-t claude</code></div>
-        <div class="install-card"><div class="ic-name">Codex</div><code>-t codex</code></div>
-        <div class="install-card"><div class="ic-name">Gemini</div><code>-t gemini</code></div>
-        <div class="install-card"><div class="ic-name">OpenClaw</div><code>-t openclaw --with-hooks</code></div>
-      </div>
-    </div>
-  </section>
+          </li>
 
-  <footer>
-    <div class="container">
+          <li class="spine-step">
+            <div class="spine-index">02</div>
+            <div class="spine-body">
+              <h3 data-i18n="flow.2.title">Install abyss + attach graph hooks</h3>
+              <p data-i18n="flow.2.desc">Code graph is a separate product. code-abyss does not download it or inject graph hooks for the three main hosts.</p>
+              <div class="cmd-row">
+                <span class="prompt">$</span>
+                <code>curl -fsSL https://raw.githubusercontent.com/telagod/abyss/main/install.sh | bash</code>
+                <button type="button" class="copy-btn" data-cmd="curl -fsSL https://raw.githubusercontent.com/telagod/abyss/main/install.sh | bash" onclick="copyCmd(this)" data-i18n="copy">Copy</button>
+              </div>
+              <div class="cmd-row">
+                <span class="prompt">$</span>
+                <code id="cmd-2">abyss attach claude</code>
+                <button type="button" class="copy-btn" data-cmd="abyss attach claude" onclick="copyCmd(this)" data-i18n="copy">Copy</button>
+              </div>
+            </div>
+          </li>
+
+          <li class="spine-step">
+            <div class="spine-index">03</div>
+            <div class="spine-body">
+              <h3 data-i18n="flow.3.title">Verify with doctor</h3>
+              <p data-i18n="flow.3.desc">Version, abyss detect, kernel, enforcement, compose budget, inject map — plus next steps if something is missing.</p>
+              <div class="cmd-row">
+                <span class="prompt">$</span>
+                <code>npx code-abyss@5.0.0-rc.1 doctor</code>
+                <button type="button" class="copy-btn" data-cmd="npx code-abyss@5.0.0-rc.1 doctor" onclick="copyCmd(this)" data-i18n="copy">Copy</button>
+              </div>
+              <pre class="doctor-sample" aria-hidden="true"><span class="t-dim">code-abyss doctor · 5.0.0-rc.1</span>
+<span class="t-ok">abyss</span>        present
+<span class="t-ok">enforcement</span> ON
+<span class="t-ok">inject plane</span> present
+<span class="t-dim">compose</span>      ~5k / 8k headroom</pre>
+            </div>
+          </li>
+        </ol>
+
+        <div class="flow-host-pick" role="group" aria-label="host">
+          <span class="flow-host-label" data-i18n="flow.host">Host for snippets</span>
+          <div class="flow-host-btns">
+            <button type="button" class="host-btn active" data-host="claude" onclick="setHost('claude')">Claude</button>
+            <button type="button" class="host-btn" data-host="codex" onclick="setHost('codex')">Codex</button>
+            <button type="button" class="host-btn" data-host="gemini" onclick="setHost('gemini')">Gemini</button>
+            <button type="button" class="host-btn" data-host="openclaw" onclick="setHost('openclaw')">OpenClaw</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AFTER FLOW: what you actually got -->
+    <section class="get-section" id="get">
+      <div class="container narrow">
+        <p class="eyebrow" data-i18n="get.label">After install</p>
+        <h2 data-i18n="get.title">What the OS gives you</h2>
+        <ul class="get-list">
+          <li>
+            <strong data-i18n="get.1.t">Control plane</strong>
+            <span data-i18n="get.1.d"><code>doctor</code> · <code>compose</code> · <code>score</code> — operate without re-tarring skills.</span>
+          </li>
+          <li>
+            <strong data-i18n="get.2.t">Lazy judgment</strong>
+            <span data-i18n="get.2.d">9 kernel bundles + 30 skills. Inject map forces judgment before execution under pressure.</span>
+          </li>
+          <li>
+            <strong data-i18n="get.3.t">Default enforcement</strong>
+            <span data-i18n="get.3.d">Character Stop-hook on claude/codex. Opt out: <code>--no-enforcement</code>.</span>
+          </li>
+          <li>
+            <strong data-i18n="get.4.t">Plain by default</strong>
+            <span data-i18n="get.4.d">Residual voice only. Optional skins via <code>--persona</code> / <code>--style</code> — never the product core.</span>
+          </li>
+        </ul>
+
+        <div class="later-box">
+          <h3 data-i18n="later.title">Later (optional)</h3>
+          <div class="cmd-row">
+            <span class="prompt">$</span>
+            <code>npx code-abyss@5.0.0-rc.1 compose -t claude --persona abyss --style abyss-cultivator</code>
+            <button type="button" class="copy-btn" data-cmd="npx code-abyss@5.0.0-rc.1 compose -t claude --persona abyss --style abyss-cultivator" onclick="copyCmd(this)" data-i18n="copy">Copy</button>
+          </div>
+          <p class="spine-note" data-i18n="later.note">Re-skin guidance without recopying the skill tree. Skip this if you just want work done.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="flow-footer">
+    <div class="container narrow">
       <div class="footer-inner">
-        <span>MIT · <b>v5.0.0-rc.1</b> · Agent OS</span>
+        <span>MIT · <b>5.0.0-rc.1</b></span>
         <div class="footer-links">
           <a href="https://github.com/telagod/code-abyss">GitHub</a>
           <a href="https://www.npmjs.com/package/code-abyss">npm</a>
-          <a href="https://github.com/telagod/code-abyss/blob/main/docs/MIGRATION-v5.md" data-i18n="footer.migrate">Upgrade from 4.x</a>
-          <a href="submit.html" data-i18n="footer.submit">Submit Persona</a>
+          <a href="https://github.com/telagod/code-abyss/blob/main/docs/MIGRATION-v5.md" data-i18n="footer.mig">4.x → 5</a>
+          <a href="https://github.com/telagod/code-abyss/blob/main/docs/design/agent-os-v5.md" data-i18n="footer.design">Design</a>
+          <a href="submit.html" data-i18n="footer.skin">Submit skin</a>
         </div>
       </div>
     </div>
@@ -338,84 +187,36 @@
   <script>
     function copyCmd(btn) {
       const cmd = btn.getAttribute('data-cmd');
-      navigator.clipboard.writeText(cmd);
+      navigator.clipboard.writeText(cmd).catch(() => {});
       const orig = btn.textContent;
-      btn.textContent = 'Copied';
+      btn.textContent = (typeof getLang === 'function' && getLang() === 'zh') ? '已复制' : 'Copied';
       btn.classList.add('copied');
-      setTimeout(() => {
-        btn.textContent = orig;
-        btn.classList.remove('copied');
-      }, 1500);
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1400);
     }
 
-    const PERSONAS = [
-      {
-        slug: "plain", name: "Plain", style: "default",
-        voice: { self: "本机", user: "对方" },
-        desc: { en: "Shipped default. Minimal residual voice — no role-play.", zh: "出厂默认。极简残余声音——无角色扮演。" },
-        color: "#9b8cff", isDefault: true
-      },
-      {
-        slug: "abyss", name: "邪修红尘仙", style: "optional skin",
-        voice: { self: "吾", user: "魔尊" },
-        desc: { en: "Optional skin. Security-first cultivator voice.", zh: "可选皮肤。安全优先的修仙声口。" },
-        color: "#7a6fd4"
-      },
-      {
-        slug: "scholar", name: "文言小生", style: "optional skin",
-        voice: { self: "在下", user: "前辈" },
-        desc: { en: "Optional skin. Literary scholar voice.", zh: "可选皮肤。文言书生声口。" },
-        color: "#8ad6b0"
-      },
-      {
-        slug: "elder-sister", name: "知性大姐姐", style: "optional skin",
-        voice: { self: "姐姐", user: "小宝" },
-        desc: { en: "Optional skin. Warm mentor voice.", zh: "可选皮肤。知性导师声口。" },
-        color: "#ff8fc7"
-      },
-      {
-        slug: "junior-sister", name: "古怪精灵小师妹", style: "optional skin",
-        voice: { self: "本仙女", user: "师兄" },
-        desc: { en: "Optional skin. High-energy voice.", zh: "可选皮肤。活泼跳脱声口。" },
-        color: "#f0b067"
-      },
-      {
-        slug: "iron-dad", name: "铁壁暖阳", style: "optional skin",
-        voice: { self: "哥", user: "宝子" },
-        desc: { en: "Optional skin. Steady protective voice.", zh: "可选皮肤。稳厚护短声口。" },
-        color: "#79b6ff"
-      },
-      {
-        slug: "dongbei-yujie", name: "东北魅影·雨姐", style: "optional skin",
-        voice: { self: "姐", user: "老蒯" },
-        desc: { en: "Optional skin. Blunt overseer voice.", zh: "可选皮肤。直戳病灶声口。" },
-        color: "#e8a87c"
+    function setHost(host) {
+      document.querySelectorAll('.host-btn').forEach((b) => {
+        b.classList.toggle('active', b.getAttribute('data-host') === host);
+      });
+      const install = host === 'openclaw'
+        ? `npx code-abyss@5.0.0-rc.1 -t openclaw --with-hooks -y`
+        : `npx code-abyss@5.0.0-rc.1 -t ${host} -y`;
+      const attach = host === 'openclaw'
+        ? `# openclaw: hooks via --with-hooks above (abyss attach not used)`
+        : `abyss attach ${host}`;
+      const c1 = document.getElementById('cmd-1');
+      const c2 = document.getElementById('cmd-2');
+      if (c1) {
+        c1.textContent = install;
+        c1.parentElement.querySelector('.copy-btn').setAttribute('data-cmd', install);
       }
-    ];
-
-    function renderPersonas() {
-      const lang = getLang();
-      document.getElementById('persona-grid').innerHTML = PERSONAS.map(p => `
-        <div class="persona-card${p.isDefault ? ' is-default' : ''}" style="--card-accent:${p.color}">
-          <div class="pc-row1">
-            <div>
-              <div class="pc-name">${p.name}</div>
-              <div class="pc-style">${p.style}</div>
-            </div>
-            <code class="pc-slug">--persona ${p.slug}</code>
-          </div>
-          <p class="pc-desc">${p.desc[lang] || p.desc.en}</p>
-          <div class="pc-voice">
-            <div class="pc-voice-cell"><span class="v-label">self</span><span class="v-val">${p.voice.self}</span></div>
-            <div class="pc-voice-cell"><span class="v-label">user</span><span class="v-val">${p.voice.user}</span></div>
-          </div>
-        </div>
-      `).join('');
+      if (c2) {
+        c2.textContent = attach;
+        const btn = c2.parentElement.querySelector('.copy-btn');
+        btn.setAttribute('data-cmd', attach.startsWith('#') ? '' : attach);
+        btn.disabled = attach.startsWith('#');
+      }
     }
-
-    renderPersonas();
-    const _origApply = applyLang;
-    applyLang = function(lang) { _origApply(lang); renderPersonas(); };
   </script>
 </body>
 </html>

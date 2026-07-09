@@ -71,10 +71,10 @@ domain expertise, and a backstop against the trained agree-reflex** — across e
 - **v4.8 — dynamic capability discovery**: code-abyss reads `abyss skill-manifest` when the installed `abyss` CLI is ≥ 0.5.22 — exposed CLI commands, MCP tools, and daemon socket verbs are discovered at install time instead of hard-coded
 - **v4.9 — hybrid split deprecation period**: `--with-abyss` / `--with-mcp` deprecated; graph hooks for claude/codex/gemini move toward `abyss attach` (completed in v5.0)
 - **v4.10 — mythos discipline kernel + Persona Voice Card**: lazy kernel, voice-only personas — see [Discipline kernel](#discipline-kernel) and [Persona Voice Card](#persona-voice-card-open-standard)
-- **v5.0 — Agent OS**: kill foyer (no binary/MCP/graph inject in code-abyss), default character enforcement, inject plane, `doctor` / `compose` / `score`. **Upgrade guide:** [docs/MIGRATION-v5.md](docs/MIGRATION-v5.md)
+- **v5.0.0-rc.1 — Agent OS (RC)**: kill foyer (no binary/MCP/graph inject in code-abyss), default character enforcement, inject plane, `doctor` / `compose` / `score`. **Upgrade guide:** [docs/MIGRATION-v5.md](docs/MIGRATION-v5.md)
 
 ```bash
-npx code-abyss@5 -t claude -y                     # persona / skills / style + default enforcement + inject map
+npx code-abyss@5.0.0-rc.1 -t claude -y                     # persona / skills / style + default enforcement + inject map
 curl -fsSL https://raw.githubusercontent.com/telagod/abyss/main/install.sh | bash   # abyss CLI (separate product)
 abyss attach claude                               # code-graph hooks (idempotent)
 npx code-abyss doctor                             # health + migration hints
@@ -420,6 +420,6 @@ npm run verify:skills       # Validate 39 skill contracts (30 domain + 9 kernel)
 
 <p align="center">
   <sub>
-    <b>MIT License</b> · v5.0.0 · made with 紫宵脉 by <a href="https://github.com/telagod">@telagod</a>
+    <b>MIT License</b> · v5.0.0-rc.1 · made with 紫宵脉 by <a href="https://github.com/telagod">@telagod</a>
   </sub>
 </p>

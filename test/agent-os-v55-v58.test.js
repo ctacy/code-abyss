@@ -21,6 +21,19 @@ describe('v5.8 release workflow packs parity', () => {
     expect(yml).toMatch(/packs:vendor:sync/);
     expect(yml).toContain('score:mechanical');
   });
+
+  test('release.yml publishes prereleases under npm dist-tag rc', () => {
+    const yml = fs.readFileSync(path.join(projectRoot, '.github', 'workflows', 'release.yml'), 'utf8');
+    expect(yml).toMatch(/--tag rc/);
+    expect(yml).toMatch(/rc\|alpha\|beta\|pre/);
+  });
+});
+
+describe('package version is rc until stable 5.0.0', () => {
+  test('package.json is 5.0.0-rc.N prerelease', () => {
+    const v = JSON.parse(fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf8')).version;
+    expect(v).toMatch(/^5\.0\.0-rc\.\d+$/);
+  });
 });
 
 describe('v5.1..v5.4 regression guards', () => {

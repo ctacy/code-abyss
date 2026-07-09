@@ -1,6 +1,8 @@
 # Migrating to code-abyss 5.0 (Agent OS)
 
-This is a **breaking** major release. The package still installs persona, skills, and style into Claude / Codex / Gemini / OpenClaw — but it no longer pretends to own the `abyss` code-graph binary or graph-hook injection for the three main hosts.
+> **Current published pre-release: `5.0.0-rc.1`.** Stable `5.0.0` is not tagged yet.
+
+This is a **breaking** major-line release (RC). The package still installs persona, skills, and style into Claude / Codex / Gemini / OpenClaw — but it no longer pretends to own the `abyss` code-graph binary or graph-hook injection for the three main hosts.
 
 Design: [`design/agent-os-v5.md`](./design/agent-os-v5.md).
 
@@ -8,7 +10,7 @@ Design: [`design/agent-os-v5.md`](./design/agent-os-v5.md).
 
 ```bash
 # 1) Reinstall the Agent OS layer (skills + persona + style + default enforcement + inject map)
-npx code-abyss@5 -t claude -y
+npx code-abyss@5.0.0-rc.1 -t claude -y
 
 # 2) Code-graph binary (separate product)
 curl -fsSL https://raw.githubusercontent.com/telagod/abyss/main/install.sh | bash
@@ -73,4 +75,4 @@ npx code-abyss -t openclaw --with-hooks -y
 
 ## Versioning note
 
-`5.0.0` is the first release that **documents and ships** the kill-foyer + Agent OS surface as the supported path. Intermediate work lived on branch `feat/agent-os-v5-1-kill-foyer` / PR #59 before tag.
+`5.0.0-rc.1` is the first **release candidate** that documents and ships the kill-foyer + Agent OS surface for soak testing. Work lives on branch `feat/agent-os-v5-1-kill-foyer` / PR #59. Promote to stable `5.0.0` after RC validation (no further planned kill-foyer scope).

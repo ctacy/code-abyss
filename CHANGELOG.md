@@ -4,13 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [5.0.0] - 2026-07-09
+## [5.0.0-rc.1] - 2026-07-09
 
-> **Major / Breaking — Agent OS v5.** code-abyss is no longer “an install tar of markdown.”
-> It is a small **control plane** (install + doctor/compose/score + inject plane + default
-> character enforcement) with judgment in the lazy mythos kernel and code-graph owned by
-> the separate `abyss` CLI. Design authority: [`docs/design/agent-os-v5.md`](docs/design/agent-os-v5.md).
-> User migration: [`docs/MIGRATION-v5.md`](docs/MIGRATION-v5.md).
+> **Release candidate (not stable 5.0.0).** Agent OS v5 cutover for early adopters.
+> Install with `npx code-abyss@5.0.0-rc.1` or `npm i -g code-abyss@5.0.0-rc.1` (npm dist-tag **`rc`** if published that way).
+> Stable **5.0.0** will follow after RC soak. Design: [`docs/design/agent-os-v5.md`](docs/design/agent-os-v5.md).
+> Migration: [`docs/MIGRATION-v5.md`](docs/MIGRATION-v5.md).
+>
+> Same breaking surface as planned 5.0.0 — RC is for validation, not a soft feature freeze only.
 
 ### Migration (from 4.x)
 
@@ -26,7 +27,7 @@ All notable changes to this project will be documented in this file.
 
 ```bash
 # Recommended upgrade path
-npx code-abyss@5 -t claude -y          # persona / skills / style + default enforcement + inject plane
+npx code-abyss@5.0.0-rc.1 -t claude -y          # persona / skills / style + default enforcement + inject plane
 curl -fsSL https://raw.githubusercontent.com/telagod/abyss/main/install.sh | bash
 abyss attach claude                    # code-graph hooks
 npx code-abyss doctor                  # health + migration hints

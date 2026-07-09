@@ -338,12 +338,12 @@ Each phase: **one PR-able unit**, green gates, independent value. No big-bang fr
 - Uninstall still strips legacy hook markers if present.
 - **Done when:** no `abyss-binary` download path; help text points only to abyss; tests updated; CI green.
 
-### Phase V5-2 — Docs & contract honesty
+### Phase V5-2 — Docs & contract honesty ✅
 
 - K5, K7, K8; expand `docs-drift` tests to skill counts / invocable set / forbid DESIGN freeform-as-current.
 - **Done when:** drift tests fail if CLAUDE/README lie again.
 
-### Phase V5-3 — Default enforcement
+### Phase V5-3 — Default enforcement ✅
 
 - K4: install character hooks by default on capable hosts; `--no-enforcement` escape.
 - Smoke asserts hook presence.

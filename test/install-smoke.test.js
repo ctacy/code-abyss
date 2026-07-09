@@ -60,6 +60,24 @@ describe('claude install smoke', () => {
     expect(fs.existsSync(path.join(claudeDir, 'skills', 'gstack'))).toBe(false);
     expect(fs.existsSync(path.join(claudeDir, 'settings.json'))).toBe(true);
     expect(fs.existsSync(path.join(claudeDir, '.code-abyss-uninstall.js'))).toBe(true);
+
+    // V5.3: character Stop-hook default-on for claude
+    const settings = JSON.parse(fs.readFileSync(path.join(claudeDir, 'settings.json'), 'utf8'));
+    const stop = settings.hooks && settings.hooks.Stop;
+    expect(Array.isArray(stop)).toBe(true);
+    expect(JSON.stringify(stop)).toContain('_kernel/character/hooks');
+    expect(JSON.stringify(stop)).toContain('check_banned_openers.py');
+  });
+
+  test('--no-enforcement 跳过 character Stop-hook', () => {
+    const result = runInstall(['--target', 'claude', '-y', '--no-enforcement']);
+    expect(result.status).toBe(0);
+    const settings = JSON.parse(
+      fs.readFileSync(path.join(tmpHome, '.claude', 'settings.json'), 'utf8')
+    );
+    const blob = JSON.stringify(settings.hooks || {});
+    expect(blob).not.toContain('check_banned_openers.py');
+    expect(`${result.stdout}\n${result.stderr}`).toMatch(/--no-enforcement/);
   });
 
   test('安装 Claude 时支持 --style 切换 outputStyle', () => {

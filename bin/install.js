@@ -220,7 +220,7 @@ let listPersonasOnly = false;
 let requestedStyleSlug = null;
 let requestedPersonaSlug = null;
 let withHooks = false;
-let withEnforcement = false;
+let noEnforcement = false;
 
 for (let i = 0; i < args.length; i++) {
   if ((args[i] === '--target' || args[i] === '-t') && args[i + 1]) { target = args[++i]; }
@@ -239,7 +239,8 @@ for (let i = 0; i < args.length; i++) {
     }
   }
   else if (args[i] === '--with-hooks') { withHooks = true; }
-  else if (args[i] === '--with-enforcement') { withEnforcement = true; }
+  else if (args[i] === '--no-enforcement') { noEnforcement = true; }
+  else if (args[i] === '--with-enforcement') { noEnforcement = false; } // compat: explicit on (default)
   else if (args[i] === '--yes' || args[i] === '-y') { autoYes = true; }
   else if (args[i] === '--help' || args[i] === '-h') {
     banner();
@@ -249,8 +250,8 @@ for (let i = 0; i < args.length; i++) {
     console.log(`  ${c.cyn('--uninstall, -u')} <${formatTargetList('|')}>   remove one target`);
     console.log(`  ${c.cyn('--with-hooks')}   openclaw/pi/hermes only: spawn install-hooks.sh`);
     console.log(`                 claude/codex/gemini graph hooks: use ${c.d('abyss attach <host>')}`);
-    console.log(`  ${c.cyn('--with-enforcement')}  character Stop-hook backstop (opt-in; blocks banned`);
-    console.log(`                 capitulation openers). claude/codex only.`);
+    console.log(`  ${c.cyn('--no-enforcement')}  skip character Stop-hook (default: ON for claude/codex)`);
+    console.log(`  ${c.cyn('--with-enforcement')}  compat alias — enforcement is already default-on`);
     console.log(`  ${c.cyn('--style')} <slug>  ${c.cyn('--persona')} <slug>  ${c.cyn('-y')}
 `);
     console.log(`${c.b('Examples')}`);
@@ -283,23 +284,28 @@ function maybeSpawnInstallHooks(targetName) {
   else warn(`install-hooks.sh ${targetName} 退出码 ${r.status ?? 'n/a'}（不阻断安装）`);
 }
 
-// --with-enforcement：character Stop-hook 强制执行兜底（与 graph hooks 分离）。
-// 仅 claude/codex 有可用的 Stop 事件；gemini/openclaw 无，按 no-silent-caps 明示跳过。
+// Character Stop-hook 强制执行兜底（Agent OS v5.3：claude/codex 默认开启）。
+// 与 graph hooks 分离。gemini/openclaw 无 Stop 事件 → 静默跳过（非降级噪音）。
+// 逃生口：--no-enforcement
 function maybeInstallEnforcement(targetName, ctx) {
-
-  if (!withEnforcement) return;
-  if (!['claude', 'codex'].includes(targetName)) {
-    info(`--with-enforcement：${targetName} 无 Stop hook 事件，强制执行不可用，已跳过`);
+  if (noEnforcement) {
+    if (['claude', 'codex'].includes(targetName)) {
+      info('character Stop-hook 已跳过（--no-enforcement）');
+    }
     return;
   }
+  if (!['claude', 'codex'].includes(targetName)) return;
   const scriptPath = path.join(ctx.targetDir, 'skills', '_kernel', 'character', 'hooks', 'install-character-hooks.sh');
   if (!fs.existsSync(scriptPath)) {
-    warn(`--with-enforcement: install-character-hooks.sh 未找到 (${scriptPath})`);
+    warn(`character Stop-hook: install-character-hooks.sh 未找到 (${scriptPath})`);
     return;
   }
-  info(`--with-enforcement → bash install-character-hooks.sh ${targetName}`);
+  info(`character Stop-hook → bash install-character-hooks.sh ${targetName}`);
   const { spawnSync } = require('child_process');
-  const r = spawnSync('bash', [scriptPath, targetName], { stdio: 'inherit' });
+  const r = spawnSync('bash', [scriptPath, targetName], {
+    stdio: 'inherit',
+    env: { ...process.env, HOME },
+  });
   if (r.status === 0) ok(`character Stop-hook 已注入 ${targetName}`);
   else warn(`install-character-hooks.sh ${targetName} 退出码 ${r.status ?? 'n/a'}（不阻断安装）`);
 }

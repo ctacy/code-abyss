@@ -118,11 +118,10 @@ after each sync). Kernel `SKILL.md`s are forced `user-invocable: false` by the s
 they're router/description-invoked judgment, not user-facing slash commands.
 
 Two ways this is enforced rather than aspirational:
-- **`--with-enforcement`** (`bin/install.js`'s `maybeInstallEnforcement()`, claude/codex only)
-  installs the `character` bundle's Stop-hook backstop (`install-character-hooks.sh` →
-  `check_banned_openers.py`) — blocks and forces one revision turn if a reply opens with a
-  banned capitulation phrase ("you're absolutely right", etc.). Deliberately a separate flag
-  from the deprecated `--with-hooks` (that gates the non-blocking abyss code-graph hooks).
+- **Character Stop-hook (default on for claude/codex)** — `maybeInstallEnforcement()` installs
+  the `character` bundle backstop (`install-character-hooks.sh` → `check_banned_openers.py`)
+  on every install unless `--no-enforcement`. Forces one revision turn if a reply opens with a
+  banned capitulation phrase. Separate from graph hooks (`abyss attach` / openclaw `--with-hooks`).
 - **`scripts/persona-battery/`** — an opt-in behavioral eval, not a unit test; see
   "Persona behavioral battery" above.
 
@@ -201,7 +200,7 @@ The installer generates different artifacts per target CLI:
 - **Gemini**: `~/.gemini/GEMINI.md` + `~/.gemini/commands/*.toml` + `~/.gemini/skills/**/SKILL.md` — Gemini reads persistent context from `GEMINI.md`; commands are optional and generated only for invocable skills
 - **OpenClaw**: `~/.openclaw/skills/**/SKILL.md` + `<workspace>/AGENTS.md` + `<workspace>/SOUL.md` — OpenClaw reads shared skills from `~/.openclaw/skills/`; workspace bootstrap files carry rules and persona/style
 
-Claude command generation and Codex/Gemini skill installation share the same skill source tree; only `user-invocable: true` skills emit explicit commands, and the current core set defaults to none.
+Claude command generation and Codex/Gemini skill installation share the same skill source tree; only `user-invocable: true` skills emit explicit commands. Current invocable set (5): `cultivating-skills`, `cultivating-personas`, `designing-hardware-products`, `operating-kicad-eda`, `reducing-aigc-detection` — source of truth is `skills/**/SKILL.md` + `bin/lib/skill-registry.js` (CI smoke asserts the forge commands).
 
 ### Adapter Pattern
 

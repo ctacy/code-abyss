@@ -74,6 +74,9 @@ jobs:
           test ! -e "$abyss_home/.claude/commands/review.md"
           test -f "$abyss_home/.claude/settings.json"
           test -f "$abyss_home/.claude/.code-abyss-uninstall.js"
+          # V5.3: character Stop-hook default-on
+          grep -q '_kernel/character/hooks' "$abyss_home/.claude/settings.json"
+          grep -q 'check_banned_openers.py' "$abyss_home/.claude/settings.json"
 
           npx --yes --package "./$pkg_tgz" code-abyss --uninstall claude
 

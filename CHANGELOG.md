@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Agent OS v5.2–v5.3 — docs honesty + default enforcement
+
+- **V5-2:** docs-drift guard now asserts live skill counts (30+9=39), invocable set (5), forbids CLAUDE "defaults to none" and stale README test totals; DESIGN.md must point at `agent-os-v5.md`.
+- **V5-3:** character Stop-hook is **default-on** for claude/codex (`maybeInstallEnforcement`). Escape hatch: `--no-enforcement`. `--with-enforcement` remains a no-op compat alias. CI smoke greps settings for `check_banned_openers.py`.
+
 ### Breaking — Agent OS v5.1 kill foyer (K1–K3)
 
 Landed under design `docs/design/agent-os-v5.md` phase **V5-1**.

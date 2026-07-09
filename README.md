@@ -211,10 +211,9 @@ prompt, so adding discipline content doesn't blow the context budget):
 
 **Two ways this becomes real, not aspirational:**
 
-- **Enforcement**: `npx code-abyss -t claude --with-enforcement` installs a Stop-hook
-  backstop (claude/codex) that forces one revision turn if a reply opens with a banned
-  capitulation phrase ("you're absolutely right", "good catch", …) — prose bans alone lose
-  to the trained agree-reflex; this is the deterministic fallback.
+- **Enforcement** (default on claude/codex): install injects a character Stop-hook backstop
+  that forces one revision turn if a reply opens with a banned capitulation phrase
+  ("you're absolutely right", "good catch", …). Opt out with `--no-enforcement`.
 - **Measurement**: `scripts/persona-battery/` is a small, honest behavioral eval — 10
   probes (does the persona hold correctness over agreeableness? lead with bad news? refuse
   to fake a "done"?) scored by an LLM judge, never faked as a pass when unscored. See
@@ -408,7 +407,7 @@ const gpt = toGPTInstructions(card); // → OpenAI Custom GPT
 ```bash
 git clone https://github.com/telagod/code-abyss && cd code-abyss
 npm install
-npm test                    # 441 tests (439 passing, 2 skipped)
+npm test                    # full Jest suite (see suite summary on run)
 npm run verify:skills       # Validate 39 skill contracts (30 domain + 9 kernel)
 ```
 

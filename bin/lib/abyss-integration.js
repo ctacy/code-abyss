@@ -1,31 +1,17 @@
 'use strict';
 
 // bin/lib/abyss-integration.js
-// abyss CLI（代码图谱）与各 host 的联动单一事实源：
-//   - hook 注入（claude/gemini settings.json，含路径重锚定与去重）
+// abyss CLI（代码图谱）与各 host 的联动单一事实源（Agent OS v5 / V5-1 kill foyer）：
 //   - 二进制探测（PATH + ~/.code-abyss/bin 兜底）与最低版本契约
-//   - MCP server 注册条目（--with-mcp）
+//   - 卸载/重装剥除遗留 code-abyss graph hooks（stripAbyssHooks）
+//   - MCP 条目 shape 助手（buildMcpEntry / inject*Mcp）—— **安装器不再写入**；
+//     客户端自管或 `abyss attach`；removeClaudeMcp 供 uninstall
 //   - packs.lock.json `tools` 字段的版本声明检查
+//   - skill-manifest 能力发现（0.5.22+）
 //
-// 设计约束：
-//   - hook 命令必须指向「安装后」的 skill 路径（<target-dir>/skills/...），
-//     绝不指向 PKG_ROOT —— npx 场景下那是易失缓存目录。
-//   - 注入幂等：以 HOOK_MARKER 识别我方条目，先删后插。旧安装里指向
-//     易失路径的条目也会被同一标记捕获并重锚定。
-//   - 脚本自带 abyss 存在性守卫，注入不以安装时是否检测到 abyss 为条件——
-//     用户后装 abyss 时 hook 自动生效，无需重装。
-//
-// ── v4.9.0 hybrid-切割 deprecation 期（2026-06-25 起）──
-//
-// claude/gemini hook 注入由 `abyss attach <host>` 接管为 production 主入口
-// （见 abyss v0.5.24+ docs/book/getting-started/agent-hook.md）。本文件的
-// `injectClaudeHooks` / `injectGeminiHooks` / `stripAbyssHooks` 在 v4.9 保留
-// 行为以维持 `--with-hooks` flag 的 backward compatibility，但 install.js
-// 触发时会打印 deprecation warning 引导用户改用 `abyss attach`。v5.0 物理
-// 删除这三个函数与相关 export；卸载剥除 (uninstall.js stripAbyssHooks) 与
-// MCP 注册 (injectClaudeMcp/GeminiMcp + removeClaudeMcp) 仍是 code-abyss
-// 责任，不在切割范围。openclaw/pi/hermes 不在此文件——它们的 hook 由
-// skills/indexing-code/hooks/common/install-hooks.sh 处理（v5.0 仍保留）。
+// claude/codex/gemini 的 graph hook **注入**不在本文件：production 主入口是
+// `abyss attach <host>`。openclaw/pi/hermes 的 hook 由
+// skills/indexing-code/hooks/common/install-hooks.sh（`--with-hooks`）处理。
 
 const fs = require('fs');
 const path = require('path');
@@ -53,72 +39,8 @@ function isAbyssHookEntry(entry) {
   }
 }
 
-// 幂等注入：按事件名先剔除带标记的旧条目（含路径过期的），再插入新条目
-function upsertHookEntries(hooks, eventName, entries) {
-  const existing = Array.isArray(hooks[eventName]) ? hooks[eventName] : [];
-  hooks[eventName] = existing.filter((e) => !isAbyssHookEntry(e)).concat(entries);
-}
-
-/**
- * @deprecated v4.9.0 — abyss attach claude 是 production 主入口。
- *   本函数保留行为以维持 `--with-hooks` flag 兼容，v5.0 物理删除。
- *   迁移：`abyss attach claude` (abyss CLI v0.5.20+)。
- */
-function injectClaudeHooks(settings, targetDir) {
-  const hookDir = resolveAbyssHookDir(targetDir);
-  if (!settings.hooks || typeof settings.hooks !== 'object') settings.hooks = {};
-  upsertHookEntries(settings.hooks, 'SessionStart', [{
-    matcher: '',
-    hooks: [{
-      type: 'command',
-      command: `bash "${path.join(hookDir, 'session-init.sh')}"`,
-      timeout: 10,
-    }],
-  }]);
-  upsertHookEntries(settings.hooks, 'PreToolUse', [{
-    matcher: 'Edit|Write',
-    hooks: [{
-      type: 'command',
-      command: `bash "${path.join(hookDir, 'pre-edit-check.sh')}"`,
-      timeout: 5,
-    }],
-  }]);
-  return hookDir;
-}
-
-/**
- * @deprecated v4.9.0 — abyss attach gemini 是 production 主入口。
- *   本函数保留行为以维持 `--with-hooks` flag 兼容，v5.0 物理删除。
- *   迁移：`abyss attach gemini` (abyss CLI v0.5.20+)。
- */
-function injectGeminiHooks(settings, targetDir) {
-  const hookDir = resolveAbyssHookDir(targetDir);
-  if (!settings.hooks || typeof settings.hooks !== 'object') settings.hooks = {};
-  upsertHookEntries(settings.hooks, 'SessionStart', [{
-    matcher: 'startup',
-    hooks: [{
-      name: 'abyss-init',
-      type: 'command',
-      command: `bash "${path.join(hookDir, 'session-init.sh')}"`,
-      timeout: 10000,
-      description: 'Auto-index project with abyss',
-    }],
-  }]);
-  upsertHookEntries(settings.hooks, 'BeforeTool', [{
-    matcher: 'write_file|replace|edit_file',
-    hooks: [{
-      name: 'abyss-check',
-      type: 'command',
-      command: `bash "${path.join(hookDir, 'pre-edit-check.sh')}"`,
-      timeout: 5000,
-      description: 'Check callers before editing code',
-    }],
-  }]);
-  return hookDir;
-}
-
-// 卸载用：从 settings 里剥除所有带标记的 hook 条目（备份还原可能带回
-// 指向已删 skill 脚本的旧条目——不清会让每次编辑冒 bash 127 噪音）
+// 卸载/重装用：从 settings 里剥除所有带标记的 hook 条目（旧 --with-hooks 残留、
+// 备份还原可能带回指向已删 skill 脚本的旧条目——不清会让每次编辑冒 bash 127）
 function stripAbyssHooks(settings) {
   if (!settings || !settings.hooks || typeof settings.hooks !== 'object') return false;
   let changed = false;
@@ -168,7 +90,7 @@ function tryVersion(cmd) {
   return null;
 }
 
-// PATH 优先，~/.code-abyss/bin 兜底（--with-abyss 的落点不要求用户改 PATH）
+// PATH 优先，~/.code-abyss/bin 兜底（历史 managed 落点；现由 abyss install.sh 等写入）
 function detectAbyss({ HOME = os.homedir() } = {}) {
   const onPath = tryVersion('abyss');
   if (onPath) return { ...onPath, binPath: 'abyss', source: 'PATH' };
@@ -270,7 +192,7 @@ function resolveAbyssMcpTools(manifest, fallback = ['search_context', 'get_symbo
   return fallback;
 }
 
-// ── MCP 注册（--with-mcp 显式 opt-in；8 个 tool schema 常驻 context 有成本） ──
+// ── MCP 条目 shape（安装器不写；供客户端自配 / 测试 / uninstall 对照）──
 
 function buildMcpEntry(binPath) {
   return { command: binPath || 'abyss', args: ['mcp'] };
@@ -305,8 +227,7 @@ module.exports = {
   HOOK_MARKER,
   resolveAbyssHookDir,
   abyssManagedBinPath,
-  injectClaudeHooks,
-  injectGeminiHooks,
+  isAbyssHookEntry,
   stripAbyssHooks,
   removeClaudeMcp,
   detectAbyss,

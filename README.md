@@ -277,7 +277,7 @@ impact: SetError  direct=17  transitive=521  tests=469  uncovered=319  risk=10.0
   ⚠ 319 call paths without test coverage
 ```
 
-`abyss` is a separate Rust binary ([telagod/abyss](https://github.com/telagod/abyss)). The installer offers to fetch it (`--with-abyss`), or grab it directly:
+`abyss` is a separate Rust binary ([telagod/abyss](https://github.com/telagod/abyss)). Install it via abyss's own channels (not `code-abyss`):
 
 ```sh
 npm install -g @code-abyss/cli   # prebuilt binary, all platforms

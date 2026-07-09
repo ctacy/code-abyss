@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Breaking — Agent OS v5.1 kill foyer (K1–K3)
+
+Landed under design `docs/design/agent-os-v5.md` phase **V5-1**.
+
+- **Removed** `--with-abyss` and `bin/lib/abyss-binary.js` — binary install is abyss-only (`install.sh` / `cargo binstall code-abyss` / `@code-abyss/cli`). Passing the flag prints a migration hint and continues without download.
+- **Removed** `--with-mcp` install path — clients register `mcpServers.abyss = { command: "abyss", args: ["mcp"] }` themselves. Shape helpers remain for tests/uninstall (`removeClaudeMcp`).
+- **Removed** code-abyss graph hook **injection** for claude/codex/gemini. Production inject is **`abyss attach <host>`**. Reinstall/uninstall still **strip** legacy marker hooks.
+- **`--with-hooks`** now only applies to **openclaw/pi/hermes** (`install-hooks.sh`). On claude/codex/gemini it prints guidance to `abyss attach` and does not write settings.
+- **Kept:** `detectAbyss`, skill-manifest summary, `--with-enforcement`, backup/uninstall, strip helpers.
+
 ## [4.10.0] - 2026-07-06
 
 > **Minor: mythos 纪律内核合并 + 人格系统重设计.** 两件事一起发：(1) 9 个工程判断

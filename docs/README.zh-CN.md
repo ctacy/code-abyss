@@ -259,7 +259,7 @@ impact: SetError  direct=17  transitive=521  tests=469  uncovered=319  risk=10.0
   ⚠ 319 call paths without test coverage
 ```
 
-`abyss` 是独立的 Rust 二进制（[telagod/abyss](https://github.com/telagod/abyss)）。安装器可代为下载（`--with-abyss`），或直接获取：
+`abyss` 是独立的 Rust 二进制（[telagod/abyss](https://github.com/telagod/abyss)）。请通过 abyss 自身渠道安装（code-abyss 不再代下二进制）：
 
 ```sh
 npm install -g @code-abyss/cli   # 预编译二进制，全平台

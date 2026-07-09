@@ -332,9 +332,9 @@ Each phase: **one PR-able unit**, green gates, independent value. No big-bang fr
 - Land this design; supersession pointers; no product code.
 - **Done when:** single primary next-era doc; v3/mythos/DESIGN linked.
 
-### Phase V5-1 — Kill foyer (delete deprecations)
+### Phase V5-1 — Kill foyer (delete deprecations) ✅ landed on `feat/agent-os-v5-1-kill-foyer`
 
-- Remove K1–K3 code paths and flags; keep detect/doctor messaging.
+- Remove K1–K3 code paths and flags; keep detect messaging.
 - Uninstall still strips legacy hook markers if present.
 - **Done when:** no `abyss-binary` download path; help text points only to abyss; tests updated; CI green.
 

@@ -4,6 +4,59 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [5.0.0-rc.1] - 2026-07-09
+
+> **Release candidate (not stable 5.0.0).** Agent OS v5 cutover for early adopters.
+> Install with `npx code-abyss@5.0.0-rc.1` or `npm i -g code-abyss@5.0.0-rc.1` (npm dist-tag **`rc`** if published that way).
+> Stable **5.0.0** will follow after RC soak. Design: [`docs/design/agent-os-v5.md`](docs/design/agent-os-v5.md).
+> Migration: [`docs/MIGRATION-v5.md`](docs/MIGRATION-v5.md).
+>
+> Same breaking surface as planned 5.0.0 — RC is for validation, not a soft feature freeze only.
+
+### Migration (from 4.x)
+
+| 4.x habit | 5.0 path |
+|-----------|----------|
+| `npx code-abyss -t claude --with-abyss` | Install abyss separately (`install.sh` / `@code-abyss/cli` / cargo), then `abyss attach claude` |
+| `--with-mcp` | Client-managed `mcpServers.abyss = { command: "abyss", args: ["mcp"] }` |
+| `--with-hooks` on claude/codex/gemini | `abyss attach <host>` (idempotent) |
+| `--with-hooks` on openclaw | Still valid: `npx code-abyss -t openclaw --with-hooks` |
+| Opt-in `--with-enforcement` | **Default on** for claude/codex; opt out with `--no-enforcement` |
+| Reinstall to change persona/style | Prefer `code-abyss compose -t <host> --persona … --style …` (no skill recopy) |
+| Hope the model reads the router | Install writes `.code-abyss-inject.md`; always-on router generated from inject-plane |
+
+```bash
+# Recommended upgrade path
+npx code-abyss@5.0.0-rc.1 -t claude -y          # persona / skills / style + default enforcement + inject plane
+curl -fsSL https://raw.githubusercontent.com/telagod/abyss/main/install.sh | bash
+abyss attach claude                    # code-graph hooks
+npx code-abyss doctor                  # health + migration hints
+```
+
+### Breaking
+
+- **Removed** `--with-abyss` and `bin/lib/abyss-binary.js` — binary distribution is abyss-only.
+- **Removed** `--with-mcp` install path — MCP registration is client-managed.
+- **Removed** code-abyss graph-hook **injection** for claude/codex/gemini (`injectClaudeHooks` / `injectGeminiHooks` / install-time Codex hook inject). Production inject is **`abyss attach <host>`**. Reinstall/uninstall still **strip** legacy marker hooks.
+- **`--with-hooks`** is openclaw/pi/hermes only. On claude/codex/gemini it prints guidance and does not write graph hooks.
+
+### Added
+
+- **Agent OS design** `docs/design/agent-os-v5.md` + `docs/MIGRATION-v5.md`.
+- **V5-4 inject plane** `bin/lib/inject-plane.js`: `DOMAIN_SKILL_MAP` (16) + `resolveTrigger()`; always-on kernel router generated from the same module; install artifact `.code-abyss-inject.md` on claude/codex.
+- **V5-5 runtime CLI:** `code-abyss doctor`, `code-abyss compose` (`bin/lib/runtime-control.js`) — compose reuses `renderRuntimeGuidance` without skill-tree recopy.
+- **V5-6 score plane:** `npm run score:mechanical` / `code-abyss score` (`bin/lib/banned-openers.js` + `score-mechanical.js`); key-free banned-opener gate; release CI runs it.
+- **V5-7 residual stance:** optional `*.stance.json` via `bin/lib/stance.js` (candor/initiative/notes only; rejects auth/skip-verify shaped fields).
+- **V5-8 hardening:** persona-fetch HTTPS + host allowlist + redirect reject; release.yml packs checks; visible `[code-abyss: neutral-fallback]` marker in identity render.
+- **V5-3 default character enforcement** on claude/codex (`--no-enforcement` escape).
+- **V5-2 docs-drift** guards for skill counts, invocable set, agent-os design pointer.
+
+### Changed
+
+- Install finish / doctor surface migration hints (missing abyss, missing attach, enforcement off, inject absent).
+- `scripts/wire-domain-gates.js` consumes `DOMAIN_SKILL_MAP` from inject-plane (no parallel map).
+- README / site install copy: abyss is external; no `--with-abyss` / `--with-mcp` tips.
+
 ## [4.10.0] - 2026-07-06
 
 > **Minor: mythos 纪律内核合并 + 人格系统重设计.** 两件事一起发：(1) 9 个工程判断

@@ -1,27 +1,12 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const ROOT = '/home/telagod/project/code-abyss';
 
-// exec skill -> kernel domain (COMPOSE: judgment layer above execution)
-const MAP = {
-  'developing-software': 'backend',
-  'designing-architectures': 'backend',
-  'provisioning-infrastructure': 'backend',
-  'engineering-data-pipelines': 'backend',
-  'automating-devops': 'backend',
-  'applying-ui-design-system': 'frontend',
-  'developing-mobile-apps': 'frontend',
-  'designing-hardware-products': 'hardware',
-  'operating-kicad-eda': 'hardware',
-  'building-agent-systems': 'ml',
-  'securing-systems': 'security',
-  'analyzing-security': 'security',
-  'architecting-security': 'security',
-  'defending-applications': 'security',
-  'detecting-and-responding': 'security',
-  'securing-cloud-and-supply-chain': 'security',
-};
+// MAP is owned by inject-plane — do not maintain a parallel list here.
+const { DOMAIN_SKILL_MAP } = require('../bin/lib/inject-plane');
+
+const ROOT = path.resolve(__dirname, '..');
+const MAP = DOMAIN_SKILL_MAP;
 
 const MARKER = 'skills/_kernel/';
 function gate(domain) {

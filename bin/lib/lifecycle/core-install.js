@@ -19,7 +19,8 @@ const fs = require('fs');
 const path = require('path');
 
 const { installGstackPack } = require('../gstack/installer');
-const { injectClaudeHooks, injectGeminiHooks, stripAbyssHooks } = require('../abyss-integration');
+const { stripAbyssHooks } = require('../abyss-integration');
+const { writeInjectArtifact, stripInjectArtifact, INJECT_REL_PATH } = require('../inject-plane');
 
 function createInstallCore(deps) {
   const {
@@ -180,7 +181,7 @@ function createInstallCore(deps) {
   }
 
   function installCore(tgt, selectedStyle, selectedPersona, packPlan, opts = {}) {
-    const withHooks = opts.withHooks === true;
+    void opts; // reserved for future inject-plane opts (Agent OS v5)
     const openClawRuntime = tgt === 'openclaw' ? resolveOpenClawRuntime({ HOME, warn }) : null;
     const runtimeRoots = openClawRuntime
       ? {
@@ -463,16 +464,17 @@ function createInstallCore(deps) {
       }
       settings.outputStyle = selectedStyle.slug;
       ok(`outputStyle = ${c.mag(selectedStyle.slug)}`);
-      // abyss 代码图谱 hook：opt-in（--with-hooks）。不带旗子时剥光旧标记条目，
-      // 让重装等价于「按当前声明状态收敛」，不留 stale 路径冒 bash 127。
-      if (withHooks) {
-        injectClaudeHooks(settings, targetDir);
-        ok(`abyss hooks → ${c.d('SessionStart + PreToolUse(Edit|Write)')}`);
-      } else if (stripAbyssHooks(settings)) {
-        info('abyss hooks → 已剥除旧条目（未带 --with-hooks）');
+      // Graph hooks: production path is `abyss attach claude`. Reinstall strips
+      // legacy code-abyss marker entries so stale bash paths do not 127.
+      if (stripAbyssHooks(settings)) {
+        info('abyss hooks → 已剥除旧 code-abyss 条目（请用 abyss attach claude）');
       }
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
       pushManifestEntry(manifest.installed, 'claude', 'settings.json');
+      // V5.4 inject plane: thin judgment map artifact (not full kernel bodies)
+      stripInjectArtifact(targetDir);
+      writeInjectArtifact(targetDir, { targetName: 'claude', info });
+      pushManifestEntry(manifest.installed, 'claude', INJECT_REL_PATH);
     } else if (tgt === 'gemini') {
       settingsPath = path.join(targetDir, 'settings.json');
       if (fs.existsSync(settingsPath)) {
@@ -486,15 +488,17 @@ function createInstallCore(deps) {
         fs.copyFileSync(settingsPath, path.join(backupDir, 'gemini', 'settings.json'));
         pushManifestEntry(manifest.backups, 'gemini', 'settings.json');
       }
-      // abyss 代码图谱 hook：opt-in（--with-hooks）。事件名按 Gemini 形状（BeforeTool）。
-      if (withHooks) {
-        injectGeminiHooks(settings, targetDir);
-        ok(`abyss hooks → ${c.d('SessionStart + BeforeTool(write_file|replace|edit_file)')}`);
-      } else if (stripAbyssHooks(settings)) {
-        info('abyss hooks → 已剥除旧条目（未带 --with-hooks）');
+      if (stripAbyssHooks(settings)) {
+        info('abyss hooks → 已剥除旧 code-abyss 条目（请用 abyss attach gemini）');
       }
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
       pushManifestEntry(manifest.installed, 'gemini', 'settings.json');
+    } else if (tgt === 'codex') {
+      pruneLegacyCodexSettings(tgt, backupDir, manifest);
+      // V5.4 inject plane for codex (same thin artifact as claude)
+      stripInjectArtifact(targetDir);
+      writeInjectArtifact(targetDir, { targetName: 'codex', info });
+      pushManifestEntry(manifest.installed, 'codex', INJECT_REL_PATH);
     } else {
       pruneLegacyCodexSettings(tgt, backupDir, manifest);
     }

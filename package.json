@@ -1,6 +1,6 @@
 {
   "name": "code-abyss",
-  "version": "4.10.0",
+  "version": "5.0.0-rc.1",
   "description": "为 Claude Code / Codex CLI / Gemini CLI / OpenClaw 注入可切换人格、主动执行导向、6种输出风格与30个工程技能（含自我进化炼炉）。代码图谱由独立的 abyss Rust CLI 提供（github.com/telagod/abyss）",
   "keywords": [
     "claude",
@@ -44,12 +44,14 @@
     "test": "jest",
     "verify:skills": "node bin/verify-skills-contract.js",
     "migrate:v4": "node bin/migrate-v3-to-v4.js",
+    "migrate:v5": "node bin/install.js doctor",
     "packs:bootstrap": "node bin/packs.js bootstrap",
     "packs:update": "node bin/packs.js update",
     "packs:check": "node bin/packs.js check",
     "packs:vendor:sync": "node bin/packs.js vendor-sync",
     "kernel:sync": "node scripts/sync-mythos.js",
-    "battery:persona": "node scripts/persona-battery/run.js"
+    "battery:persona": "node scripts/persona-battery/run.js",
+    "score:mechanical": "node bin/lib/score-mechanical.js"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.10.1"

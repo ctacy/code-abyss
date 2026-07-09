@@ -60,6 +60,33 @@ describe('claude install smoke', () => {
     expect(fs.existsSync(path.join(claudeDir, 'skills', 'gstack'))).toBe(false);
     expect(fs.existsSync(path.join(claudeDir, 'settings.json'))).toBe(true);
     expect(fs.existsSync(path.join(claudeDir, '.code-abyss-uninstall.js'))).toBe(true);
+
+    // V5.3: character Stop-hook default-on for claude
+    const settings = JSON.parse(fs.readFileSync(path.join(claudeDir, 'settings.json'), 'utf8'));
+    const stop = settings.hooks && settings.hooks.Stop;
+    expect(Array.isArray(stop)).toBe(true);
+    expect(JSON.stringify(stop)).toContain('_kernel/character/hooks');
+    expect(JSON.stringify(stop)).toContain('check_banned_openers.py');
+
+    // V5.4: inject plane artifact (judgment map, not full kernel bodies)
+    const injectPath = path.join(claudeDir, '.code-abyss-inject.md');
+    expect(fs.existsSync(injectPath)).toBe(true);
+    const injectBody = fs.readFileSync(injectPath, 'utf8');
+    expect(injectBody).toContain('code-abyss-inject-plane');
+    expect(injectBody).toContain('skills/_kernel/security');
+    expect(injectBody).toContain('skills/_kernel/doctrine');
+    expect(injectBody).toContain('securing-systems');
+  });
+
+  test('--no-enforcement 跳过 character Stop-hook', () => {
+    const result = runInstall(['--target', 'claude', '-y', '--no-enforcement']);
+    expect(result.status).toBe(0);
+    const settings = JSON.parse(
+      fs.readFileSync(path.join(tmpHome, '.claude', 'settings.json'), 'utf8')
+    );
+    const blob = JSON.stringify(settings.hooks || {});
+    expect(blob).not.toContain('check_banned_openers.py');
+    expect(`${result.stdout}\n${result.stderr}`).toMatch(/--no-enforcement/);
   });
 
   test('安装 Claude 时支持 --style 切换 outputStyle', () => {
@@ -209,16 +236,32 @@ describe('codex install smoke', () => {
     const original = ['model = "custom-model"', 'model_provider = "custom"', '', '[projects."/tmp/demo"]', 'trust_level = "trusted"', ''].join('\n');
     fs.writeFileSync(path.join(codexDir, 'config.toml'), original);
 
-    const install = runInstall(['--target', 'codex', '-y', '--with-hooks']);
+    const install = runInstall(['--target', 'codex', '-y']);
     expect(install.status).toBe(0);
-    expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).toContain('[[hooks.PreToolUse]]');
+    // V5.1: code-abyss no longer injects graph hooks (abyss attach owns that)
+    expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).not.toContain('[[hooks.PreToolUse]]');
+    expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).toContain('model = "custom-model"');
 
     const uninstall = runInstall(['--uninstall', 'codex']);
     expect(uninstall.status).toBe(0);
     expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).toBe(original);
   });
 
-  test('默认 install 不再注入 hooks（要 --with-hooks 显式 opt-in）', () => {
+  test('codex install 永不注入 graph hooks；--with-hooks 仅引导 abyss attach', () => {
+    const codexDir = path.join(tmpHome, '.codex');
+    fs.mkdirSync(codexDir, { recursive: true });
+    const original = ['model = "custom-model"', ''].join('\n');
+    fs.writeFileSync(path.join(codexDir, 'config.toml'), original);
+
+    const install = runInstall(['--target', 'codex', '-y', '--with-hooks']);
+    expect(install.status).toBe(0);
+    const cfg = fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8');
+    expect(cfg).not.toContain('[[hooks.PreToolUse]]');
+    expect(cfg).not.toContain('[[hooks.SessionStart]]');
+    expect(`${install.stdout}\n${install.stderr}`).toMatch(/abyss attach codex/);
+  });
+
+  test('默认 install 不注入 graph hooks', () => {
     const codexDir = path.join(tmpHome, '.codex');
     fs.mkdirSync(codexDir, { recursive: true });
     const original = ['model = "custom-model"', ''].join('\n');

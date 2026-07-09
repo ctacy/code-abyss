@@ -30,7 +30,7 @@
     "config/*.toml",
     "config/personas/index.json",
     "config/personas/_shared/",
-    "config/personas/abyss.json",
+    "config/personas/plain.json",
     "output-styles/",
     "packs/",
     "skills/",

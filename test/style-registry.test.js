@@ -33,7 +33,7 @@ describe('style registry', () => {
 
   test('读取默认风格', () => {
     const style = getDefaultStyle(projectRoot, 'claude');
-    expect(style.slug).toBe('abyss-cultivator');
+    expect(style.slug).toBe('plain');
   });
 
   test('按 slug 解析风格', () => {
@@ -259,7 +259,7 @@ describe('persona registry', () => {
 
   test('读取默认人格', () => {
     const persona = getDefaultPersona(projectRoot);
-    expect(persona.slug).toBe('abyss');
+    expect(persona.slug).toBe('plain');
   });
 
   test('按 slug 解析人格', () => {

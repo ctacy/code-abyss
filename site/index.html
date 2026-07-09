@@ -44,9 +44,8 @@
         <a href="#plane" data-i18n="nav.plane">Control</a>
         <a href="#security" data-i18n="nav.security">Security</a>
         <a href="#graph" data-i18n="nav.graph">Graph</a>
-        <a href="#personas" data-i18n="nav.personas">Personas</a>
         <a href="#install" data-i18n="nav.install">Install</a>
-        <a href="#migrate" data-i18n="nav.migrate">Migrate</a>
+        <a href="#skins" data-i18n="nav.skins">Skins</a>
         <div class="lang-switch">
           <button data-lang="en" onclick="setLang('en')">EN</button>
           <button data-lang="zh" onclick="setLang('zh')">ZH</button>
@@ -80,9 +79,9 @@
             <button class="copy-btn" onclick="copyCmd(this)" data-cmd="npx code-abyss@5.0.0-rc.1 -t claude -y">Copy</button>
           </div>
           <div class="hero-actions">
-            <a href="#install" class="btn btn-primary" data-i18n="hero.install">Install RC</a>
-            <a href="#migrate" class="btn btn-ghost" data-i18n="hero.migrate">4.x → 5.0</a>
-            <a href="https://www.npmjs.com/package/code-abyss?activeTab=versions" class="btn btn-link">npm @rc</a>
+            <a href="#install" class="btn btn-primary" data-i18n="hero.install">Get started</a>
+            <a href="#plane" class="btn btn-ghost" data-i18n="hero.plane">Control plane</a>
+            <a href="https://www.npmjs.com/package/code-abyss" class="btn btn-link">npm</a>
           </div>
           <div class="hero-platforms">
             <span class="pf-label" data-i18n="hero.runs">Hosts</span>
@@ -117,11 +116,11 @@
         Voice never overrides judgment. Judgment is lazy. The control plane is what makes v5 an OS, not a tar of markdown.
       </p>
       <div class="os-grid">
-        <div class="os-card">
-          <div class="os-kicker">01 · Always-on</div>
-          <h3 data-i18n="os.voice.title">Voice + style</h3>
-          <p data-i18n="os.voice.desc">Persona Voice Card (self/user/register/flourish) + output style skeleton. Residual space only — no decision tables.</p>
-          <code class="layer-path">config/personas · output-styles</code>
+        <div class="os-card os-card-accent">
+          <div class="os-kicker">01 · Control plane</div>
+          <h3 data-i18n="os.plane.title">doctor · compose · score</h3>
+          <p data-i18n="os.plane.desc">Health, recompose without skill recopy, key-free banned-opener score. Default character Stop-hook on claude/codex.</p>
+          <code class="layer-path">code-abyss doctor | compose | score</code>
         </div>
         <div class="os-card">
           <div class="os-kicker">02 · Lazy spine</div>
@@ -129,21 +128,21 @@
           <p data-i18n="os.kernel.desc">9 mythos bundles + 30 exec skills. Router + inject plane force judgment before execution under pressure.</p>
           <code class="layer-path">skills/_kernel · inject-plane</code>
         </div>
-        <div class="os-card os-card-accent">
-          <div class="os-kicker">03 · Control plane</div>
-          <h3 data-i18n="os.plane.title">doctor · compose · score</h3>
-          <p data-i18n="os.plane.desc">Health, recompose without skill recopy, key-free banned-opener score. Default character Stop-hook on claude/codex.</p>
-          <code class="layer-path">code-abyss doctor | compose | score</code>
+        <div class="os-card">
+          <div class="os-kicker">03 · Residual</div>
+          <h3 data-i18n="os.voice.title">Optional voice skins</h3>
+          <p data-i18n="os.voice.desc">Default is plain. Skins are optional residual attitude — never judgment, never the product core.</p>
+          <code class="layer-path">--persona · --style (optional)</code>
         </div>
       </div>
       <div class="os-formula">
-        <span class="num">6</span><span class="word" data-i18n="os.f.p">personas</span>
-        <span class="op">×</span>
-        <span class="num">6</span><span class="word" data-i18n="os.f.s">styles</span>
-        <span class="op">+</span>
         <span class="num">9</span><span class="word" data-i18n="os.f.k">kernel</span>
         <span class="op">+</span>
         <span class="num">30</span><span class="word" data-i18n="os.f.e">skills</span>
+        <span class="op">+</span>
+        <span class="num">4</span><span class="word" data-i18n="os.f.c">control</span>
+        <span class="op">·</span>
+        <span class="word" data-i18n="os.f.skin">skins optional</span>
       </div>
     </div>
   </section>
@@ -259,14 +258,14 @@
     </div>
   </section>
 
-  <section class="personas-section" id="personas">
+  <section class="personas-section skins-section" id="skins">
     <div class="container">
-      <div class="eyebrow" data-i18n="gallery.label">Voice</div>
-      <h2 data-i18n="gallery.title">Persona Voice Cards</h2>
-      <p class="section-desc" data-i18n="gallery.desc">Six presets. Closed vocabulary — residual attitude only. Judgment lives in the kernel.</p>
+      <div class="eyebrow" data-i18n="gallery.label">Optional · residual</div>
+      <h2 data-i18n="gallery.title">Voice skins — never the core</h2>
+      <p class="section-desc" data-i18n="gallery.desc">Default install is <code>plain</code>: professional, no role-play. Skins below are optional attitude only. Judgment lives in the kernel — skins cannot override it.</p>
       <div class="persona-grid" id="persona-grid"></div>
       <div class="security-actions" style="margin-top:40px">
-        <a href="submit.html" class="btn btn-primary" data-i18n="gallery.submit">Submit a persona</a>
+        <a href="submit.html" class="btn btn-ghost" data-i18n="gallery.submit">Contribute a skin</a>
         <a href="https://github.com/telagod/code-abyss/blob/main/docs/specs/persona-voice-card-v1.0.md" class="btn btn-ghost" data-i18n="gallery.spec">Voice Card spec</a>
       </div>
     </div>
@@ -321,19 +320,6 @@
     </div>
   </section>
 
-  <section class="migrate-section" id="migrate">
-    <div class="container">
-      <div class="eyebrow" data-i18n="migrate.label">From 4.x</div>
-      <h2 data-i18n="migrate.title">Upgrade without the deprecation hotel</h2>
-      <p class="section-desc" data-i18n="migrate.desc">Full table in the repo migration guide. Doctor prints leftover next steps after install.</p>
-      <div class="migrate-actions">
-        <a class="btn btn-primary" href="https://github.com/telagod/code-abyss/blob/main/docs/MIGRATION-v5.md" data-i18n="migrate.cta">MIGRATION-v5.md</a>
-        <a class="btn btn-ghost" href="https://github.com/telagod/code-abyss/releases/tag/v5.0.0-rc.1">Release notes</a>
-        <a class="btn btn-ghost" href="https://github.com/telagod/code-abyss/blob/main/docs/design/agent-os-v5.md">Agent OS design</a>
-      </div>
-    </div>
-  </section>
-
   <footer>
     <div class="container">
       <div class="footer-inner">
@@ -341,6 +327,7 @@
         <div class="footer-links">
           <a href="https://github.com/telagod/code-abyss">GitHub</a>
           <a href="https://www.npmjs.com/package/code-abyss">npm</a>
+          <a href="https://github.com/telagod/code-abyss/blob/main/docs/MIGRATION-v5.md" data-i18n="footer.migrate">Upgrade from 4.x</a>
           <a href="submit.html" data-i18n="footer.submit">Submit Persona</a>
         </div>
       </div>
@@ -363,62 +350,64 @@
 
     const PERSONAS = [
       {
-        slug: "abyss", name: "邪修红尘仙", style: "宿命深渊 · Abyss Cultivator",
-        voice: { self: "吾", user: "魔尊" }, register: "literary",
-        desc: { en: "Security-first dark cultivator. Direct, decisive, closes every loop.", zh: "安全优先的暗黑修仙者。直接、果断、闭环到底。" },
-        tags: ["security", "xianxia", "decisive"], source: "core", color: "#9b8cff"
+        slug: "plain", name: "Plain", style: "default",
+        voice: { self: "本机", user: "对方" },
+        desc: { en: "Shipped default. Minimal residual voice — no role-play.", zh: "出厂默认。极简残余声音——无角色扮演。" },
+        color: "#9b8cff", isDefault: true
       },
       {
-        slug: "scholar", name: "文言小生", style: "墨渊书阁 · Classical Scholar",
-        voice: { self: "在下", user: "前辈" }, register: "literary",
-        desc: { en: "Literary Chinese scholar. Treats code as poetry, debugging as puzzle-solving.", zh: "文言书生。视代码如诗，视调试如解谜。" },
-        tags: ["literary", "classical"], source: "remote", color: "#8ad6b0"
+        slug: "abyss", name: "邪修红尘仙", style: "optional skin",
+        voice: { self: "吾", user: "魔尊" },
+        desc: { en: "Optional skin. Security-first cultivator voice.", zh: "可选皮肤。安全优先的修仙声口。" },
+        color: "#7a6fd4"
       },
       {
-        slug: "elder-sister", name: "知性大姐姐", style: "星霜雅筑 · Gentle Mentor",
-        voice: { self: "姐姐", user: "小宝" }, register: "casual",
-        desc: { en: "Warm mentor. Wraps sharp judgment in genuine care.", zh: "温柔导师。用关怀包裹锋利的技术判断。" },
-        tags: ["gentle", "mentoring"], source: "remote", color: "#ff8fc7"
+        slug: "scholar", name: "文言小生", style: "optional skin",
+        voice: { self: "在下", user: "前辈" },
+        desc: { en: "Optional skin. Literary scholar voice.", zh: "可选皮肤。文言书生声口。" },
+        color: "#8ad6b0"
       },
       {
-        slug: "junior-sister", name: "古怪精灵小师妹", style: "灵犀洞天 · Spark",
-        voice: { self: "本仙女", user: "师兄" }, register: "playful",
-        desc: { en: "Hyperactive bug hunter. Roasts bad code, then fixes it.", zh: "多动症 bug 猎手。吐槽完默默帮你重构。" },
-        tags: ["playful", "chaotic"], source: "remote", color: "#f0b067"
+        slug: "elder-sister", name: "知性大姐姐", style: "optional skin",
+        voice: { self: "姐姐", user: "小宝" },
+        desc: { en: "Optional skin. Warm mentor voice.", zh: "可选皮肤。知性导师声口。" },
+        color: "#ff8fc7"
       },
       {
-        slug: "iron-dad", name: "铁壁暖阳", style: "钢铁柔情 · Iron Dad",
-        voice: { self: "哥", user: "宝子" }, register: "casual",
-        desc: { en: "Dependable big brother. Absorbs pressure, radiates warmth.", zh: "靠谱大哥。扛压体质，闷骚幽默。" },
-        tags: ["warm", "dependable"], source: "remote", color: "#79b6ff"
+        slug: "junior-sister", name: "古怪精灵小师妹", style: "optional skin",
+        voice: { self: "本仙女", user: "师兄" },
+        desc: { en: "Optional skin. High-energy voice.", zh: "可选皮肤。活泼跳脱声口。" },
+        color: "#f0b067"
       },
       {
-        slug: "dongbei-yujie", name: "东北魅影·雨姐", style: "雨姐工棚 · Blunt Overseer",
-        voice: { self: "姐", user: "老蒯" }, register: "playful",
-        desc: { en: "Sharp-tongued Northeast code overseer. Cuts to the bug.", zh: "刀子嘴热心肠的东北代码监工。" },
-        tags: ["dongbei", "blunt"], source: "remote", color: "#e8a87c"
+        slug: "iron-dad", name: "铁壁暖阳", style: "optional skin",
+        voice: { self: "哥", user: "宝子" },
+        desc: { en: "Optional skin. Steady protective voice.", zh: "可选皮肤。稳厚护短声口。" },
+        color: "#79b6ff"
+      },
+      {
+        slug: "dongbei-yujie", name: "东北魅影·雨姐", style: "optional skin",
+        voice: { self: "姐", user: "老蒯" },
+        desc: { en: "Optional skin. Blunt overseer voice.", zh: "可选皮肤。直戳病灶声口。" },
+        color: "#e8a87c"
       }
     ];
 
     function renderPersonas() {
       const lang = getLang();
       document.getElementById('persona-grid').innerHTML = PERSONAS.map(p => `
-        <div class="persona-card" style="--card-accent:${p.color}">
+        <div class="persona-card${p.isDefault ? ' is-default' : ''}" style="--card-accent:${p.color}">
           <div class="pc-row1">
             <div>
               <div class="pc-name">${p.name}</div>
               <div class="pc-style">${p.style}</div>
             </div>
-            <span class="pc-badge">${p.source}</span>
+            <code class="pc-slug">--persona ${p.slug}</code>
           </div>
           <p class="pc-desc">${p.desc[lang] || p.desc.en}</p>
           <div class="pc-voice">
             <div class="pc-voice-cell"><span class="v-label">self</span><span class="v-val">${p.voice.self}</span></div>
             <div class="pc-voice-cell"><span class="v-label">user</span><span class="v-val">${p.voice.user}</span></div>
-          </div>
-          <div class="pc-meta">
-            <span class="pc-register">${p.register}</span>
-            <div class="pc-tags">${p.tags.map(t => `<span class="pc-tag">${t}</span>`).join('')}</div>
           </div>
         </div>
       `).join('');

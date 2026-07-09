@@ -2097,3 +2097,36 @@ footer {
   .cut-row { grid-template-columns: 1fr; gap: 4px; }
   .install-steps li { grid-template-columns: 32px 1fr; }
 }
+
+/* Skins as residual — quieter than product core cards */
+.skins-section {
+  padding-top: 96px;
+  padding-bottom: 96px;
+  opacity: 0.98;
+}
+.skins-section .section-desc { margin-bottom: 40px; }
+.pc-slug {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--paper-mute);
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  padding: 4px 8px;
+  white-space: nowrap;
+}
+.persona-card.is-default {
+  border-color: var(--iris-line);
+}
+.persona-card.is-default::after {
+  content: 'default';
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--iris);
+}
+.persona-card { position: relative; }

@@ -154,7 +154,7 @@ also validates every `config/personas/*.json` as a CI gate.
 
 ### Persona Loading (Core + Remote)
 
-Only the **core persona** (`abyss`) ships with the npm package. All other personas are **remote** — fetched from GitHub raw on first use and cached at `~/.code-abyss/personas/<slug>/<slug>.json`.
+Default residual voice is **`plain`** (ships with the package). Flavor personas (`abyss`, `scholar`, …) are **optional skins** (`core: false`) — fetched from GitHub raw on first use and cached at `~/.code-abyss/personas/<slug>/<slug>.json`. Personas are not the product core; the Agent OS (kernel + skills + control plane) is.
 
 `config/personas/index.json` has two entry types:
 - **Core** (`core: true`): `label`/`description` derived by loading + validating `config/personas/<slug>.json` at registry-build time (throws on failure — a broken shipped file is a packaging bug, not a runtime-degrade case)

@@ -1,11 +1,19 @@
 {
   "styles": [
     {
+      "slug": "plain",
+      "label": "Plain",
+      "description": "Minimal professional output contract. Default for Agent OS — no role-play skin.",
+      "file": "plain.md",
+      "default": true,
+      "targets": ["claude", "codex", "gemini", "openclaw"]
+    },
+    {
       "slug": "abyss-cultivator",
       "label": "宿命深渊",
       "description": "沉浸式邪修风格，杀伐果断，攻防与角色代入。",
       "file": "abyss-cultivator.md",
-      "default": true,
+      "default": false,
       "targets": ["claude", "codex", "gemini", "openclaw"]
     },
     {

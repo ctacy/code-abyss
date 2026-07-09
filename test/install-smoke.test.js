@@ -14,7 +14,7 @@ describe('install cli styles', () => {
     });
 
     expect(result.status).toBe(0);
-    expect(result.stdout).toContain('abyss-cultivator');
+    expect(result.stdout).toContain('plain');
     expect(result.stdout).toContain('scholar-classic');
   });
 });
@@ -165,7 +165,7 @@ describe('codex install smoke', () => {
     expect(fs.existsSync(path.join(codexDir, 'prompts'))).toBe(false);
     expect(fs.readFileSync(path.join(codexDir, 'config.toml'), 'utf8')).not.toContain('[profiles.full_');
     const instructionMd = fs.readFileSync(path.join(codexDir, 'instruction.md'), 'utf8');
-    expect(instructionMd).toContain('宿命深渊');
+    expect(instructionMd).toContain('Plain');
   });
 
   test('安装 Codex 时会清理旧 prompts 残留', () => {

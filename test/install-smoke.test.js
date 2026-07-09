@@ -67,6 +67,15 @@ describe('claude install smoke', () => {
     expect(Array.isArray(stop)).toBe(true);
     expect(JSON.stringify(stop)).toContain('_kernel/character/hooks');
     expect(JSON.stringify(stop)).toContain('check_banned_openers.py');
+
+    // V5.4: inject plane artifact (judgment map, not full kernel bodies)
+    const injectPath = path.join(claudeDir, '.code-abyss-inject.md');
+    expect(fs.existsSync(injectPath)).toBe(true);
+    const injectBody = fs.readFileSync(injectPath, 'utf8');
+    expect(injectBody).toContain('code-abyss-inject-plane');
+    expect(injectBody).toContain('skills/_kernel/security');
+    expect(injectBody).toContain('skills/_kernel/doctrine');
+    expect(injectBody).toContain('securing-systems');
   });
 
   test('--no-enforcement 跳过 character Stop-hook', () => {

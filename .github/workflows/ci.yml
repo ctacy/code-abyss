@@ -77,6 +77,10 @@ jobs:
           # V5.3: character Stop-hook default-on
           grep -q '_kernel/character/hooks' "$abyss_home/.claude/settings.json"
           grep -q 'check_banned_openers.py' "$abyss_home/.claude/settings.json"
+          # V5.4: inject plane judgment map
+          test -f "$abyss_home/.claude/.code-abyss-inject.md"
+          grep -q 'skills/_kernel/security' "$abyss_home/.claude/.code-abyss-inject.md"
+          grep -q 'code-abyss-inject-plane' "$abyss_home/.claude/.code-abyss-inject.md"
 
           npx --yes --package "./$pkg_tgz" code-abyss --uninstall claude
 

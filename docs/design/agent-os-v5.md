@@ -349,9 +349,9 @@ Each phase: **one PR-able unit**, green gates, independent value. No big-bang fr
 - Smoke asserts hook presence.
 - **Done when:** `-y` install on claude includes enforcement artifacts.
 
-### Phase V5-4 — Inject plane v1
+### Phase V5-4 — Inject plane v1 ✅
 
-- Single trigger table module (data) → (a) renders router markdown (b) drives hook/session inject for ≥ security + doctrine done-gate + the 16 domain MAP entries.
+- Single trigger table module (`bin/lib/inject-plane.js`) (data) → (a) renders router markdown (b) drives hook/session inject for ≥ security + doctrine done-gate + the 16 domain MAP entries.
 - Unit tests: trigger fixtures → expected bundle id.
 - **Done when:** tests prove mapping; at least one host path installs inject artifacts.
 

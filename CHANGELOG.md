@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Agent OS v5.4 — inject plane
+
+- **`bin/lib/inject-plane.js`**: single SoT trigger table (`DOMAIN_SKILL_MAP` ×16 + cross-cutting + path/text rules) with pure `resolveTrigger()`.
+- Always-on **kernel router** is generated from the same module (`renderKernelRouterMd` via `style-registry.loadSharedBehavior`); disk `kernel-router.md` is a mirror stub.
+- **Install artifact** `.code-abyss-inject.md` on claude/codex (marker `code-abyss-inject-plane`); strip+replace on reinstall; lists judgment paths without baking kernel bodies.
+- `scripts/wire-domain-gates.js` consumes `DOMAIN_SKILL_MAP` (no parallel map).
+- Tests: `test/inject-plane.test.js` + install-smoke + CI greps.
+
 ### Agent OS v5.2–v5.3 — docs honesty + default enforcement
 
 - **V5-2:** docs-drift guard now asserts live skill counts (30+9=39), invocable set (5), forbids CLAUDE "defaults to none" and stale README test totals; DESIGN.md must point at `agent-os-v5.md`.

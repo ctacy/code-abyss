@@ -20,6 +20,7 @@ const path = require('path');
 
 const { installGstackPack } = require('../gstack/installer');
 const { stripAbyssHooks } = require('../abyss-integration');
+const { writeInjectArtifact, stripInjectArtifact, INJECT_REL_PATH } = require('../inject-plane');
 
 function createInstallCore(deps) {
   const {
@@ -470,6 +471,10 @@ function createInstallCore(deps) {
       }
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
       pushManifestEntry(manifest.installed, 'claude', 'settings.json');
+      // V5.4 inject plane: thin judgment map artifact (not full kernel bodies)
+      stripInjectArtifact(targetDir);
+      writeInjectArtifact(targetDir, { targetName: 'claude', info });
+      pushManifestEntry(manifest.installed, 'claude', INJECT_REL_PATH);
     } else if (tgt === 'gemini') {
       settingsPath = path.join(targetDir, 'settings.json');
       if (fs.existsSync(settingsPath)) {
@@ -488,6 +493,12 @@ function createInstallCore(deps) {
       }
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
       pushManifestEntry(manifest.installed, 'gemini', 'settings.json');
+    } else if (tgt === 'codex') {
+      pruneLegacyCodexSettings(tgt, backupDir, manifest);
+      // V5.4 inject plane for codex (same thin artifact as claude)
+      stripInjectArtifact(targetDir);
+      writeInjectArtifact(targetDir, { targetName: 'codex', info });
+      pushManifestEntry(manifest.installed, 'codex', INJECT_REL_PATH);
     } else {
       pruneLegacyCodexSettings(tgt, backupDir, manifest);
     }

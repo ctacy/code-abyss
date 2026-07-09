@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { listTargetNames } = require('./target-registry');
 const { validatePersonaVoiceCard, renderPersonaIdentity, NEUTRAL_FALLBACK_PERSONA } = require('./persona-voice-card');
+const { renderKernelRouterMd } = require('./inject-plane');
 
 const SUPPORTED_TARGETS = new Set(listTargetNames());
 
@@ -37,6 +38,11 @@ function loadSharedBehavior(projectRoot) {
   const sharedDir = path.join(projectRoot, 'config', 'personas', '_shared');
   const parts = [];
   for (const file of SHARED_FILES_ORDER) {
+    // kernel-router is generated from inject-plane (single SoT) — never a second freehand list
+    if (file === 'kernel-router.md') {
+      parts.push(renderKernelRouterMd().replace(/\s+$/, ''));
+      continue;
+    }
     const filePath = path.join(sharedDir, file);
     if (fs.existsSync(filePath)) {
       parts.push(fs.readFileSync(filePath, 'utf8').replace(/\s+$/, ''));

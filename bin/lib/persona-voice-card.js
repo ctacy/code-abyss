@@ -75,7 +75,11 @@ const NEUTRAL_FALLBACK_PERSONA = Object.freeze({
   register: 'casual',
   emoji_policy: 'minimal',
   flourish: [],
+  // V5.8: visible in-render marker (not stderr-only)
+  _neutralFallback: true,
 });
+
+const NEUTRAL_FALLBACK_MARKER = '[code-abyss: neutral-fallback]';
 
 function isNonEmptyString(v) {
   return typeof v === 'string' && v.trim().length > 0;
@@ -187,6 +191,9 @@ function renderPersonaIdentity(persona) {
   const registerSentence = REGISTER_SENTENCES[persona.register] || '';
   const emojiSentence = EMOJI_SENTENCES[persona.emoji_policy] || '';
   const flourishLines = (persona.flourish || []).map((f) => `> ${f}`).join('\n');
+  const neutralLine = (persona && (persona._neutralFallback || persona.slug === 'neutral-fallback'))
+    ? `> ${NEUTRAL_FALLBACK_MARKER} 人格校验失败，已回退中性语音。`
+    : '';
 
   return [
     '## 人格',
@@ -194,6 +201,7 @@ function renderPersonaIdentity(persona) {
     registerSentence,
     emojiSentence,
     flourishLines,
+    neutralLine,
   ].filter(Boolean).join('\n');
 }
 
@@ -213,6 +221,7 @@ module.exports = {
   MAX_AGGREGATE_VOICE_BUDGET,
   BANNED_CHARS_RE,
   NEUTRAL_FALLBACK_PERSONA,
+  NEUTRAL_FALLBACK_MARKER,
   validatePersonaVoiceCard,
   renderPersonaIdentity,
 };

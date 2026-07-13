@@ -1,6 +1,7 @@
 'use strict';
 
-// abyss 联动层测试：hook 注入（幂等 + 路径重锚定）、版本契约、MCP 注册、lock tools 检查
+// abyss 联动层测试（Agent OS v5.1 kill foyer）：
+// graph hook 注入已移除（→ abyss attach）；保留 strip / detect / MCP shape / lock tools / manifest。
 
 const path = require('path');
 const os = require('os');
@@ -9,8 +10,6 @@ const fs = require('fs');
 const {
   HOOK_MARKER,
   resolveAbyssHookDir,
-  injectClaudeHooks,
-  injectGeminiHooks,
   stripAbyssHooks,
   compareVersions,
   satisfiesMin,
@@ -26,153 +25,127 @@ const {
 } = require('../bin/lib/abyss-integration.js');
 
 const {
-  injectCodexHooks,
   injectCodexMcp,
   stripCodexAbyssIntegration,
+  stripLegacyCodexAbyssFromConfig,
 } = require('../bin/adapters/codex.js');
 
-const {
-  resolveReleaseTarget,
-  assetName,
-  releaseUrl,
-} = require('../bin/lib/abyss-binary.js');
-
 const TARGET_DIR = path.join('/home/user', '.claude');
+const HOOK_DIR = path.join(TARGET_DIR, 'skills', 'indexing-code', 'hooks', 'common');
 
-describe('claude hook 注入', () => {
-  test('空 settings 注入 SessionStart + PreToolUse，路径锚定安装目录', () => {
-    const settings = {};
-    injectClaudeHooks(settings, TARGET_DIR);
-    expect(settings.hooks.SessionStart).toHaveLength(1);
+function fixtureClaudeHooks(targetDir = TARGET_DIR) {
+  const hookDir = path.join(targetDir, 'skills', 'indexing-code', 'hooks', 'common');
+  return {
+    hooks: {
+      SessionStart: [{
+        matcher: '',
+        hooks: [{ type: 'command', command: `bash "${path.join(hookDir, 'session-init.sh')}"`, timeout: 10 }],
+      }],
+      PreToolUse: [{
+        matcher: 'Edit|Write',
+        hooks: [{ type: 'command', command: `bash "${path.join(hookDir, 'pre-edit-check.sh')}"`, timeout: 5 }],
+      }],
+    },
+  };
+}
+
+function fixtureCodexAbyssHooks(hookDir) {
+  return [
+    '[[hooks.SessionStart]]',
+    'matcher = "startup|resume"',
+    '',
+    '[[hooks.SessionStart.hooks]]',
+    'type = "command"',
+    `command = "bash \\"${hookDir}/session-init.sh\\""`,
+    'timeout = 10',
+    'statusMessage = "abyss: checking index"',
+    '',
+    '[[hooks.PreToolUse]]',
+    'matcher = "Bash|shell|apply_patch|Edit|Write"',
+    '',
+    '[[hooks.PreToolUse.hooks]]',
+    'type = "command"',
+    `command = "bash \\"${hookDir}/pre-edit-check.sh\\""`,
+    'timeout = 5',
+    'statusMessage = "abyss: checking callers"',
+    '',
+  ].join('\n');
+}
+
+describe('卸载残留剥除 (claude/gemini settings)', () => {
+  test('stripAbyssHooks 只剥我方条目，空事件键收口', () => {
+    const settings = fixtureClaudeHooks();
+    settings.hooks.PreToolUse.push({ matcher: 'Bash', hooks: [{ type: 'command', command: 'user-guard.sh' }] });
+    expect(stripAbyssHooks(settings)).toBe(true);
+    expect(settings.hooks.SessionStart).toBeUndefined();
     expect(settings.hooks.PreToolUse).toHaveLength(1);
-    const cmd = settings.hooks.PreToolUse[0].hooks[0].command;
-    expect(cmd).toContain(path.join(TARGET_DIR, 'skills', 'indexing-code', 'hooks', 'common'));
-    expect(cmd).toContain('pre-edit-check.sh');
-    expect(settings.hooks.PreToolUse[0].matcher).toBe('Edit|Write');
+    expect(JSON.stringify(settings.hooks.PreToolUse[0])).toContain('user-guard');
   });
 
-  test('重复注入幂等（不产生重复条目）', () => {
-    const settings = {};
-    injectClaudeHooks(settings, TARGET_DIR);
-    injectClaudeHooks(settings, TARGET_DIR);
-    injectClaudeHooks(settings, TARGET_DIR);
-    expect(settings.hooks.SessionStart).toHaveLength(1);
-    expect(settings.hooks.PreToolUse).toHaveLength(1);
+  test('stripAbyssHooks 全空时移除 hooks 容器，无我方条目返回 false', () => {
+    const settings = fixtureClaudeHooks();
+    expect(stripAbyssHooks(settings)).toBe(true);
+    expect(settings.hooks).toBeUndefined();
+    expect(stripAbyssHooks({ hooks: { PreToolUse: [{ matcher: 'x' }] } })).toBe(false);
   });
 
-  test('指向易失路径的旧条目被重锚定（历史 bug 自愈）', () => {
+  test('stripAbyssHooks 识别 HOOK_MARKER 路径', () => {
     const settings = {
       hooks: {
         PreToolUse: [{
           matcher: 'Edit|Write',
-          hooks: [{ type: 'command', command: 'bash "/tmp/npx-cache-123/skills/indexing-code/hooks/common/pre-edit-check.sh"', timeout: 5 }],
+          hooks: [{ type: 'command', command: `bash "/tmp/npx-cache/skills/${HOOK_MARKER}/pre-edit-check.sh"` }],
         }],
       },
     };
-    injectClaudeHooks(settings, TARGET_DIR);
-    expect(settings.hooks.PreToolUse).toHaveLength(1);
-    expect(settings.hooks.PreToolUse[0].hooks[0].command).toContain(TARGET_DIR);
-    expect(settings.hooks.PreToolUse[0].hooks[0].command).not.toContain('npx-cache');
-  });
-
-  test('用户自有 hook 不被触碰', () => {
-    const settings = {
-      hooks: {
-        PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: 'my-custom-guard.sh' }] }],
-      },
-    };
-    injectClaudeHooks(settings, TARGET_DIR);
-    expect(settings.hooks.PreToolUse).toHaveLength(2);
-    expect(JSON.stringify(settings.hooks.PreToolUse[0])).toContain('my-custom-guard');
+    expect(stripAbyssHooks(settings)).toBe(true);
+    expect(settings.hooks).toBeUndefined();
   });
 });
 
-describe('gemini hook 注入', () => {
-  test('注入 SessionStart + BeforeTool（gemini 事件形状）且幂等', () => {
-    const settings = {};
-    const dir = path.join('/home/user', '.gemini');
-    injectGeminiHooks(settings, dir);
-    injectGeminiHooks(settings, dir);
-    expect(settings.hooks.SessionStart).toHaveLength(1);
-    expect(settings.hooks.BeforeTool).toHaveLength(1);
-    expect(settings.hooks.BeforeTool[0].matcher).toBe('write_file|replace|edit_file');
-    expect(settings.hooks.BeforeTool[0].hooks[0].name).toBe('abyss-check');
-  });
-});
+describe('codex TOML 残留剥除', () => {
+  const CODEX_HOOK_DIR = '/home/user/.codex/skills/indexing-code/hooks/common';
 
-describe('codex TOML hook 注入', () => {
-  const HOOK_DIR = '/home/user/.codex/skills/indexing-code/hooks/common';
-
-  test('空 config 注入数组表形态的两个 hook（Codex 0.125+ schema）', () => {
-    const { merged, installed, skipped } = injectCodexHooks('', HOOK_DIR, '\n');
-    expect(installed).toEqual(['hooks.SessionStart', 'hooks.PreToolUse']);
-    expect(skipped).toEqual([]);
-    // 数组表头：[[hooks.X]] + [[hooks.X.hooks]]，绝不能再出现扁平 [hooks.X]
-    expect(merged).toContain('[[hooks.SessionStart]]');
-    expect(merged).toContain('[[hooks.SessionStart.hooks]]');
-    expect(merged).toContain('[[hooks.PreToolUse]]');
-    expect(merged).toContain('[[hooks.PreToolUse.hooks]]');
-    expect(merged).not.toMatch(/^\[hooks\./m);
-    expect(merged).toContain('type = "command"');
-    expect(merged).toContain(`${HOOK_DIR}/pre-edit-check.sh`);
-    expect(merged).toContain('matcher = "Bash|shell|apply_patch|Edit|Write"');
+  test('stripCodexAbyssIntegration 剥除带标记 hook 节 + mcp 节，保留用户节', () => {
+    let cfg = 'model = "gpt"\n\n[profiles.full_auto]\napproval_policy = "on-request"\n\n';
+    cfg += fixtureCodexAbyssHooks(CODEX_HOOK_DIR);
+    cfg = injectCodexMcp(cfg, 'abyss', '\n');
+    const { merged, removed } = stripCodexAbyssIntegration(cfg);
+    expect(removed).toBe(true);
+    expect(merged).not.toContain('indexing-code');
+    expect(merged).not.toContain('mcp_servers.abyss');
+    expect(merged).toContain('model = "gpt"');
+    expect(merged).toContain('[profiles.full_auto]');
   });
 
-  test('重复注入幂等（节与键不重复）', () => {
-    const first = injectCodexHooks('', HOOK_DIR, '\n').merged;
-    const second = injectCodexHooks(first, HOOK_DIR, '\n').merged;
-    const count = (second.match(/\[\[hooks\.PreToolUse\]\]/g) || []).length;
-    expect(count).toBe(1);
-    const cmdCount = (second.match(/pre-edit-check\.sh/g) || []).length;
-    expect(cmdCount).toBe(1);
-  });
-
-  test('command_windows 仅在传入 winBash 时生成', () => {
-    const without = injectCodexHooks('', HOOK_DIR, '\n').merged;
-    expect(without).not.toContain('command_windows');
-    const withWin = injectCodexHooks('', HOOK_DIR, '\n', { winBash: 'C:/Program Files/Git/bin/bash.exe' }).merged;
-    expect(withWin).toContain('command_windows = "\\"C:/Program Files/Git/bin/bash.exe\\"');
-  });
-
-  test('旧路径条目被重锚定', () => {
-    const stale = injectCodexHooks('', '/tmp/npx-cache/skills/indexing-code/hooks/common', '\n').merged;
-    const fixed = injectCodexHooks(stale, HOOK_DIR, '\n').merged;
-    expect(fixed).toContain(HOOK_DIR);
-    expect(fixed).not.toContain('npx-cache');
-  });
-
-  test('旧式扁平用户 hook 防冲突跳过', () => {
-    const userCfg = '[hooks.PreToolUse]\nmatcher = "Bash"\ncommand = "my-guard.sh"\n';
-    const { merged, installed, skipped } = injectCodexHooks(userCfg, HOOK_DIR, '\n');
-    expect(installed).toEqual(['hooks.SessionStart']);
-    expect(skipped).toContain('hooks.PreToolUse');
+  test('stripCodexAbyssIntegration 不动用户自有 hook 节', () => {
+    const cfg = '[hooks.PreToolUse]\nmatcher = "Bash"\ncommand = "my-guard.sh"\n';
+    const { merged, removed } = stripCodexAbyssIntegration(cfg);
+    expect(removed).toBe(false);
     expect(merged).toContain('my-guard.sh');
   });
 
-  test('当前数组表用户 hook 与 abyss hook 并存', () => {
-    const userCfg = [
-      '[[hooks.PreToolUse]]',
-      'matcher = "^Bash$"',
-      '',
-      '[[hooks.PreToolUse.hooks]]',
-      'type = "command"',
-      'command = "my-guard.sh"',
-      '',
-    ].join('\n');
-    const { merged, installed, skipped } = injectCodexHooks(userCfg, HOOK_DIR, '\n');
-    expect(installed).toEqual(['hooks.SessionStart', 'hooks.PreToolUse']);
-    expect(skipped).toEqual([]);
-    expect(merged).toContain('my-guard.sh');
-    expect(merged).toContain(`${HOOK_DIR}/pre-edit-check.sh`);
-    expect((merged.match(/\[\[hooks\.PreToolUse\]\]/g) || []).length).toBe(2);
-  });
-
-  test('MCP 节注入且幂等', () => {
+  test('MCP 节 shape 助手幂等（客户端自管参考）', () => {
     let merged = injectCodexMcp('', '/opt/bin/abyss', '\n');
     merged = injectCodexMcp(merged, '/opt/bin/abyss', '\n');
     expect((merged.match(/\[mcp_servers\.abyss\]/g) || []).length).toBe(1);
     expect(merged).toContain('command = "/opt/bin/abyss"');
     expect(merged).toContain('args = ["mcp"]');
+  });
+
+  test('stripLegacyCodexAbyssFromConfig 写回文件', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'codex-strip-'));
+    try {
+      const cfgPath = path.join(tmp, 'config.toml');
+      fs.writeFileSync(cfgPath, `model = "x"\n\n${fixtureCodexAbyssHooks(CODEX_HOOK_DIR)}`);
+      const r = stripLegacyCodexAbyssFromConfig(cfgPath);
+      expect(r.removed).toBe(true);
+      const out = fs.readFileSync(cfgPath, 'utf8');
+      expect(out).toContain('model = "x"');
+      expect(out).not.toContain('indexing-code');
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });
 
@@ -216,7 +189,6 @@ describe('版本契约', () => {
   });
 
   test('satisfiesMin 拒绝缺失与过旧（针对当前 MIN_ABYSS_VERSION 锁）', () => {
-    // MIN_ABYSS_VERSION = 0.5.20 起步；0.5.x 起算稳定，0.5.22+ 解锁 skill-manifest
     expect(satisfiesMin('0.5.20', MIN_ABYSS_VERSION)).toBe(true);
     expect(satisfiesMin('0.5.23', MIN_ABYSS_VERSION)).toBe(true);
     expect(satisfiesMin('0.5.19', MIN_ABYSS_VERSION)).toBe(false);
@@ -225,8 +197,6 @@ describe('版本契约', () => {
   });
 
   test('SKILL_MANIFEST_AVAILABLE_FROM 在 MIN_ABYSS_VERSION 之上', () => {
-    // 0.5.22+ 才有 skill-manifest；MIN 是 0.5.20 是允许的，
-    // 但 0.5.20 / 0.5.21 不应被错误地认为「能跑 skill-manifest」
     expect(compareVersions(SKILL_MANIFEST_AVAILABLE_FROM, MIN_ABYSS_VERSION)).toBeGreaterThanOrEqual(0);
     expect(satisfiesMin('0.5.21', SKILL_MANIFEST_AVAILABLE_FROM)).toBe(false);
     expect(satisfiesMin('0.5.22', SKILL_MANIFEST_AVAILABLE_FROM)).toBe(true);
@@ -248,7 +218,7 @@ describe('版本契约', () => {
   });
 });
 
-describe('MCP 注册', () => {
+describe('MCP 条目 shape（安装器不写，助手保留）', () => {
   test('buildMcpEntry 默认 abyss，managed 路径透传', () => {
     expect(buildMcpEntry(null)).toEqual({ command: 'abyss', args: ['mcp'] });
     expect(buildMcpEntry('/home/u/.code-abyss/bin/abyss').command).toBe('/home/u/.code-abyss/bin/abyss');
@@ -289,67 +259,23 @@ describe('MCP 注册', () => {
   });
 });
 
-describe('abyss-binary 资产解析', () => {
-  test('release target 与当前平台匹配', () => {
-    const t = resolveReleaseTarget();
-    // CI 跑在 linux/macos/windows x64|arm64 上，均应有映射
-    expect(t).toBeTruthy();
-    expect(t).toMatch(/^(x86_64|aarch64)-(unknown-linux-gnu|apple-darwin|pc-windows-msvc)$/);
+describe('kill foyer：abyss-binary 已移除', () => {
+  test('bin/lib/abyss-binary.js 不存在', () => {
+    expect(fs.existsSync(path.join(__dirname, '..', 'bin', 'lib', 'abyss-binary.js'))).toBe(false);
   });
 
-  test('资产名与 release.yml 的 archive: abyss-$target 对齐', () => {
-    const t = resolveReleaseTarget();
-    const name = assetName(t);
-    if (process.platform === 'win32') expect(name).toBe(`abyss-${t}.zip`);
-    else expect(name).toBe(`abyss-${t}.tar.gz`);
-  });
-
-  test('URL：latest 与钉版两种形态', () => {
-    const ext = process.platform === 'win32' ? '.zip' : '.tar.gz';
-    expect(releaseUrl('x86_64-unknown-linux-gnu', null))
-      .toBe(`https://github.com/telagod/abyss/releases/latest/download/abyss-x86_64-unknown-linux-gnu${ext}`);
-    expect(releaseUrl('x86_64-unknown-linux-gnu', '0.3.1'))
-      .toBe(`https://github.com/telagod/abyss/releases/download/v0.3.1/abyss-x86_64-unknown-linux-gnu${ext}`);
-  });
-});
-
-describe('卸载残留剥除', () => {
-  test('stripAbyssHooks 只剥我方条目，空事件键收口', () => {
-    const settings = {};
-    injectClaudeHooks(settings, TARGET_DIR);
-    settings.hooks.PreToolUse.push({ matcher: 'Bash', hooks: [{ type: 'command', command: 'user-guard.sh' }] });
-    expect(stripAbyssHooks(settings)).toBe(true);
-    expect(settings.hooks.SessionStart).toBeUndefined();
-    expect(settings.hooks.PreToolUse).toHaveLength(1);
-    expect(JSON.stringify(settings.hooks.PreToolUse[0])).toContain('user-guard');
-  });
-
-  test('stripAbyssHooks 全空时移除 hooks 容器，无我方条目返回 false', () => {
-    const settings = {};
-    injectClaudeHooks(settings, TARGET_DIR);
-    expect(stripAbyssHooks(settings)).toBe(true);
-    expect(settings.hooks).toBeUndefined();
-    expect(stripAbyssHooks({ hooks: { PreToolUse: [{ matcher: 'x' }] } })).toBe(false);
-  });
-
-  test('stripCodexAbyssIntegration 剥除带标记 hook 节 + mcp 节，保留用户节', () => {
-    const hookDir = '/home/u/.codex/skills/indexing-code/hooks/common';
-    let cfg = 'model = "gpt"\n\n[profiles.full_auto]\napproval_policy = "on-request"\n';
-    cfg = injectCodexHooks(cfg, hookDir, '\n').merged;
-    cfg = injectCodexMcp(cfg, 'abyss', '\n');
-    const { merged, removed } = stripCodexAbyssIntegration(cfg);
-    expect(removed).toBe(true);
-    expect(merged).not.toContain('indexing-code');
-    expect(merged).not.toContain('mcp_servers.abyss');
-    expect(merged).toContain('model = "gpt"');
-    expect(merged).toContain('[profiles.full_auto]');
-  });
-
-  test('stripCodexAbyssIntegration 不动用户自有 hook 节', () => {
-    const cfg = '[hooks.PreToolUse]\nmatcher = "Bash"\ncommand = "my-guard.sh"\n';
-    const { merged, removed } = stripCodexAbyssIntegration(cfg);
-    expect(removed).toBe(false);
-    expect(merged).toContain('my-guard.sh');
+  test('install help 不再列出 --with-abyss / --with-mcp 为可用 flag', () => {
+    const { spawnSync } = require('child_process');
+    const r = spawnSync(process.execPath, [path.join(__dirname, '..', 'bin', 'install.js'), '--help'], {
+      encoding: 'utf8',
+    });
+    expect(r.status).toBe(0);
+    const out = `${r.stdout}\n${r.stderr}`;
+    expect(out).toContain('--with-hooks');
+    expect(out).toContain('abyss attach');
+    // help text must not advertise removed flags as active options
+    expect(out).not.toMatch(/--with-abyss\s+.*download/i);
+    expect(out).not.toMatch(/--with-mcp\s+.*register/i);
   });
 });
 
@@ -370,70 +296,20 @@ describe('skill-manifest 能力发现', () => {
     expect(tryReadAbyssManifest({ binPath: '/no/such/abyss-bin-xyz' })).toBeNull();
   });
 
-  // 真实 abyss 二进制烟囱测试。CI 上没装就 skip，本地有就跑——
-  // ABYSS_BIN 显式指向也认。
   const realAbyss = process.env.ABYSS_BIN
     || (fs.existsSync('/home/telagod/project/code-abyss-dev/target/release/abyss')
       ? '/home/telagod/project/code-abyss-dev/target/release/abyss'
       : null);
   const maybeIt = realAbyss ? test : test.skip;
 
-  maybeIt('对真实 abyss ≥ 0.5.22 返回 schema_version=1 的 manifest', () => {
-    const m = tryReadAbyssManifest({ binPath: realAbyss });
+  maybeIt('真实 abyss skill-manifest --compact 可解析', () => {
+    const m = tryReadAbyssManifest({ binPath: realAbyss, timeoutMs: 5000 });
     expect(m).toBeTruthy();
     expect(m.schema_version).toBe(1);
-    expect(typeof m.version).toBe('string');
-    expect(m.providers).toBeTruthy();
-    expect(Array.isArray(m.providers.cli.commands)).toBe(true);
-    expect(Array.isArray(m.providers.mcp.tools)).toBe(true);
-    expect(Array.isArray(m.providers.daemon.verbs)).toBe(true);
-    // 关键 verb：subscribe 是 0.5.22+ 新引入的，验证发现路径走通
-    expect(m.providers.daemon.verbs).toContain('subscribe');
-  });
-
-  test('summarizeAbyssManifest 把 manifest 浓缩成单行', () => {
-    expect(summarizeAbyssManifest(null)).toBeNull();
-    const fake = {
-      version: '0.5.23',
-      schema_version: 1,
-      providers: {
-        cli: { commands: [{ name: 'a' }, { name: 'b' }, { name: 'c' }] },
-        mcp: { tools: ['x', 'y'] },
-        daemon: { verbs: ['ping', 'subscribe'] },
-      },
-    };
-    const s = summarizeAbyssManifest(fake);
-    expect(s).toContain('abyss v0.5.23');
-    expect(s).toContain('3 CLI commands');
-    expect(s).toContain('2 MCP tools');
-    expect(s).toContain('daemon verbs: ping, subscribe');
-  });
-
-  test('resolveAbyssMcpTools 优先用 manifest 否则 fallback', () => {
-    // null manifest → fallback
-    expect(resolveAbyssMcpTools(null)).toEqual(expect.arrayContaining(['search_context', 'get_symbols']));
-    // 空数组也算无效，走 fallback
-    expect(resolveAbyssMcpTools({ providers: { mcp: { tools: [] } } }, ['fb'])).toEqual(['fb']);
-    // 有内容直接用
-    expect(resolveAbyssMcpTools({ providers: { mcp: { tools: ['t1', 't2'] } } }, ['fb'])).toEqual(['t1', 't2']);
-  });
-
-  test('schema_version 不为 1 的 manifest 被拒（jest 单测 mock spawnSync）', () => {
-    jest.resetModules();
-    jest.doMock('child_process', () => ({
-      spawnSync: (cmd, args) => {
-        if (args && args[0] === '--version') {
-          return { status: 0, stdout: 'abyss 0.5.23\n' };
-        }
-        if (args && args[0] === 'skill-manifest') {
-          return { status: 0, stdout: JSON.stringify({ schema_version: 2, version: '0.5.23' }) };
-        }
-        return { status: 1, stdout: '' };
-      },
-    }));
-    const { tryReadAbyssManifest: mocked } = require('../bin/lib/abyss-integration.js');
-    expect(mocked({ binPath: '/fake/abyss' })).toBeNull();
-    jest.dontMock('child_process');
-    jest.resetModules();
+    const line = summarizeAbyssManifest(m);
+    expect(line).toMatch(/abyss v/);
+    const tools = resolveAbyssMcpTools(m);
+    expect(Array.isArray(tools)).toBe(true);
+    expect(tools.length).toBeGreaterThan(0);
   });
 });

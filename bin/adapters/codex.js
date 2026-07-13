@@ -427,22 +427,14 @@ function patchAndReportCodexDefaults({ cfgPath, ok, warn }) {
   }
 }
 
-// ── abyss 联动（hook + MCP）──
-// hook 形状与 skills/indexing-code/hooks/codex/hooks.json 同源，Codex 0.125+ 数组表 schema：
-//   [[hooks.SessionStart]] matcher  +  [[hooks.SessionStart.hooks]] type/command/timeout
-//   [[hooks.PreToolUse]]   matcher  +  [[hooks.PreToolUse.hooks]]   type/command/timeout
-//   旧扁平 [hooks.X] 已被 Codex 拒载（invalid type: map, expected a sequence）
-// MCP: [mcp_servers.abyss] command/args —— 节名是我方命名空间，可自由 upsert。
+// ── abyss 联动残留剥除（Agent OS v5 / V5-1）──
+// Graph hook **注入** production 主入口：`abyss attach codex`（abyss CLI）。
+// 本文件只负责：安装/卸载时剥除历史 code-abyss 写入的 marker hook 与
+// [mcp_servers.abyss] 节，避免 stale 路径 bash 127。
 //
-// ── v4.9.0 hybrid-切割 deprecation 期（2026-06-25 起）──
-//
-// `abyss attach codex` (abyss CLI v0.5.20+) 是 codex hook 注入的 production 主入口
-// （shape 与本文件 1:1 一致，2026-06-18 abyss v0.5.23 已对齐 ground truth）。下方
-// `injectCodexHooks` / `splitTomlBlocks` / `gatherHookGroup` / `renderCodexHookBlock`
-// / `stripCodexAbyssIntegration` (~256 行) 与常量 `ABYSS_HOOK_MARKER` 在 v4.9 保留
-// 行为以维持 `--with-hooks` flag 兼容；install.js 触发时打印 deprecation warning
-// 引导用户改用 `abyss attach codex`。v5.0 物理删除上述函数与常量。MCP 注册
-// (mcp_servers.abyss) 仍是 code-abyss 责任，不在切割范围。
+// Codex 0.125+ hook shape（供 strip 识别 / 测试 fixture）：
+//   [[hooks.SessionStart]] + [[hooks.SessionStart.hooks]]
+//   [[hooks.PreToolUse]] + [[hooks.PreToolUse.hooks]]
 
 const ABYSS_HOOK_MARKER = 'indexing-code/hooks/common';
 
@@ -488,83 +480,6 @@ function gatherHookGroup(blocks, startIdx, eventName) {
     j++;
   }
   return { group, next: j };
-}
-
-// Codex 0.125+ 期望数组表形态：[[hooks.Event]] + [[hooks.Event.hooks]]，旧扁平表会报
-// "invalid type: map, expected a sequence in hooks" 直接拒载 config.toml。
-function renderCodexHookBlock(ev, dir, winBash, eol) {
-  const target = `${dir}/${ev.script}`;
-  const L = [
-    `[[hooks.${ev.name}]]`,
-    `matcher = "${ev.matcher}"`,
-    '',
-    `[[hooks.${ev.name}.hooks]]`,
-    'type = "command"',
-    `command = "bash \\"${target}\\""`,
-  ];
-  // Windows 下 Git Bash 可能不在 PATH，command_windows 钉到安装期解析出的 bash 绝对路径
-  if (winBash) L.push(`command_windows = "\\"${tomlPath(winBash)}\\" \\"${target}\\""`);
-  L.push(`timeout = ${ev.timeout}`);
-  L.push(`statusMessage = "${ev.statusMessage}"`);
-  return L.join(eol);
-}
-
-function injectCodexHooks(content, hookDir, eol, opts = {}) {
-  const dir = tomlPath(hookDir);
-  const winBash = opts.winBash || null;
-  // stripOnly=true: 只剥旧条目，不渲染新块（用于 --with-hooks 不带的重装收敛）
-  const stripOnly = opts.stripOnly === true;
-  const events = [
-    { name: 'SessionStart', matcher: 'startup|resume', script: 'session-init.sh', timeout: 10, statusMessage: 'abyss: checking index' },
-    { name: 'PreToolUse', matcher: 'Bash|shell|apply_patch|Edit|Write', script: 'pre-edit-check.sh', timeout: 5, statusMessage: 'abyss: checking callers' },
-  ];
-
-  // 1. 先剥掉我方旧 hook 组（带标记），同时保留用户自有事件——保持非破坏 + 旧路径重锚。
-  //    Codex 支持同一事件多个数组表并存；只有旧式扁平 [hooks.X] 会和数组表冲突。
-  const blocks = splitTomlBlocks(content);
-  const flatUserOwned = new Set();
-  const kept = [];
-  let i = 0;
-  while (i < blocks.length) {
-    const b = blocks[i];
-    const m = b.header && b.header.match(HOOK_EVENT_HEADER_RE);
-    if (m) {
-      const { group, next } = gatherHookGroup(blocks, i, m[1]);
-      const groupText = group.map((g) => g.lines.join('\n')).join('\n');
-      if (groupText.includes(ABYSS_HOOK_MARKER)) {
-        // 我方旧条目：丢弃，稍后重建（顺带重锚旧路径）
-      } else {
-        if (b.header.startsWith('[hooks.')) flatUserOwned.add(m[1]);
-        for (const g of group) kept.push(...g.lines);
-      }
-      i = next;
-      continue;
-    }
-    kept.push(...b.lines);
-    i++;
-  }
-
-  // 2. 为非用户占位的事件追加新块（stripOnly 模式下跳过 fresh 渲染，仅完成剥离）
-  const installed = [];
-  const skipped = [];
-  const fresh = [];
-  if (!stripOnly) {
-    for (const ev of events) {
-      if (flatUserOwned.has(ev.name)) {
-        skipped.push(`hooks.${ev.name}`);
-        continue;
-      }
-      fresh.push(renderCodexHookBlock(ev, dir, winBash, eol));
-      installed.push(`hooks.${ev.name}`);
-    }
-  }
-
-  let merged = kept.join(eol);
-  if (fresh.length) {
-    const base = merged.replace(/\s+$/, '');
-    merged = (base ? base + eol + eol : '') + fresh.join(eol + eol) + eol;
-  }
-  return { merged, installed, skipped };
 }
 
 function renderCodexProfileFile(profileName, eol = '\n') {
@@ -658,6 +573,7 @@ function ensureCodexProfileFiles({
   return { installed, managed, skipped };
 }
 
+// 参考 shape（安装器不写）：客户端自管 MCP 时可用
 function injectCodexMcp(content, abyssBinPath, eol) {
   const cmd = `"${tomlPath(abyssBinPath || 'abyss')}"`;
   let merged = upsertKeyInSection(content, 'mcp_servers.abyss', 'command', cmd, eol);
@@ -665,7 +581,7 @@ function injectCodexMcp(content, abyssBinPath, eol) {
   return merged;
 }
 
-// 卸载用：剥除带标记的 hook 组（含 [[hooks.X]] + [[hooks.X.hooks]]）与 [mcp_servers.abyss] 节
+// 卸载/重装用：剥除带标记的 hook 组（含 [[hooks.X]] + [[hooks.X.hooks]]）与 [mcp_servers.abyss] 节
 function stripCodexAbyssIntegration(content) {
   const eol = content.includes('\r\n') ? '\r\n' : '\n';
   const blocks = splitTomlBlocks(content);
@@ -696,47 +612,13 @@ function stripCodexAbyssIntegration(content) {
   return { merged: cleaned.join(eol), removed };
 }
 
-// 安装期解析 Windows 下的 bash 绝对路径，供 command_windows 钉用——非 win32 返回 null。
-// 优先 PATH 中的 bash，其次 Git for Windows 常见安装位；找不到则不写 command_windows。
-function resolveWindowsBash(platform = process.platform, env = process.env) {
-  if (platform !== 'win32') return null;
-  try {
-    const { execSync } = require('child_process');
-    const out = execSync('where bash', { stdio: ['ignore', 'pipe', 'ignore'] })
-      .toString().split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
-    // 跳过 WSL 的 C:\Windows\System32\bash.exe（不能跑 Git Bash 脚本），优先 Git 的
-    const git = out.find((p) => /git/i.test(p)) || out.find((p) => !/system32/i.test(p));
-    if (git) return git;
-  } catch (_) { /* bash 不在 PATH，回落到常见安装位 */ }
-  const candidates = [
-    path.join(env.ProgramFiles || 'C:/Program Files', 'Git', 'bin', 'bash.exe'),
-    path.join(env['ProgramFiles(x86)'] || 'C:/Program Files (x86)', 'Git', 'bin', 'bash.exe'),
-    path.join(env.LOCALAPPDATA || 'C:/Users/Default/AppData/Local', 'Programs', 'Git', 'bin', 'bash.exe'),
-  ];
-  for (const c of candidates) {
-    try { if (fs.existsSync(c)) return c; } catch (_) { /* ignore */ }
-  }
-  return null;
-}
-
-function injectCodexAbyssIntegration({ cfgPath, HOME, withMcp = false, withHooks = false, abyssBinPath = null }) {
-  const raw = fs.existsSync(cfgPath) ? fs.readFileSync(cfgPath, 'utf8') : '';
-  const eol = raw.includes('\r\n') ? '\r\n' : '\n';
-  const hookDir = path.join(HOME, '.codex', 'skills', 'indexing-code', 'hooks', 'common');
-
-  // withHooks=false 时 stripOnly=true：剥旧条目但不种新的，让重装等价于收敛声明状态
-  const hooks = injectCodexHooks(raw, hookDir, eol, {
-    winBash: resolveWindowsBash(),
-    stripOnly: !withHooks,
-  });
-  let merged = hooks.merged;
-  let mcpInstalled = false;
-  if (withMcp) {
-    merged = injectCodexMcp(merged, abyssBinPath, eol);
-    mcpInstalled = true;
-  }
-  if (merged !== raw) fs.writeFileSync(cfgPath, merged);
-  return { installed: hooks.installed, skipped: hooks.skipped, mcpInstalled };
+// 安装期：只剥除历史 code-abyss 写入的 abyss hooks/MCP，从不注入（→ abyss attach codex）
+function stripLegacyCodexAbyssFromConfig(cfgPath) {
+  if (!fs.existsSync(cfgPath)) return { removed: false };
+  const raw = fs.readFileSync(cfgPath, 'utf8');
+  const { merged, removed } = stripCodexAbyssIntegration(raw);
+  if (removed && merged !== raw) fs.writeFileSync(cfgPath, merged);
+  return { removed };
 }
 
 function detectCodexAuth({
@@ -789,14 +671,14 @@ function cleanupLegacyCodexRuntime({
   return removed;
 }
 
-function reportAbyssIntegration({ cfgPath, HOME, withMcp, withHooks = false, abyssBinPath, ok, info, warn }) {
+function reportAbyssIntegration({ cfgPath, info, warn }) {
   try {
-    const r = injectCodexAbyssIntegration({ cfgPath, HOME, withMcp, withHooks, abyssBinPath });
-    if (r.installed.length > 0) ok(`abyss hooks → ${r.installed.join(', ')}`);
-    if (r.skipped.length > 0) info(`检测到旧式扁平 hook，跳过同事件注入: ${r.skipped.join(', ')}`);
-    if (r.mcpInstalled) ok('MCP → [mcp_servers.abyss]');
+    const r = stripLegacyCodexAbyssFromConfig(cfgPath);
+    if (r.removed) {
+      info('abyss hooks/MCP → 已剥除旧 code-abyss 条目（请用 abyss attach codex）');
+    }
   } catch (e) {
-    warn(`abyss 联动写入失败: ${e.message}`);
+    warn(`abyss 残留剥除失败: ${e.message}`);
   }
 }
 
@@ -810,9 +692,6 @@ async function postCodex({
   warn,
   info,
   c,
-  withMcp = false,
-  withHooks = false,
-  abyssBinPath = null
 }) {
   const cfgPath = path.join(HOME, '.codex', 'config.toml');
   const exists = fs.existsSync(cfgPath);
@@ -840,7 +719,7 @@ async function postCodex({
       patchAndReportCodexDefaults({ cfgPath, ok, warn });
     }
     ensureCodexProfileFiles({ HOME, ctx, ok, info, warn });
-    reportAbyssIntegration({ cfgPath, HOME, withMcp, withHooks, abyssBinPath, ok, info, warn });
+    reportAbyssIntegration({ cfgPath, info, warn });
     flushCodexManifest(ctx);
     return;
   }
@@ -861,7 +740,7 @@ async function postCodex({
     patchAndReportCodexDefaults({ cfgPath, ok, warn });
   }
   ensureCodexProfileFiles({ HOME, ctx, ok, info, warn });
-  reportAbyssIntegration({ cfgPath, HOME, withMcp, withHooks, abyssBinPath, ok, info, warn });
+  reportAbyssIntegration({ cfgPath, info, warn });
   flushCodexManifest(ctx);
 }
 
@@ -871,11 +750,10 @@ module.exports = {
   mergeCodexConfigDefaults,
   patchCodexConfig,
   patchCodexConfigDefaults,
-  injectCodexHooks,
   injectCodexMcp,
-  injectCodexAbyssIntegration,
   ensureCodexProfileFiles,
   stripCodexAbyssIntegration,
+  stripLegacyCodexAbyssFromConfig,
   detectCodexAuth,
   getCodexCoreFiles,
   postCodex,

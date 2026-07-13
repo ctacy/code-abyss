@@ -44,7 +44,26 @@ jobs:
       - name: Verify skills contract
         run: npm run verify:skills
 
+      - name: Packs lock check (parity with PR CI)
+        run: npm run packs:check
+
+      - name: Packs vendor-sync check (parity with PR CI)
+        run: npm run packs:vendor:sync -- --check
+
+      - name: Mechanical score (banned openers, key-free)
+        run: npm run score:mechanical
+
+      # Prerelease (e.g. 5.0.0-rc.1) → npm dist-tag `rc` so `latest` stays on stable.
+      # Stable → default `latest` tag.
       - name: Publish to npm
-        run: npm publish --access public --provenance
+        run: |
+          pkg=$(node -p "require('./package.json').version")
+          if node -e "process.exit(/-(rc|alpha|beta|pre)/i.test(process.argv[1])?0:1)" "$pkg"; then
+            echo "Publishing prerelease $pkg with dist-tag rc"
+            npm publish --access public --provenance --tag rc
+          else
+            echo "Publishing stable $pkg with dist-tag latest"
+            npm publish --access public --provenance
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

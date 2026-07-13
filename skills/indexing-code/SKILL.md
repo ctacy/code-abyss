@@ -117,7 +117,7 @@ abyss attach all        # 三平台一次完成
 
 > **v4.8.x → v4.9 deprecation 期变更**
 > - `--with-hooks` 对 claude/codex/gemini 仍写入 hook，但 install.js 打印 warning 引导改用 `abyss attach <host>`；v5.0 移除该路径（openclaw/pi/hermes 的 `--with-hooks` 永久保留并改造为 spawn install-hooks.sh）
-> - `--with-abyss` 下载 abyss 二进制到 `~/.code-abyss/bin/` 进入 deprecation，引导用户改用 `curl -fsSL https://raw.githubusercontent.com/telagod/abyss/main/install.sh | bash`；v5.0 移除
+> - `--with-abyss` **已移除**（Agent OS v5.1）。请用 `curl -fsSL https://raw.githubusercontent.com/telagod/abyss/main/install.sh | bash`；claude/codex/gemini graph hooks 用 `abyss attach <host>`
 > - `--with-mcp` 注册 abyss MCP 进入 deprecation，引导用户改用 `abyss mcp` 客户端自配；v5.0 移除
 
 **openclaw / pi / hermes** — 由 code-abyss npm 包负责（abyss CLI 不接管这三平台，见 abyss `src/attach/mod.rs` 注释）：

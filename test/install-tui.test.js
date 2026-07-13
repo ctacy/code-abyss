@@ -112,11 +112,9 @@ describe('interactive install TUI', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('tab/→ next');
-    // scholar's label ("文言小生") is UI-only picker metadata under the persona
-    // redesign — it is never dereferenced by the render path (see
-    // docs/specs/persona-voice-card-v1.0.md §2.2). Assert on `self`, which IS
-    // rendered via the fixed identity template.
-    expect(claudeMd).toContain('自称：在下');
-    expect(settings.outputStyle).toBe('scholar-classic');
+    // Default is plain; one Tab moves to first optional skin (abyss). Assert on
+    // identity self (rendered), not picker labels.
+    expect(claudeMd).toContain('自称：吾');
+    expect(settings.outputStyle).toBe('abyss-cultivator');
   }, 45000);
 });

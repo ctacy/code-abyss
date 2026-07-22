@@ -2,9 +2,9 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+    "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "true",
     "CLAUDE_CODE_ENABLE_TASKS": "1",
-    "CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION": "1",
+    "CLAUDE_CODE_ENABLE_PROMPT_SUGGESTION": "true",
     "ENABLE_TOOL_SEARCH": "auto:10"
   },
   "defaultMode": "bypassPermissions",
@@ -22,7 +22,6 @@
   "permissions": {
     "allow": [
       "Bash",
-      "LS",
       "Read",
       "Edit",
       "Write",
@@ -32,10 +31,7 @@
       "Grep",
       "WebFetch",
       "WebSearch",
-      "TodoWrite",
-      "NotebookRead",
-      "NotebookEdit",
-      "mcp__*"
+      "NotebookEdit"
     ]
   }
 }

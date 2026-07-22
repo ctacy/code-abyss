@@ -101,7 +101,9 @@ describe('inject-plane router generation (single SoT)', () => {
   });
 
   test('always-on compose still under budget and ends with kernel precedence', () => {
-    const content = renderRuntimeGuidance(projectRoot, 'abyss-cultivator', 'codex', 'abyss');
+    // skipLocalOverlay: measure the shipped always-on core only — the
+    // user-private CLAUDE.local.md overlay is exempt from the budget cap.
+    const content = renderRuntimeGuidance(projectRoot, 'abyss-cultivator', 'codex', 'abyss', { skipLocalOverlay: true });
     expect(content.length).toBeLessThan(8000);
     expect(content).toContain('内核边界');
     expect(content).toContain('securing-systems');

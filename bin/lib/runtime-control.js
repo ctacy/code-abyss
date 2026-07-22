@@ -51,7 +51,9 @@ function detectEnforcementOn({ HOME = os.homedir(), target = 'claude' } = {}) {
 function measureComposeBudget(projectRoot, { styleSlug, personaSlug } = {}) {
   const style = styleSlug || getDefaultStyle(projectRoot, 'claude').slug;
   const persona = personaSlug || getDefaultPersona(projectRoot).slug;
-  const text = renderRuntimeGuidance(projectRoot, style, 'codex', persona);
+  // Budget measures the shipped always-on core; the user-private local
+  // overlay (CLAUDE.local.md, not in the tarball) is exempt.
+  const text = renderRuntimeGuidance(projectRoot, style, 'codex', persona, { skipLocalOverlay: true });
   return {
     style,
     persona,
@@ -81,8 +83,11 @@ function buildDoctorReport({
   const kernel = readKernelSyncMeta(projectRoot);
   const enforcement = detectEnforcementOn({ HOME, target });
   const budget = measureComposeBudget(projectRoot);
-  const injectPath = path.join(HOME, target === 'codex' ? '.codex' : '.claude', INJECT_REL_PATH);
-  const injectPresent = fs.existsSync(injectPath);
+  const injectSupported = target === 'claude' || target === 'codex';
+  const injectPath = injectSupported
+    ? path.join(HOME, target === 'codex' ? '.codex' : '.claude', INJECT_REL_PATH)
+    : null;
+  const injectPresent = injectPath ? fs.existsSync(injectPath) : null;
 
   return {
     package: { name: pkg.name, version: pkg.version },
@@ -99,7 +104,11 @@ function buildDoctorReport({
       : { present: false },
     enforcement: { target, ...enforcement },
     composeBudget: budget,
-    injectPlane: { present: injectPresent, path: injectPath },
+    injectPlane: {
+      supported: injectSupported,
+      present: injectPresent,
+      path: injectPath,
+    },
   };
 }
 
@@ -126,7 +135,7 @@ function collectMigrationHints(report) {
       'character Stop-hook OFF → reinstall without --no-enforcement  (default on in 5.0)'
     );
   }
-  if (report.injectPlane && !report.injectPlane.present && t && ['claude', 'codex'].includes(t)) {
+  if (report.injectPlane && report.injectPlane.supported && !report.injectPlane.present && t && ['claude', 'codex'].includes(t)) {
     hints.push(
       `inject plane missing → npx code-abyss -t ${t} -y  (writes ${report.injectPlane.path || '.code-abyss-inject.md'})`
     );
@@ -159,7 +168,11 @@ function formatDoctorReport(report) {
   );
   const b = report.composeBudget;
   lines.push(`compose budget: ${b.length}/${b.cap} (headroom ${b.headroom}) persona=${b.persona} style=${b.style}`);
-  lines.push(`inject plane: ${report.injectPlane.present ? 'present' : 'absent'} (${report.injectPlane.path})`);
+  if (!report.injectPlane.supported) {
+    lines.push(`inject plane: N/A (${report.enforcement.target} — not installed by code-abyss)`);
+  } else {
+    lines.push(`inject plane: ${report.injectPlane.present ? 'present' : 'absent'} (${report.injectPlane.path})`);
+  }
 
   const hints = collectMigrationHints(report);
   if (hints.length) {
@@ -175,6 +188,8 @@ function formatDoctorReport(report) {
  * Compose host guidance using the same engine as install (no skill tree copy).
  * @returns {{ guidance: string, destPath: string|null, wrote: boolean }}
  */
+const COMPOSE_SUPPORTED_TARGETS = new Set(['claude', 'codex', 'gemini', 'openclaw']);
+
 function composeHostGuidance({
   projectRoot,
   target = 'claude',
@@ -183,6 +198,9 @@ function composeHostGuidance({
   HOME = os.homedir(),
   write = false,
 } = {}) {
+  if (!COMPOSE_SUPPORTED_TARGETS.has(target)) {
+    throw new Error(`unsupported target: ${target}. Supported: ${[...COMPOSE_SUPPORTED_TARGETS].join(', ')}`);
+  }
   const persona = personaSlug || getDefaultPersona(projectRoot).slug;
   const style = styleSlug
     || getDefaultStyle(projectRoot, target === 'gemini' ? 'claude' : target).slug;
@@ -197,6 +215,13 @@ function composeHostGuidance({
 
   const hostForRender = target === 'gemini' ? 'gemini' : 'codex';
   const guidance = renderRuntimeGuidance(projectRoot, style, hostForRender, persona);
+  // Budget cap protects the shipped always-on core only; the user-private
+  // local overlay (CLAUDE.local.md, not in the tarball) is exempt and still
+  // written to the host file in full.
+  const core = renderRuntimeGuidance(projectRoot, style, hostForRender, persona, { skipLocalOverlay: true });
+  if (core.length >= COMPOSE_BUDGET_CAP) {
+    throw new Error(`compose guidance exceeds budget cap: ${core.length}/${COMPOSE_BUDGET_CAP}`);
+  }
 
   let destPath = null;
   if (target === 'claude') destPath = path.join(HOME, '.claude', 'CLAUDE.md');

@@ -351,7 +351,10 @@ function renderRuntimeGuidance(projectRoot, styleSlug, targetName = 'codex', per
   const styleContent = apply(readStyleContent(projectRoot, style).replace(/^\s+/, '')); // L2 契约
 
   // Local overlay: append CLAUDE.local.md if found anywhere in the search chain.
-  const overlaySearch = [
+  // Skipped when measuring the shipped always-on budget — the overlay is a
+  // user-private, opt-in layer (excluded from the npm tarball) and must not
+  // count against the core compose budget cap.
+  const overlaySearch = options.skipLocalOverlay ? [] : [
     path.join(projectRoot, 'config', 'CLAUDE.local.md'),
     options.targetDir && path.join(options.targetDir, 'CLAUDE.local.md'),
     path.join(process.cwd(), 'config', 'CLAUDE.local.md'),

@@ -1,11 +1,12 @@
 # 邪修红尘仙 · 本地叠加说明 v1.1
 
 **定位**：Local Overlay（仅追加，不覆盖上游）
-**作用目标**：安装阶段合并到最终 `~/.claude/CLAUDE.md`
-**生效范围**：仅对 Claude Code 生效（Codex/Gemini/OpenClaw 需各自适配）
+**作用目标**：安装阶段合并到最终配置文件
+**生效范围**：对 Claude Code / Codex CLI / Gemini CLI / OpenClaw 四个宿主均生效（通过 `renderRuntimeGuidance()` 统一加载）
 **兼容版本**：code-abyss >= 0.3.0
 
 > 本文件用于承载魔尊的本地长期规则。建议在安装脚本中以幂等方式追加，避免上游更新时丢失。
+> 各宿主加载路径：`~/.claude/CLAUDE.local.md` / `~/.codex/instruction.md` / `~/.gemini/GEMINI.md` / `~/.openclaw/SOUL.md`
 
 ---
 
@@ -24,26 +25,56 @@
   - 从当前工作目录 `process.cwd()` 开始，依次向上查找 `.claude/settings.json` 和 `.claude/settings.local.json`
   - 查找范围：当前目录 → 父目录 → 祖父目录 → ... → 根目录或遇到 `.git` 目录所在层级停止
   - **安全边界**：最多向上查找 10 层，超过则停止（防止路径遍历攻击）
-  - 首次找到即使用，不再继续向上查找（最近原则）
+  - **首次找到即使用，不再继续向上查找（最近原则）**
+  - **子目录配置优先于父目录配置**：若 `D:\project\src\.claude\settings.json` 和 `D:\project\.claude\settings.json` 同时存在，使用前者（离当前目录最近）
   - 示例：`D:\HYS\Code\Github\project\src\utils` 执行时，查找顺序：
     ```
     D:\HYS\Code\Github\project\src\utils\.claude\settings.json
     D:\HYS\Code\Github\project\src\.claude\settings.json
     D:\HYS\Code\Github\project\.claude\settings.json  ← 找到，停止向上
     ```
-- **配置合并示例**：
+- **配置合并示例**（多层嵌套场景）：
   ```json
-  // ~/.claude/settings.json
+  // 场景 1：子项目有独立配置（父项目配置被跳过）
+  
+  // ~/.claude/settings.json（全局配置）
   {"theme": "dark", "timeout": 30}
   
-  // project/.claude/settings.json  
-  {"timeout": 60, "proxy": "http://proxy.example.com"}
+  // D:/project1/.claude/settings.json（父项目配置）
+  {"timeout": 120, "proxy": "http://proxy.example.com"}
   
-  // project/.claude/settings.local.json
+  // D:/project1/project2/.claude/settings.json（子项目配置）
+  {"timeout": 60, "features": {"autoSave": true}}
+  
+  // D:/project1/project2/.claude/settings.local.json（子项目本地覆盖）
   {"proxy": "http://192.168.1.100:8080"}
   
-  // 最终合并结果（深度合并）
-  {"theme": "dark", "timeout": 60, "proxy": "http://192.168.1.100:8080"}
+  // 在 D:/project1/project2/src 目录执行时：
+  // 查找 settings.json：向上找到 D:/project1/project2/.claude/settings.json（停止，父项目被跳过）
+  // 查找 settings.local.json：向上找到 D:/project1/project2/.claude/settings.local.json（停止）
+  // 三层深度合并结果（全局 + 子项目 + 子项目本地）：
+  {"theme": "dark", "timeout": 60, "proxy": "http://192.168.1.100:8080", "features": {"autoSave": true}}
+  
+  // ────────────────────────────────────────────────────────────────
+  
+  // 场景 2：子项目无独立配置（继承父项目配置）
+  
+  // ~/.claude/settings.json（全局配置）
+  {"theme": "dark", "timeout": 30}
+  
+  // D:/project1/.claude/settings.json（父项目配置）
+  {"timeout": 120, "proxy": "http://proxy.example.com"}
+  
+  // D:/project1/project2/.claude/settings.local.json（子项目本地覆盖，但无 settings.json）
+  {"proxy": "http://192.168.1.100:8080"}
+  
+  // 在 D:/project1/project2/src 目录执行时：
+  // 查找 settings.json：向上穿过 project2，找到 D:/project1/.claude/settings.json（停止）
+  // 查找 settings.local.json：向上找到 D:/project1/project2/.claude/settings.local.json（停止）
+  // 三层深度合并结果（全局 + 父项目 + 子项目本地）：
+  {"theme": "dark", "timeout": 120, "proxy": "http://192.168.1.100:8080"}
+  
+  // 合并优先级：全局 < 项目级 settings.json < 项目级 settings.local.json
   ```
 - 存在多个时，以 `~/.claude/settings.json` < `.claude/settings.json` < `.claude/settings.local.json` 的顺序深度合并，`.claude/settings.local.json` 优先级最高。
 - 读取结果作为本次会话的环境变量上下文，影响后续工具调用、路径解析、模型参数等行为。

@@ -29,10 +29,10 @@ describe('v5.8 release workflow packs parity', () => {
   });
 });
 
-describe('package version is rc until stable 5.0.0', () => {
-  test('package.json is 5.0.0-rc.N prerelease', () => {
+describe('package version has reached stable 5.0.x', () => {
+  test('package.json is 5.0.x stable (no longer rc prerelease)', () => {
     const v = JSON.parse(fs.readFileSync(path.join(projectRoot, 'package.json'), 'utf8')).version;
-    expect(v).toMatch(/^5\.0\.0-rc\.\d+$/);
+    expect(v).toMatch(/^5\.0\.\d+$/);
   });
 });
 

@@ -62,7 +62,7 @@ jobs:
           export HOME="$abyss_home"
           export USERPROFILE="$abyss_home"
 
-          npx --yes --package "./$pkg_tgz" code-abyss --target claude -y
+          npx --yes --package "./$pkg_tgz" code-abyss-sc --target claude -y
 
           test -f "$abyss_home/.claude/CLAUDE.md"
           test -d "$abyss_home/.claude/skills"
@@ -82,7 +82,7 @@ jobs:
           grep -q 'skills/_kernel/security' "$abyss_home/.claude/.code-abyss-inject.md"
           grep -q 'code-abyss-inject-plane' "$abyss_home/.claude/.code-abyss-inject.md"
 
-          npx --yes --package "./$pkg_tgz" code-abyss --uninstall claude
+          npx --yes --package "./$pkg_tgz" code-abyss-sc --uninstall claude
 
           test ! -e "$abyss_home/.claude/CLAUDE.md"
           test ! -e "$abyss_home/.claude/skills"
@@ -116,7 +116,7 @@ jobs:
           export HOME="$abyss_home"
           export USERPROFILE="$abyss_home"
 
-          npx --yes --package "./$pkg_tgz" code-abyss --target codex -y
+          npx --yes --package "./$pkg_tgz" code-abyss-sc --target codex -y
 
           test -f "$abyss_home/.codex/instruction.md"
           test ! -e "$abyss_home/.codex/AGENTS.md"
@@ -127,7 +127,7 @@ jobs:
           test ! -e "$abyss_home/.codex/settings.json"
           test -f "$abyss_home/.codex/.code-abyss-uninstall.js"
 
-          npx --yes --package "./$pkg_tgz" code-abyss --uninstall codex
+          npx --yes --package "./$pkg_tgz" code-abyss-sc --uninstall codex
 
           test ! -e "$abyss_home/.codex/instruction.md"
           test ! -e "$abyss_home/.codex/AGENTS.md"
@@ -162,7 +162,7 @@ jobs:
           export HOME="$abyss_home"
           export USERPROFILE="$abyss_home"
 
-          npx --yes --package "./$pkg_tgz" code-abyss --target gemini -y
+          npx --yes --package "./$pkg_tgz" code-abyss-sc --target gemini -y
 
           test -f "$abyss_home/.gemini/GEMINI.md"
           test -d "$abyss_home/.gemini/skills"
@@ -175,7 +175,7 @@ jobs:
           test -f "$abyss_home/.gemini/settings.json"
           test -f "$abyss_home/.gemini/.code-abyss-uninstall.js"
 
-          npx --yes --package "./$pkg_tgz" code-abyss --uninstall gemini
+          npx --yes --package "./$pkg_tgz" code-abyss-sc --uninstall gemini
 
           test ! -e "$abyss_home/.gemini/GEMINI.md"
           test ! -e "$abyss_home/.gemini/skills"
@@ -209,7 +209,7 @@ jobs:
           export HOME="$abyss_home"
           export USERPROFILE="$abyss_home"
 
-          npx --yes --package "./$pkg_tgz" code-abyss --target openclaw -y
+          npx --yes --package "./$pkg_tgz" code-abyss-sc --target openclaw -y
 
           test -d "$abyss_home/.openclaw/skills"
           test -f "$abyss_home/.openclaw/workspace/AGENTS.md"
@@ -218,7 +218,7 @@ jobs:
           test ! -e "$abyss_home/.openclaw/commands"
           test ! -e "$abyss_home/.openclaw/skills/gstack"
 
-          npx --yes --package "./$pkg_tgz" code-abyss --uninstall openclaw
+          npx --yes --package "./$pkg_tgz" code-abyss-sc --uninstall openclaw
 
           test ! -e "$abyss_home/.openclaw/skills"
           test ! -e "$abyss_home/.openclaw/.code-abyss-backup"
